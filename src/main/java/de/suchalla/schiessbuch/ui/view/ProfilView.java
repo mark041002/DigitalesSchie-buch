@@ -14,8 +14,9 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexWrap;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
@@ -39,11 +40,15 @@ public class ProfilView extends VerticalLayout {
     private final SecurityService securityService;
     private final BenutzerService benutzerService;
 
-    private final EmailField emailField = new EmailField("E-Mail");
     private final PasswordField neuesPasswortField = new PasswordField("Neues Passwort");
     private final PasswordField passwortBestaetigenField = new PasswordField("Passwort bestätigen");
 
     private final Benutzer currentUser;
+
+    private boolean nameEditMode = false;
+    private boolean emailEditMode = false;
+
+    private Div infoCard; // Instanzvariable für die InfoCard
 
     public ProfilView(SecurityService securityService, BenutzerService benutzerService) {
         this.securityService = securityService;
@@ -74,32 +79,19 @@ public class ProfilView extends VerticalLayout {
         add(title);
 
         // Profilinformationen (oben, volle Breite)
-        Div infoCard = createInfoCard();
+        infoCard = createInfoCard();
         infoCard.getStyle().set("margin-bottom", "var(--lumo-space-m)");
         infoCard.setWidthFull();
         add(infoCard);
 
-        // Row: E-Mail und Passwort nebeneinander (auf kleinen Bildschirmen umbruch)
-        FlexLayout emailPassRow = new FlexLayout();
-        emailPassRow.setWidthFull();
-        emailPassRow.setFlexDirection(FlexDirection.ROW);
-        emailPassRow.setFlexWrap(FlexWrap.WRAP);
-        emailPassRow.getStyle().set("gap", "var(--lumo-space-m)");
-
-        Div emailCard = createEmailCard();
-        emailCard.getStyle().set("flex", "1 1 320px").set("min-width", "260px");
-        emailCard.setWidthFull();
-
+        // Passwort-ändern-Card volle Breite
         Div passwortCard = createPasswortCard();
-        passwortCard.getStyle().set("flex", "1 1 320px").set("min-width", "260px");
         passwortCard.setWidthFull();
-
-        emailPassRow.add(emailCard, passwortCard);
-        // Beide Spalten dürfen gleichmäßig wachsen
-        emailPassRow.setFlexGrow(1, emailCard);
-        emailPassRow.setFlexGrow(1, passwortCard);
-
-        add(emailPassRow);
+        passwortCard.getStyle()
+            .set("max-width", "none")
+            .set("margin-left", "0")
+            .set("padding", "var(--lumo-space-l)");
+        add(passwortCard);
 
         // Gefahrenzone Card (volle Breite unter den Feldern)
         Div dangerCard = createDangerCard();
@@ -112,81 +104,148 @@ public class ProfilView extends VerticalLayout {
         Div card = new Div();
         card.addClassName("card");
         card.getStyle()
-                .set("background", "var(--lumo-base-color)")
-                .set("border-radius", "var(--lumo-border-radius-l)")
-                .set("box-shadow", "var(--lumo-box-shadow-s)")
-                .set("padding", "var(--lumo-space-l)");
+            .set("background", "var(--lumo-base-color)")
+            .set("border-radius", "var(--lumo-border-radius-l)")
+            .set("box-shadow", "var(--lumo-box-shadow-s)")
+            .set("padding", "var(--lumo-space-l)")
+            .set("margin-left", "0");
 
         H3 cardTitle = new H3("Benutzerinformationen");
-        cardTitle.getStyle().set("margin-top", "0");
+        cardTitle.getStyle().set("margin-top", "0").set("margin-bottom", "var(--lumo-space-m)");
 
-        Div infoGrid = new Div();
-        infoGrid.getStyle()
-                .set("display", "flex")
-                .set("flex-direction", "column")
-                .set("gap", "var(--lumo-space-m)");
-
-        infoGrid.add(
-                createInfoItem("Name", currentUser.getVollstaendigerName(), VaadinIcon.USER),
-                createInfoItem("Rolle", getRollenText(currentUser.getRolle().toString()), VaadinIcon.DIPLOMA),
-                createInfoItem("E-Mail", currentUser.getEmail(), VaadinIcon.ENVELOPE)
-        );
-
-        card.add(cardTitle, infoGrid);
+        card.add(cardTitle, createNameRow(card), createEmailRow(card));
         return card;
     }
 
-    private Div createInfoItem(String label, String value, VaadinIcon icon) {
-        Div item = new Div();
-        item.getStyle()
+    // Hilfsmethoden für dynamische Zeilen
+    private Div createNameRow(Div card) {
+        Div nameRow = new Div();
+        nameRow.getStyle()
+            .set("display", "flex")
+            .set("gap", "var(--lumo-space-m)")
+            .set("align-items", "center")
+            .set("margin-bottom", "var(--lumo-space-m)");
+
+        if (!nameEditMode) {
+            Div nameContainer = new Div();
+            nameContainer.getStyle()
                 .set("display", "flex")
                 .set("align-items", "center")
-                .set("gap", "var(--lumo-space-s)");
+                .set("gap", "var(--lumo-space-s)")
+                .set("flex-grow", "1");
 
-        Span iconSpan = new Span(icon.create());
-        iconSpan.getStyle().set("color", "var(--lumo-primary-color)");
+            Span userIcon = new Span(VaadinIcon.USER.create());
+            userIcon.getStyle().set("display", "flex").set("align-items", "center");
 
-        Div textDiv = new Div();
-        Span labelSpan = new Span(label);
-        labelSpan.getStyle()
-                .set("font-size", "var(--lumo-font-size-xs)")
-                .set("color", "var(--lumo-secondary-text-color)")
-                .set("display", "block");
+            Span nameText = new Span(currentUser.getVollstaendigerName());
+            nameText.getStyle().set("font-weight", "500").set("font-size", "var(--lumo-font-size-m)");
 
-        Span valueSpan = new Span(value);
-        valueSpan.getStyle()
-                .set("font-weight", "500")
-                .set("display", "block");
+            nameContainer.add(userIcon, nameText);
 
-        textDiv.add(labelSpan, valueSpan);
-        item.add(iconSpan, textDiv);
-        return item;
+            Button bearbeiten = new Button("Bearbeiten", e -> {
+                nameEditMode = true;
+                card.removeAll();
+                H3 title = new H3("Benutzerinformationen");
+                title.getStyle().set("margin-top", "0").set("margin-bottom", "var(--lumo-space-m)");
+                card.add(title, createNameRow(card), createEmailRow(card));
+            });
+            bearbeiten.getStyle().set("flex-shrink", "0");
+
+            nameRow.add(nameContainer, bearbeiten);
+        } else {
+            TextField nameField = new TextField();
+            nameField.setValue(currentUser.getVollstaendigerName());
+            nameField.setWidthFull();
+            nameField.getStyle().set("flex-grow", "1");
+
+            Button speichern = new Button("Speichern", e -> {
+                String neuerName = nameField.getValue();
+                if (neuerName == null || neuerName.trim().isEmpty()) {
+                    Notification.show("Bitte geben Sie einen Namen ein").addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    return;
+                }
+                currentUser.setVorname(neuerName.split(" ")[0]);
+                if (neuerName.split(" ").length > 1) {
+                    currentUser.setNachname(neuerName.substring(neuerName.indexOf(' ')+1));
+                }
+                benutzerService.aktualisiereBenutzer(currentUser);
+                Notification.show("Name erfolgreich geändert").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                nameEditMode = false;
+                // InfoCard im Layout ersetzen
+                int idx = getChildren().toList().indexOf(infoCard);
+                remove(infoCard);
+                infoCard = createInfoCard();
+                addComponentAtIndex(idx, infoCard);
+            });
+            speichern.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            speichern.getStyle().set("flex-shrink", "0");
+
+            nameRow.add(nameField, speichern);
+        }
+        return nameRow;
     }
 
-    private Div createEmailCard() {
-        Div card = new Div();
-        card.addClassName("card");
-        card.getStyle()
-                .set("background", "var(--lumo-base-color)")
-                .set("border-radius", "var(--lumo-border-radius-l)")
-                .set("box-shadow", "var(--lumo-box-shadow-s)")
-                .set("padding", "var(--lumo-space-l)")
-                .set("height", "100%");
+    private Div createEmailRow(Div card) {
+        Div emailRow = new Div();
+        emailRow.getStyle()
+            .set("display", "flex")
+            .set("gap", "var(--lumo-space-m)")
+            .set("align-items", "center");
 
-        H3 cardTitle = new H3("E-Mail ändern");
-        cardTitle.getStyle().set("margin-top", "0");
+        if (!emailEditMode) {
+            Div emailContainer = new Div();
+            emailContainer.getStyle()
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("gap", "var(--lumo-space-s)")
+                .set("flex-grow", "1");
 
-        emailField.setValue(currentUser.getEmail());
-        emailField.setWidthFull();
-        emailField.setPrefixComponent(VaadinIcon.ENVELOPE.create());
+            Span emailIcon = new Span(VaadinIcon.ENVELOPE.create());
+            emailIcon.getStyle().set("display", "flex").set("align-items", "center");
 
-        Button speichernButton = new Button("E-Mail speichern", e -> aendereEmail());
-        speichernButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        speichernButton.setIcon(VaadinIcon.CHECK.create());
-        speichernButton.setWidthFull();
+            Span emailText = new Span(currentUser.getEmail());
+            emailText.getStyle().set("font-weight", "500").set("font-size", "var(--lumo-font-size-m)");
 
-        card.add(cardTitle, emailField, speichernButton);
-        return card;
+            emailContainer.add(emailIcon, emailText);
+
+            Button bearbeiten = new Button("Bearbeiten", e -> {
+                emailEditMode = true;
+                card.removeAll();
+                H3 title = new H3("Benutzerinformationen");
+                title.getStyle().set("margin-top", "0").set("margin-bottom", "var(--lumo-space-m)");
+                card.add(title, createNameRow(card), createEmailRow(card));
+            });
+            bearbeiten.getStyle().set("flex-shrink", "0");
+
+            emailRow.add(emailContainer, bearbeiten);
+        } else {
+            EmailField emailField = new EmailField();
+            emailField.setValue(currentUser.getEmail());
+            emailField.setWidthFull();
+            emailField.getStyle().set("flex-grow", "1");
+
+            Button speichern = new Button("Speichern", e -> {
+                String neueEmail = emailField.getValue();
+                if (neueEmail == null || neueEmail.trim().isEmpty()) {
+                    Notification.show("Bitte geben Sie eine E-Mail-Adresse ein").addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    return;
+                }
+                currentUser.setEmail(neueEmail);
+                benutzerService.aktualisiereBenutzer(currentUser);
+                Notification.show("E-Mail erfolgreich geändert").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                emailEditMode = false;
+                // InfoCard im Layout ersetzen
+                int idx = getChildren().toList().indexOf(infoCard);
+                remove(infoCard);
+                infoCard = createInfoCard();
+                addComponentAtIndex(idx, infoCard);
+            });
+            speichern.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            speichern.getStyle().set("flex-shrink", "0");
+
+            emailRow.add(emailField, speichern);
+        }
+        return emailRow;
     }
 
     private Div createPasswortCard() {
@@ -257,24 +316,6 @@ public class ProfilView extends VerticalLayout {
         };
     }
 
-    private void aendereEmail() {
-        try {
-            String neueEmail = emailField.getValue();
-            if (neueEmail == null || neueEmail.trim().isEmpty()) {
-                Notification.show("Bitte geben Sie eine E-Mail-Adresse ein")
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                return;
-            }
-
-            currentUser.setEmail(neueEmail);
-            benutzerService.aktualisiereBenutzer(currentUser);
-            Notification.show("E-Mail erfolgreich geändert")
-                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-        } catch (Exception e) {
-            Notification.show("Fehler: " + e.getMessage())
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-        }
-    }
 
     private void aenderePasswort() {
         String neuesPasswort = neuesPasswortField.getValue();

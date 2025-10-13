@@ -38,7 +38,7 @@ public class VereinsmitgliedschaftService {
      * @throws IllegalArgumentException wenn der Verein nicht existiert oder bereits eine aktive Mitgliedschaft besteht
      */
     public Vereinsmitgliedschaft beantragenMitgliedschaft(Benutzer benutzer, Long vereinId) {
-        Verein verein = vereinRepository.findByIdWithMitgliedschaften(vereinId)
+        Verein verein = vereinRepository.findById(vereinId)
                 .orElseThrow(() -> new IllegalArgumentException("Verein nicht gefunden"));
 
         // Prüfen, ob bereits eine aktive oder beantragte Mitgliedschaft existiert
@@ -283,5 +283,28 @@ public class VereinsmitgliedschaftService {
         mitgliedschaft.setAustrittDatum(LocalDate.now());
 
         mitgliedschaftRepository.save(mitgliedschaft);
+    }
+
+    /**
+     * Gibt alle Mitgliedschaften für einen Verein zurück (alle Status).
+     *
+     * @param verein Der Verein
+     * @return Liste aller Mitgliedschaften
+     */
+    @Transactional(readOnly = true)
+    public List<Vereinsmitgliedschaft> findeAlleMitgliedschaften(Verein verein) {
+        return mitgliedschaftRepository.findByVereinWithDetails(verein);
+    }
+
+    /**
+     * Gibt Mitgliedschaften für einen Verein nach Status zurück.
+     *
+     * @param verein Der Verein
+     * @param status Der Status
+     * @return Liste der Mitgliedschaften
+     */
+    @Transactional(readOnly = true)
+    public List<Vereinsmitgliedschaft> findeMitgliedschaftenNachStatus(Verein verein, MitgliedschaftStatus status) {
+        return mitgliedschaftRepository.findByVereinAndStatusWithDetails(verein, status);
     }
 }

@@ -109,4 +109,16 @@ public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmi
     List<Vereinsmitgliedschaft> findByVereinAndStatusWithDetails(
             @Param("verein") Verein verein,
             @Param("status") MitgliedschaftStatus status);
+
+    /**
+     * Findet alle Mitgliedschaften eines Vereins mit eager loading (alle Status).
+     *
+     * @param verein Der Verein
+     * @return Liste der Mitgliedschaften
+     */
+    @Query("SELECT DISTINCT m FROM Vereinsmitgliedschaft m " +
+           "LEFT JOIN FETCH m.benutzer " +
+           "LEFT JOIN FETCH m.verein " +
+           "WHERE m.verein = :verein")
+    List<Vereinsmitgliedschaft> findByVereinWithDetails(@Param("verein") Verein verein);
 }

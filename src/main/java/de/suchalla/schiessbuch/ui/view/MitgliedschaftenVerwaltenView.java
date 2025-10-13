@@ -8,7 +8,6 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -23,6 +22,8 @@ import com.vaadin.flow.server.StreamResource;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
+import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
+import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.PdfExportService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
@@ -40,8 +41,8 @@ import java.util.stream.Collectors;
  * @author Markus Suchalla
  * @version 1.0.0
  */
-@Route(value = "mitgliedschaften-verwalten", layout = MainLayout.class)
-@PageTitle("Mitgliedschaften verwalten | Digitales Schießbuch")
+@Route(value = "mitgliedsverwaltung", layout = MainLayout.class)
+@PageTitle("Mitgliedsverwaltung | Digitales Schießbuch")
 @RolesAllowed({"VEREINS_CHEF", "AUFSEHER", "VEREINS_ADMIN", "ADMIN"})
 @Slf4j
 public class MitgliedschaftenVerwaltenView extends VerticalLayout {
@@ -49,8 +50,8 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     private final VereinsmitgliedschaftService mitgliedschaftService;
     private final PdfExportService pdfExportService;
     private final Benutzer currentUser;
+    private final VereinRepository vereinRepository;
 
-    private final Grid<Vereinsmitgliedschaft> anfrageGrid = new Grid<>(Vereinsmitgliedschaft.class, false);
     private final Grid<Vereinsmitgliedschaft> mitgliederGrid = new Grid<>(Vereinsmitgliedschaft.class, false);
 
     private final TextField suchfeld = new TextField();
@@ -58,14 +59,15 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     private final DatePicker bisDatum = new DatePicker("Bis");
 
     private Verein aktuellerVerein;
-    private VerticalLayout anfrageLayout;
-    private VerticalLayout mitgliederLayout;
+    private MitgliedschaftStatus aktuellerStatus = MitgliedschaftStatus.BEANTRAGT;
 
     public MitgliedschaftenVerwaltenView(SecurityService securityService,
                                          VereinsmitgliedschaftService mitgliedschaftService,
-                                         PdfExportService pdfExportService) {
+                                         PdfExportService pdfExportService,
+                                         VereinRepository vereinRepository) {
         this.mitgliedschaftService = mitgliedschaftService;
         this.pdfExportService = pdfExportService;
+        this.vereinRepository = vereinRepository;
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
         setSpacing(true);
@@ -83,7 +85,10 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             mitgliedschaftService.findeMitgliedschaften(currentUser).stream()
                     .filter(m -> Boolean.TRUE.equals(m.getIstVereinschef()) || Boolean.TRUE.equals(m.getIstAufseher()))
                     .findFirst()
-                    .ifPresent(mitgliedschaft -> aktuellerVerein = mitgliedschaft.getVerein());
+                    .ifPresent(mitgliedschaft -> {
+                        Long vereinId = mitgliedschaft.getVerein().getId();
+                        aktuellerVerein = vereinRepository.findById(vereinId).orElse(null);
+                    });
         }
     }
 
@@ -96,70 +101,55 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             return;
         }
 
-        add(new H2("Mitgliedschaften verwalten - " + aktuellerVerein.getName()));
+        add(new H2("Mitgliedsverwaltung - " + aktuellerVerein.getName()));
 
-        // Tabs für Anfragen und Mitglieder
-        Tab anfrageTab = new Tab("Offene Anfragen");
-        Tab mitgliederTab = new Tab("Aktive Mitglieder");
+        // Tabs für Status-Filter
+        Tab beantragtTab = new Tab("Zur Genehmigung");
+        Tab genehmigtTab = new Tab("Aktive Mitglieder");
+        Tab abgelehntTab = new Tab("Abgelehnte");
+        Tab alleTab = new Tab("Alle");
 
-        Tabs tabs = new Tabs(anfrageTab, mitgliederTab);
+        Tabs tabs = new Tabs(beantragtTab, genehmigtTab, abgelehntTab, alleTab);
+        tabs.setWidthFull();
 
-        anfrageLayout = createAnfrageLayout();
-        mitgliederLayout = createMitgliederLayout();
-
-        // Nur Anfragen-Layout initial sichtbar
-        mitgliederLayout.setVisible(false);
+        // CSS für größeren Indikator-Balken
+        tabs.getElement().getStyle()
+                .set("--lumo-size-xs", "4px");
 
         tabs.addSelectedChangeListener(event -> {
-            anfrageLayout.setVisible(event.getSelectedTab() == anfrageTab);
-            mitgliederLayout.setVisible(event.getSelectedTab() == mitgliederTab);
+            Tab selectedTab = event.getSelectedTab();
+            if (selectedTab == beantragtTab) {
+                aktuellerStatus = MitgliedschaftStatus.BEANTRAGT;
+            } else if (selectedTab == genehmigtTab) {
+                aktuellerStatus = MitgliedschaftStatus.AKTIV;
+            } else if (selectedTab == abgelehntTab) {
+                aktuellerStatus = MitgliedschaftStatus.ABGELEHNT;
+            } else {
+                aktuellerStatus = null; // Alle
+            }
+            updateGrid();
         });
 
-        add(tabs, anfrageLayout, mitgliederLayout);
+        add(tabs);
+        add(createFilterLayout());
+        add(createGridLayout());
 
-        updateAnfrageGrid();
-        updateMitgliederGrid();
+        updateGrid();
     }
 
     /**
-     * Erstellt das Layout für Beitrittsanfragen.
+     * Erstellt das Filter-Layout.
      */
-    private VerticalLayout createAnfrageLayout() {
-        VerticalLayout layout = new VerticalLayout();
-        layout.add(new H3("Offene Beitrittsanfragen"));
-
-        // Grid für Beitrittsanfragen
-        anfrageGrid.addColumn(anfrage -> anfrage.getBenutzer().getVollstaendigerName())
-                .setHeader("Name")
-                .setSortable(true);
-        anfrageGrid.addColumn(anfrage -> anfrage.getBenutzer().getEmail())
-                .setHeader("E-Mail");
-        anfrageGrid.addColumn(Vereinsmitgliedschaft::getBeitrittDatum)
-                .setHeader("Antragsdatum")
-                .setSortable(true);
-        anfrageGrid.addComponentColumn(this::createAnfrageActionButtons)
-                .setHeader("Aktionen");
-
-        layout.add(anfrageGrid);
-        return layout;
-    }
-
-    /**
-     * Erstellt das Layout für aktive Mitglieder.
-     */
-    private VerticalLayout createMitgliederLayout() {
-        VerticalLayout layout = new VerticalLayout();
-        layout.add(new H3("Aktive Mitglieder"));
-
+    private HorizontalLayout createFilterLayout() {
         // Filter
         suchfeld.setPlaceholder("Nach Namen suchen...");
         suchfeld.setWidth("300px");
-        suchfeld.addValueChangeListener(e -> updateMitgliederGrid());
+        suchfeld.addValueChangeListener(e -> updateGrid());
 
         vonDatum.setValue(LocalDate.now().minusYears(1));
         bisDatum.setValue(LocalDate.now());
 
-        Button filterButton = new Button("Filtern", e -> updateMitgliederGrid());
+        Button filterButton = new Button("Filtern", e -> updateGrid());
         filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         // PDF-Download
@@ -169,23 +159,30 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         pdfButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
         pdfDownload.add(pdfButton);
 
-        FormLayout filterLayout = new FormLayout(suchfeld, vonDatum, bisDatum);
-        HorizontalLayout buttonLayout = new HorizontalLayout(filterButton, pdfDownload);
+        HorizontalLayout layout = new HorizontalLayout(suchfeld, vonDatum, bisDatum, filterButton, pdfDownload);
+        layout.setDefaultVerticalComponentAlignment(Alignment.END);
+        return layout;
+    }
 
-        layout.add(filterLayout, buttonLayout);
+    /**
+     * Erstellt das Grid-Layout.
+     */
+    private VerticalLayout createGridLayout() {
+        VerticalLayout layout = new VerticalLayout();
 
-        // Grid für aktive Mitglieder
+        // Grid konfigurieren
         mitgliederGrid.addColumn(m -> m.getBenutzer().getVollstaendigerName())
                 .setHeader("Name")
                 .setSortable(true);
         mitgliederGrid.addColumn(m -> m.getBenutzer().getEmail())
                 .setHeader("E-Mail");
         mitgliederGrid.addColumn(Vereinsmitgliedschaft::getBeitrittDatum)
-                .setHeader("Beitrittsdatum")
                 .setSortable(true);
         mitgliederGrid.addColumn(this::getRolleText)
                 .setHeader("Rolle");
-        mitgliederGrid.addComponentColumn(this::createMitgliederActionButtons)
+        mitgliederGrid.addColumn(this::getStatusText)
+                .setHeader("Status");
+        mitgliederGrid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen");
 
         layout.add(mitgliederGrid);
@@ -193,29 +190,29 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     }
 
     /**
-     * Erstellt Aktions-Buttons für Anfragen.
+     * Erstellt Aktions-Buttons je nach Status.
      */
-    private HorizontalLayout createAnfrageActionButtons(Vereinsmitgliedschaft anfrage) {
-        Button genehmigenButton = new Button("Genehmigen", e -> genehmigen(anfrage));
-        genehmigenButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_SMALL);
-
-        Button ablehnenButton = new Button("Ablehnen", e -> zeigeAblehnungsDialog(anfrage));
-        ablehnenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-
-        return new HorizontalLayout(genehmigenButton, ablehnenButton);
-    }
-
-    /**
-     * Erstellt Aktions-Buttons für Mitglieder.
-     */
-    private HorizontalLayout createMitgliederActionButtons(Vereinsmitgliedschaft mitgliedschaft) {
+    private HorizontalLayout createActionButtons(Vereinsmitgliedschaft mitgliedschaft) {
         HorizontalLayout layout = new HorizontalLayout();
 
-        // Nur Vereinschef kann Aufseher ernennen und Mitglieder entfernen
-        if (Boolean.TRUE.equals(currentUser.getVereinsmitgliedschaften().stream()
-                .anyMatch(m -> m.getVerein().equals(aktuellerVerein) && m.getIstVereinschef()))) {
+        // Für beantragte Mitgliedschaften: Genehmigen/Ablehnen
+        if (mitgliedschaft.getStatus() == MitgliedschaftStatus.BEANTRAGT) {
+            Button genehmigenButton = new Button("Genehmigen", e -> genehmigen(mitgliedschaft));
+            genehmigenButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_SMALL);
 
-            if (!Boolean.TRUE.equals(mitgliedschaft.getIstVereinschef())) {
+            Button ablehnenButton = new Button("Ablehnen", e -> zeigeAblehnungsDialog(mitgliedschaft));
+            ablehnenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+
+            layout.add(genehmigenButton, ablehnenButton);
+        }
+
+        // Für aktive Mitgliedschaften: Aufseher-Status ändern, Entfernen (nur Vereinschef)
+        if (mitgliedschaft.getStatus() == MitgliedschaftStatus.AKTIV) {
+            boolean istVereinschef = currentUser.getVereinsmitgliedschaften().stream()
+                    .anyMatch(m -> m.getVerein().getId().equals(aktuellerVerein.getId()) &&
+                                   Boolean.TRUE.equals(m.getIstVereinschef()));
+
+            if (istVereinschef && !Boolean.TRUE.equals(mitgliedschaft.getIstVereinschef())) {
                 Button aufseherButton;
                 if (Boolean.TRUE.equals(mitgliedschaft.getIstAufseher())) {
                     aufseherButton = new Button("Aufseher entziehen",
@@ -273,8 +270,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             mitgliedschaftService.genehmigeAnfrage(anfrage.getId());
             Notification.show("Beitrittsanfrage genehmigt")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            updateAnfrageGrid();
-            updateMitgliederGrid();
+            updateGrid();
             log.info("Beitrittsanfrage genehmigt für Benutzer: {}", anfrage.getBenutzer().getEmail());
         } catch (Exception e) {
             log.error("Fehler beim Genehmigen der Anfrage", e);
@@ -295,7 +291,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             }
             Notification.show("Beitrittsanfrage abgelehnt")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            updateAnfrageGrid();
+            updateGrid();
             log.info("Beitrittsanfrage abgelehnt für Benutzer: {}", anfrage.getBenutzer().getEmail());
         } catch (Exception e) {
             log.error("Fehler beim Ablehnen der Anfrage", e);
@@ -312,7 +308,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             mitgliedschaftService.setzeAufseherStatus(mitgliedschaft.getId(), istAufseher);
             String nachricht = istAufseher ? "Mitglied zu Aufseher ernannt" : "Aufseher-Status entzogen";
             Notification.show(nachricht).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            updateMitgliederGrid();
+            updateGrid();
             log.info("Aufseher-Status geändert für Benutzer: {}", mitgliedschaft.getBenutzer().getEmail());
         } catch (Exception e) {
             log.error("Fehler beim Ändern des Aufseher-Status", e);
@@ -329,7 +325,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             mitgliedschaftService.mitgliedEntfernen(mitgliedschaft.getId());
             Notification.show("Mitglied aus Verein entfernt")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            updateMitgliederGrid();
+            updateGrid();
             log.info("Mitglied entfernt: {}", mitgliedschaft.getBenutzer().getEmail());
         } catch (Exception e) {
             log.error("Fehler beim Entfernen des Mitglieds", e);
@@ -339,21 +335,19 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     }
 
     /**
-     * Aktualisiert das Anfrage-Grid.
+     * Aktualisiert das Grid basierend auf dem ausgewählten Status.
      */
-    private void updateAnfrageGrid() {
+    private void updateGrid() {
         if (aktuellerVerein != null) {
-            List<Vereinsmitgliedschaft> anfragen = mitgliedschaftService.findeBeitrittsanfragen(aktuellerVerein);
-            anfrageGrid.setItems(anfragen);
-        }
-    }
+            List<Vereinsmitgliedschaft> mitglieder;
 
-    /**
-     * Aktualisiert das Mitglieder-Grid.
-     */
-    private void updateMitgliederGrid() {
-        if (aktuellerVerein != null) {
-            List<Vereinsmitgliedschaft> mitglieder = mitgliedschaftService.findeAktiveMitgliedschaften(aktuellerVerein);
+            if (aktuellerStatus == null) {
+                // Alle Mitgliedschaften
+                mitglieder = mitgliedschaftService.findeAlleMitgliedschaften(aktuellerVerein);
+            } else {
+                // Nach Status filtern
+                mitglieder = mitgliedschaftService.findeMitgliedschaftenNachStatus(aktuellerVerein, aktuellerStatus);
+            }
 
             // Filter nach Suchfeld
             String suchbegriff = suchfeld.getValue();
@@ -384,8 +378,13 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     private StreamResource createPdfResource() {
         return new StreamResource("mitgliedschaften_" + LocalDate.now() + ".pdf", () -> {
             try {
-                List<Vereinsmitgliedschaft> mitglieder = mitgliedschaftService
-                        .findeAktiveMitgliedschaften(aktuellerVerein);
+                List<Vereinsmitgliedschaft> mitglieder;
+
+                if (aktuellerStatus == null) {
+                    mitglieder = mitgliedschaftService.findeAlleMitgliedschaften(aktuellerVerein);
+                } else {
+                    mitglieder = mitgliedschaftService.findeMitgliedschaftenNachStatus(aktuellerVerein, aktuellerStatus);
+                }
 
                 // Filter anwenden
                 String suchbegriff = suchfeld.getValue();
@@ -422,4 +421,17 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         }
         return "Mitglied";
     }
+
+    /**
+     * Gibt den Statustext zurück.
+     */
+    private String getStatusText(Vereinsmitgliedschaft mitgliedschaft) {
+        return switch (mitgliedschaft.getStatus()) {
+            case BEANTRAGT -> "Zur Genehmigung";
+            case ABGELEHNT -> "Abgelehnt";
+            case BEENDET -> "Beendet";
+            default -> "Unbekannt";
+        };
+    }
+
 }

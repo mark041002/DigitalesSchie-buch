@@ -4,7 +4,6 @@ import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Verband;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -48,8 +47,9 @@ public interface VereinRepository extends JpaRepository<Verein, Long> {
      *
      * @return Liste aller Vereine
      */
+    @Override
     @EntityGraph(attributePaths = {"verband", "mitgliedschaften"})
-    List<Verein> findAllWithMitgliedschaften();
+    List<Verein> findAll();
 
     /**
      * Findet einen Verein mit geladenen Mitgliedschaften und Verband anhand der ID.
@@ -57,6 +57,7 @@ public interface VereinRepository extends JpaRepository<Verein, Long> {
      * @param id Die Vereins-ID
      * @return Optional mit Verein
      */
+    @Override
     @EntityGraph(attributePaths = {"verband", "mitgliedschaften"})
-    Optional<Verein> findByIdWithMitgliedschaften(Long id);
+    Optional<Verein> findById(Long id);
 }

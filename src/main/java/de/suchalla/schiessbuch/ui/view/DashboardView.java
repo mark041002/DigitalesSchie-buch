@@ -137,14 +137,12 @@ public class DashboardView extends VerticalLayout {
                     createStatCard("Ungelesene Nachrichten", String.valueOf(ungeleseneNachrichten),
                             VaadinIcon.BELL, "var(--lumo-primary-color)"),
                     createStatCard("Rolle", getRollenText(user.getRolle()),
-                            VaadinIcon.USER_STAR, "var(--lumo-success-color)"),
-                    createStatCard("Status", "Aktiv",
-                            VaadinIcon.CHECK_CIRCLE, "var(--lumo-success-color)")
+                            VaadinIcon.USER_STAR, "var(--lumo-success-color)")
             );
         } catch (Exception e) {
             // Fallback wenn Services nicht verfügbar
             grid.add(
-                    createStatCard("Status", "Bereit", VaadinIcon.CHECK_CIRCLE, "var(--lumo-success-color)")
+                // Status-Karte entfernt, keine Fallback-Karte mehr
             );
         }
 

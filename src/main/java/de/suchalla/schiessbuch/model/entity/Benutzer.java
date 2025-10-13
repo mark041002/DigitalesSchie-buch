@@ -19,7 +19,8 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "benutzer")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -116,5 +117,29 @@ public class Benutzer {
         return rolle == BenutzerRolle.ADMIN ||
                rolle == BenutzerRolle.SOFTWARE_ADMIN ||
                rolle == BenutzerRolle.VEREINS_ADMIN;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Benutzer benutzer = (Benutzer) o;
+        return id != null && id.equals(benutzer.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "Benutzer{" +
+                "id=" + id +
+                ", email='" + email + '\'' +
+                ", vorname='" + vorname + '\'' +
+                ", nachname='" + nachname + '\'' +
+                ", rolle=" + rolle +
+                '}';
     }
 }

@@ -4,6 +4,7 @@ import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
 import de.suchalla.schiessbuch.model.enums.EintragStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -27,6 +28,7 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @param schuetze Der Schütze
      * @return Liste der Einträge
      */
+    @EntityGraph(attributePaths = {"schuetze", "schiesstand"})
     List<SchiessnachweisEintrag> findBySchuetze(Benutzer schuetze);
 
     /**
@@ -36,6 +38,7 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @param status Der Status
      * @return Liste der Einträge
      */
+    @EntityGraph(attributePaths = {"schuetze", "schiesstand"})
     List<SchiessnachweisEintrag> findBySchuetzeAndStatus(Benutzer schuetze, EintragStatus status);
 
     /**
@@ -46,6 +49,7 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @param bis End-Datum
      * @return Liste der Einträge
      */
+    @EntityGraph(attributePaths = {"schuetze", "schiesstand"})
     List<SchiessnachweisEintrag> findBySchuetzeAndDatumBetween(Benutzer schuetze, LocalDate von, LocalDate bis);
 
     /**
@@ -57,6 +61,7 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @param status Der Status
      * @return Liste der Einträge
      */
+    @EntityGraph(attributePaths = {"schuetze", "schiesstand"})
     List<SchiessnachweisEintrag> findBySchuetzeAndDatumBetweenAndStatus(
             Benutzer schuetze, LocalDate von, LocalDate bis, EintragStatus status);
 

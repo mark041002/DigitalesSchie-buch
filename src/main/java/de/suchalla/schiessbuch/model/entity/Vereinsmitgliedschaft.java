@@ -86,4 +86,8 @@ public class Vereinsmitgliedschaft {
     protected void onUpdate() {
         aktualisiertAm = LocalDateTime.now();
     }
+
+    public LocalDate getBeitrittDatum() {
+        return beitrittDatum;
+    }
 }

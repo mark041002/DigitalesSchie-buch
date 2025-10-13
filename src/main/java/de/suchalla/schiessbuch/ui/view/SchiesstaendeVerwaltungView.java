@@ -12,12 +12,17 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.Verein;
+import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
 import de.suchalla.schiessbuch.model.enums.SchiesstandTyp;
+import de.suchalla.schiessbuch.service.BenutzerService;
 import de.suchalla.schiessbuch.service.DisziplinService;
 import de.suchalla.schiessbuch.service.VerbandService;
 import jakarta.annotation.security.RolesAllowed;
+
+import java.util.List;
 
 /**
  * View für Schießstandverwaltung (nur für Admins).
@@ -30,6 +35,7 @@ import jakarta.annotation.security.RolesAllowed;
 @RolesAllowed({"ADMIN", "SOFTWARE_ADMIN"})
 public class SchiesstaendeVerwaltungView extends VerticalLayout {
 
+    private final BenutzerService benutzerService;
     private final DisziplinService disziplinService;
     private final VerbandService verbandService;
     private final Grid<Schiesstand> grid = new Grid<>(Schiesstand.class, false);
@@ -38,8 +44,10 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
     private final TextField adresseField = new TextField("Adresse");
     private final ComboBox<SchiesstandTyp> typComboBox = new ComboBox<>("Typ");
     private final ComboBox<Verein> vereinComboBox = new ComboBox<>("Verein");
+    private final ComboBox<Benutzer> inhaberComboBox = new ComboBox<>("Inhaber / Vereinschef");
 
-    public SchiesstaendeVerwaltungView(DisziplinService disziplinService, VerbandService verbandService) {
+    public SchiesstaendeVerwaltungView(BenutzerService benutzerService, DisziplinService disziplinService, VerbandService verbandService) {
+        this.benutzerService = benutzerService;
         this.disziplinService = disziplinService;
         this.verbandService = verbandService;
 
@@ -53,28 +61,51 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
     private void createContent() {
         add(new H2("Schießstandverwaltung"));
 
-        // Formular
         nameField.setRequired(true);
 
-        typComboBox.setItems(SchiesstandTyp.values());
+        // Nur die beiden Typen erlauben
+        typComboBox.setItems(SchiesstandTyp.GEWERBLICH, SchiesstandTyp.VEREINSGEBUNDEN);
         typComboBox.setItemLabelGenerator(this::getTypText);
         typComboBox.setRequired(true);
         typComboBox.addValueChangeListener(e -> {
             if (e.getValue() == SchiesstandTyp.VEREINSGEBUNDEN) {
                 vereinComboBox.setVisible(true);
                 vereinComboBox.setRequired(true);
-            } else {
+                inhaberComboBox.setVisible(true);
+                inhaberComboBox.setRequired(true);
+                // Vereinschefs laden
+                List<Benutzer> vereinschefs = benutzerService.findByRolle(BenutzerRolle.VEREINS_CHEF);
+                inhaberComboBox.setItems(vereinschefs);
+            } else if (e.getValue() == SchiesstandTyp.GEWERBLICH) {
                 vereinComboBox.setVisible(false);
                 vereinComboBox.setRequired(false);
-                vereinComboBox.clear();
+                inhaberComboBox.setVisible(true);
+                inhaberComboBox.setRequired(true);
+                inhaberComboBox.clear();
+                // Alle Benutzer als mögliche gewerbliche Inhaber
+                List<Benutzer> inhaber = benutzerService.findAlleBenutzer();
+                inhaberComboBox.setItems(inhaber);
+            } else {
+                vereinComboBox.setVisible(false);
+                inhaberComboBox.setVisible(false);
             }
         });
+
+        inhaberComboBox.setItemLabelGenerator(Benutzer::getVollstaendigerName);
+        inhaberComboBox.setVisible(false);
+        inhaberComboBox.setRequired(false);
+        inhaberComboBox.setAllowCustomValue(false);
+        inhaberComboBox.setClearButtonVisible(true);
+        inhaberComboBox.setPlaceholder("Namen suchen...");
+        inhaberComboBox.addCustomValueSetListener(event ->
+            Notification.show("Bitte wählen Sie einen Benutzer aus der Liste.", 3000, Notification.Position.MIDDLE)
+        );
 
         vereinComboBox.setItems(verbandService.findeAlleVereine());
         vereinComboBox.setItemLabelGenerator(Verein::getName);
         vereinComboBox.setVisible(false);
 
-        FormLayout formLayout = new FormLayout(nameField, typComboBox, vereinComboBox, adresseField);
+        FormLayout formLayout = new FormLayout(nameField, typComboBox, vereinComboBox, inhaberComboBox, adresseField);
         formLayout.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0", 1),
                 new FormLayout.ResponsiveStep("500px", 2)

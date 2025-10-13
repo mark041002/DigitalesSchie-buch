@@ -171,7 +171,7 @@ public class VerbandService {
      */
     @Transactional(readOnly = true)
     public List<Verein> findeAlleVereine() {
-        return vereinRepository.findAllWithDetails();
+        return vereinRepository.findAll();
     }
 
     /**

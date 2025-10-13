@@ -17,7 +17,8 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "verein")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -70,5 +71,27 @@ public class Verein {
     @PreUpdate
     protected void onUpdate() {
         aktualisiertAm = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Verein verein = (Verein) o;
+        return id != null && id.equals(verein.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "Verein{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", vereinsNummer='" + vereinsNummer + '\'' +
+                '}';
     }
 }

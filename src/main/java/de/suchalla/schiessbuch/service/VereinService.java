@@ -40,7 +40,7 @@ public class VereinService {
      */
     @Transactional(readOnly = true)
     public List<Verein> findeAlleVereine() {
-        return vereinRepository.findAllWithMitgliedschaften();
+        return vereinRepository.findAll();
     }
 
     /**

@@ -2,7 +2,6 @@ package de.suchalla.schiessbuch.ui.view;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H2;
@@ -12,7 +11,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.service.VerbandService;
 import jakarta.annotation.security.RolesAllowed;
@@ -34,7 +32,6 @@ public class VereineVerwaltungView extends VerticalLayout {
     private final TextField nameField = new TextField("Name");
     private final TextField adresseField = new TextField("Adresse");
     private final TextField vereinsNummerField = new TextField("Vereinsnummer");
-    private final ComboBox<Verband> verbandComboBox = new ComboBox<>("Verband");
 
     public VereineVerwaltungView(VerbandService verbandService) {
         this.verbandService = verbandService;
@@ -52,11 +49,7 @@ public class VereineVerwaltungView extends VerticalLayout {
         // Formular
         nameField.setRequired(true);
 
-        verbandComboBox.setItems(verbandService.findeAlleVerbaende());
-        verbandComboBox.setItemLabelGenerator(Verband::getName);
-        verbandComboBox.setRequired(true);
-
-        FormLayout formLayout = new FormLayout(nameField, verbandComboBox, adresseField, vereinsNummerField);
+        FormLayout formLayout = new FormLayout(nameField, adresseField, vereinsNummerField);
         formLayout.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0", 1),
                 new FormLayout.ResponsiveStep("500px", 2)
@@ -70,7 +63,6 @@ public class VereineVerwaltungView extends VerticalLayout {
         // Grid
         grid.addColumn(Verein::getId).setHeader("ID").setWidth("80px");
         grid.addColumn(Verein::getName).setHeader("Name");
-        grid.addColumn(verein -> verein.getVerband().getName()).setHeader("Verband");
         grid.addColumn(Verein::getVereinsNummer).setHeader("Vereinsnummer");
         grid.addColumn(Verein::getAdresse).setHeader("Adresse");
         grid.addColumn(verein -> verein.getMitgliedschaften().size()).setHeader("Mitglieder");
@@ -79,27 +71,26 @@ public class VereineVerwaltungView extends VerticalLayout {
     }
 
     private void speichereVerein() {
-        if (nameField.isEmpty() || verbandComboBox.isEmpty()) {
-            Notification.show("Name und Verband sind erforderlich")
+        String name = nameField.getValue();
+        String adresse = adresseField.getValue();
+        String vereinsNummer = vereinsNummerField.getValue();
+        if (name == null || name.trim().isEmpty()) {
+            Notification.show("Name ist erforderlich")
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return;
         }
+        Verein verein = new Verein();
+        verein.setName(name);
+        verein.setAdresse(adresse);
+        verein.setVereinsNummer(vereinsNummer);
 
         try {
-            Verein verein = Verein.builder()
-                    .name(nameField.getValue())
-                    .verband(verbandComboBox.getValue())
-                    .adresse(adresseField.getValue())
-                    .vereinsNummer(vereinsNummerField.getValue())
-                    .build();
-
             verbandService.erstelleVerein(verein);
             Notification.show("Verein erfolgreich erstellt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
             nameField.clear();
             adresseField.clear();
             vereinsNummerField.clear();
-            verbandComboBox.clear();
             updateGrid();
 
         } catch (Exception e) {
@@ -111,4 +102,3 @@ public class VereineVerwaltungView extends VerticalLayout {
         grid.setItems(verbandService.findeAlleVereine());
     }
 }
-
