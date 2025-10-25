@@ -22,10 +22,12 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Verein {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @NotBlank(message = "Name darf nicht leer sein")
@@ -71,19 +73,6 @@ public class Verein {
     @PreUpdate
     protected void onUpdate() {
         aktualisiertAm = LocalDateTime.now();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Verein verein = (Verein) o;
-        return id != null && id.equals(verein.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
     }
 
     @Override

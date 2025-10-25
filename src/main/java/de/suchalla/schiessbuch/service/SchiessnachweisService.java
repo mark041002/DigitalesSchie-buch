@@ -80,7 +80,7 @@ public class SchiessnachweisService {
      */
     @Transactional(readOnly = true)
     public Optional<SchiessnachweisEintrag> findeEintrag(Long id) {
-        return eintragRepository.findById(id);
+        return eintragRepository.findByIdWithDetails(id);
     }
 
     /**
@@ -169,8 +169,9 @@ public class SchiessnachweisService {
      * @return Der signierte Eintrag
      * @throws IllegalStateException wenn Eintrag bereits signiert
      */
+    @Transactional
     public SchiessnachweisEintrag signiereEintrag(Long eintragId, Benutzer aufseher, String signatur) {
-        SchiessnachweisEintrag eintrag = eintragRepository.findById(eintragId)
+        SchiessnachweisEintrag eintrag = eintragRepository.findByIdWithDetails(eintragId)
                 .orElseThrow(() -> new IllegalArgumentException("Eintrag nicht gefunden"));
 
         if (eintrag.getStatus() != EintragStatus.UNSIGNIERT) {
@@ -199,8 +200,9 @@ public class SchiessnachweisService {
      * @return Der abgelehnte Eintrag
      * @throws IllegalStateException wenn Eintrag bereits bearbeitet
      */
+    @Transactional
     public SchiessnachweisEintrag lehneEintragAb(Long eintragId, Benutzer aufseher, String ablehnungsgrund) {
-        SchiessnachweisEintrag eintrag = eintragRepository.findById(eintragId)
+        SchiessnachweisEintrag eintrag = eintragRepository.findByIdWithDetails(eintragId)
                 .orElseThrow(() -> new IllegalArgumentException("Eintrag nicht gefunden"));
 
         if (eintrag.getStatus() != EintragStatus.UNSIGNIERT) {
@@ -227,6 +229,7 @@ public class SchiessnachweisService {
      * @return Der aktualisierte Eintrag
      * @throws IllegalStateException wenn Eintrag bereits signiert
      */
+    @Transactional
     public SchiessnachweisEintrag aktualisiereEintrag(SchiessnachweisEintrag eintrag) {
         if (!eintrag.kannBearbeitetWerden()) {
             throw new IllegalStateException("Signierte Einträge können nicht bearbeitet werden");
@@ -240,8 +243,9 @@ public class SchiessnachweisService {
      * @param eintragId Die Eintrags-ID
      * @throws IllegalStateException wenn Eintrag bereits signiert
      */
+    @Transactional
     public void loescheEintrag(Long eintragId) {
-        SchiessnachweisEintrag eintrag = eintragRepository.findById(eintragId)
+        SchiessnachweisEintrag eintrag = eintragRepository.findByIdWithDetails(eintragId)
                 .orElseThrow(() -> new IllegalArgumentException("Eintrag nicht gefunden"));
 
         if (!eintrag.kannGeloeschtWerden()) {

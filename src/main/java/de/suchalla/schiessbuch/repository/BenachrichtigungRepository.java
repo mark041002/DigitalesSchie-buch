@@ -3,6 +3,7 @@ package de.suchalla.schiessbuch.repository;
 import de.suchalla.schiessbuch.model.entity.Benachrichtigung;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.enums.BenachrichtigungsTyp;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -23,6 +24,7 @@ public interface BenachrichtigungRepository extends JpaRepository<Benachrichtigu
      * @param empfaenger Der Empfänger
      * @return Liste der Benachrichtigungen
      */
+    @EntityGraph(attributePaths = {"empfaenger", "eintrag"})
     List<Benachrichtigung> findByEmpfaengerOrderByErstelltAmDesc(Benutzer empfaenger);
 
     /**
@@ -32,6 +34,7 @@ public interface BenachrichtigungRepository extends JpaRepository<Benachrichtigu
      * @param gelesen Gelesen-Status
      * @return Liste der Benachrichtigungen
      */
+    @EntityGraph(attributePaths = {"empfaenger", "eintrag"})
     List<Benachrichtigung> findByEmpfaengerAndGelesenOrderByErstelltAmDesc(Benutzer empfaenger, Boolean gelesen);
 
     /**
@@ -41,6 +44,7 @@ public interface BenachrichtigungRepository extends JpaRepository<Benachrichtigu
      * @param typ Der Benachrichtigungstyp
      * @return Liste der Benachrichtigungen
      */
+    @EntityGraph(attributePaths = {"empfaenger", "eintrag"})
     List<Benachrichtigung> findByEmpfaengerAndTypOrderByErstelltAmDesc(Benutzer empfaenger, BenachrichtigungsTyp typ);
 
     /**
@@ -52,4 +56,3 @@ public interface BenachrichtigungRepository extends JpaRepository<Benachrichtigu
      */
     long countByEmpfaengerAndGelesen(Benutzer empfaenger, Boolean gelesen);
 }
-

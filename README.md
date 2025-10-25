@@ -59,11 +59,12 @@ Die Anwendung ist dann unter http://localhost:8000 erreichbar.
 
 Bei der ersten Initialisierung werden automatisch Testbenutzer erstellt:
 
-| Benutzername | Passwort | Rolle |
-|--------------|----------|-------|
-| admin | admin123 | Software-Administrator |
-| schuetze | test123 | Schütze |
-| aufseher | test123 | Vereins-Aufseher |
+| Benutzername        | Passwort | Rolle                  |
+|---------------------|----------|------------------------|
+| admin@test.de       | admin123 | Software-Administrator |
+| schuetze@test.de    | test123 | Schütze                |
+| aufseher@test.de    | test123 | Vereins-Aufseher       |
+| vereinschef@test.de | test123 | Vereinschef            |
 
 ## 📊 Datenbankschema
 

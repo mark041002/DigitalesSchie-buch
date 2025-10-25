@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository für SchiessnachweisEintrag-Entitäten.
@@ -28,7 +29,7 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @param schuetze Der Schütze
      * @return Liste der Einträge
      */
-    @EntityGraph(attributePaths = {"schuetze", "schiesstand"})
+    @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher"})
     List<SchiessnachweisEintrag> findBySchuetze(Benutzer schuetze);
 
     /**
@@ -38,7 +39,7 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @param status Der Status
      * @return Liste der Einträge
      */
-    @EntityGraph(attributePaths = {"schuetze", "schiesstand"})
+    @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher"})
     List<SchiessnachweisEintrag> findBySchuetzeAndStatus(Benutzer schuetze, EintragStatus status);
 
     /**
@@ -49,7 +50,7 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @param bis End-Datum
      * @return Liste der Einträge
      */
-    @EntityGraph(attributePaths = {"schuetze", "schiesstand"})
+    @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher"})
     List<SchiessnachweisEintrag> findBySchuetzeAndDatumBetween(Benutzer schuetze, LocalDate von, LocalDate bis);
 
     /**
@@ -61,7 +62,7 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @param status Der Status
      * @return Liste der Einträge
      */
-    @EntityGraph(attributePaths = {"schuetze", "schiesstand"})
+    @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher"})
     List<SchiessnachweisEintrag> findBySchuetzeAndDatumBetweenAndStatus(
             Benutzer schuetze, LocalDate von, LocalDate bis, EintragStatus status);
 
@@ -71,6 +72,7 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @param schiesstand Der Schießstand
      * @return Liste der Einträge
      */
+    @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher"})
     List<SchiessnachweisEintrag> findBySchiesstand(Schiesstand schiesstand);
 
     /**
@@ -81,6 +83,7 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @param bis End-Datum
      * @return Liste der Einträge
      */
+    @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher"})
     List<SchiessnachweisEintrag> findBySchiesstandAndDatumBetween(
             Schiesstand schiesstand, LocalDate von, LocalDate bis);
 
@@ -91,6 +94,7 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @param status Der Status
      * @return Liste der Einträge
      */
+    @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher"})
     List<SchiessnachweisEintrag> findBySchiesstandAndStatus(Schiesstand schiesstand, EintragStatus status);
 
     /**
@@ -100,6 +104,7 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @return Liste der Einträge
      */
     @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
+           "LEFT JOIN FETCH e.schuetze " +
            "LEFT JOIN FETCH e.disziplin d " +
            "LEFT JOIN FETCH e.schiesstand s " +
            "LEFT JOIN FETCH e.aufseher " +
@@ -128,7 +133,12 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @param bis End-Datum
      * @return Liste der Einträge
      */
-    @Query("SELECT e FROM SchiessnachweisEintrag e WHERE e.schiesstand = :schiesstand " +
+    @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
+           "LEFT JOIN FETCH e.schuetze " +
+           "LEFT JOIN FETCH e.disziplin " +
+           "LEFT JOIN FETCH e.schiesstand " +
+           "LEFT JOIN FETCH e.aufseher " +
+           "WHERE e.schiesstand = :schiesstand " +
            "AND e.schuetze = :schuetze AND e.datum BETWEEN :von AND :bis ORDER BY e.datum DESC")
     List<SchiessnachweisEintrag> findBySchiesstandUndSchuetzeImZeitraum(
             @Param("schiesstand") Schiesstand schiesstand,
@@ -144,4 +154,30 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @return Anzahl der Einträge
      */
     long countBySchuetzeAndStatus(Benutzer schuetze, EintragStatus status);
+
+    /**
+     * Findet einen Eintrag mit allen Beziehungen.
+     *
+     * @param id Die Eintrags-ID
+     * @return Optional mit Eintrag
+     */
+    @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
+           "LEFT JOIN FETCH e.schuetze " +
+           "LEFT JOIN FETCH e.disziplin " +
+           "LEFT JOIN FETCH e.schiesstand " +
+           "LEFT JOIN FETCH e.aufseher " +
+           "WHERE e.id = :id")
+    Optional<SchiessnachweisEintrag> findByIdWithDetails(@Param("id") Long id);
+
+    /**
+     * Findet alle Einträge mit allen Beziehungen.
+     *
+     * @return Liste aller Einträge
+     */
+    @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
+           "LEFT JOIN FETCH e.schuetze " +
+           "LEFT JOIN FETCH e.disziplin " +
+           "LEFT JOIN FETCH e.schiesstand " +
+           "LEFT JOIN FETCH e.aufseher")
+    List<SchiessnachweisEintrag> findAllWithDetails();
 }

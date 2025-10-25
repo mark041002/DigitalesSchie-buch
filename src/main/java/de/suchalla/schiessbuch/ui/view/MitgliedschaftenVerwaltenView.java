@@ -57,9 +57,15 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     private final TextField suchfeld = new TextField();
     private final DatePicker vonDatum = new DatePicker("Von");
     private final DatePicker bisDatum = new DatePicker("Bis");
+    private final Button filterButton = new Button("Filtern");
+    private HorizontalLayout filterLayout;
+    private Anchor pdfDownload;
 
     private Verein aktuellerVerein;
     private MitgliedschaftStatus aktuellerStatus = MitgliedschaftStatus.BEANTRAGT;
+    private Tab aktuellerTab;
+    private Tab alleTab;
+    private Grid.Column<Vereinsmitgliedschaft> statusColumn;
 
     public MitgliedschaftenVerwaltenView(SecurityService securityService,
                                          VereinsmitgliedschaftService mitgliedschaftService,
@@ -104,12 +110,15 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         add(new H2("Mitgliedsverwaltung - " + aktuellerVerein.getName()));
 
         // Tabs für Status-Filter
-        Tab beantragtTab = new Tab("Zur Genehmigung");
         Tab genehmigtTab = new Tab("Aktive Mitglieder");
+        Tab beantragtTab = new Tab("Zur Genehmigung");
         Tab abgelehntTab = new Tab("Abgelehnte");
-        Tab alleTab = new Tab("Alle");
+        alleTab = new Tab("Alle");
 
-        Tabs tabs = new Tabs(beantragtTab, genehmigtTab, abgelehntTab, alleTab);
+        // Setze initialen Tab
+        aktuellerTab = genehmigtTab;
+
+        Tabs tabs = new Tabs(genehmigtTab, beantragtTab, abgelehntTab, alleTab);
         tabs.setWidthFull();
 
         // CSS für größeren Indikator-Balken
@@ -118,6 +127,8 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
 
         tabs.addSelectedChangeListener(event -> {
             Tab selectedTab = event.getSelectedTab();
+            aktuellerTab = selectedTab;
+
             if (selectedTab == beantragtTab) {
                 aktuellerStatus = MitgliedschaftStatus.BEANTRAGT;
             } else if (selectedTab == genehmigtTab) {
@@ -127,6 +138,15 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             } else {
                 aktuellerStatus = null; // Alle
             }
+
+            // Rebuild filter layout basierend auf Tab
+            updateFilterLayout(selectedTab == alleTab);
+
+            // Zeige/Verstecke Status-Spalte
+            if (statusColumn != null) {
+                statusColumn.setVisible(selectedTab == alleTab);
+            }
+
             updateGrid();
         });
 
@@ -141,27 +161,48 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
      * Erstellt das Filter-Layout.
      */
     private HorizontalLayout createFilterLayout() {
-        // Filter
+        // Initialisiere Filter-Komponenten
         suchfeld.setPlaceholder("Nach Namen suchen...");
         suchfeld.setWidth("300px");
         suchfeld.addValueChangeListener(e -> updateGrid());
 
         vonDatum.setValue(LocalDate.now().minusYears(1));
         bisDatum.setValue(LocalDate.now());
-
-        Button filterButton = new Button("Filtern", e -> updateGrid());
+        filterButton.addClickListener(e -> updateGrid());
         filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         // PDF-Download
-        Anchor pdfDownload = new Anchor(createPdfResource(), "");
+        pdfDownload = new Anchor(createPdfResource(), "");
         pdfDownload.getElement().setAttribute("download", true);
         Button pdfButton = new Button("PDF exportieren");
         pdfButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
         pdfDownload.add(pdfButton);
 
-        HorizontalLayout layout = new HorizontalLayout(suchfeld, vonDatum, bisDatum, filterButton, pdfDownload);
-        layout.setDefaultVerticalComponentAlignment(Alignment.END);
-        return layout;
+        // Erstelle initiales Layout (ohne Datums-Filter)
+        filterLayout = new HorizontalLayout(suchfeld, pdfDownload);
+        filterLayout.setDefaultVerticalComponentAlignment(Alignment.END);
+        filterLayout.setWidthFull();
+        filterLayout.setSpacing(true);
+        filterLayout.setPadding(false);
+
+        return filterLayout;
+    }
+
+    /**
+     * Aktualisiert das Filter-Layout je nach ausgewähltem Tab.
+     */
+    private void updateFilterLayout(boolean showDateFilters) {
+        if (filterLayout != null) {
+            filterLayout.removeAll();
+
+            if (showDateFilters) {
+                // Mit Datums-Filtern für "Alle" Tab
+                filterLayout.add(suchfeld, vonDatum, bisDatum, filterButton, pdfDownload);
+            } else {
+                // Ohne Datums-Filter für andere Tabs
+                filterLayout.add(suchfeld, pdfDownload);
+            }
+        }
     }
 
     /**
@@ -177,11 +218,18 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         mitgliederGrid.addColumn(m -> m.getBenutzer().getEmail())
                 .setHeader("E-Mail");
         mitgliederGrid.addColumn(Vereinsmitgliedschaft::getBeitrittDatum)
+                .setHeader("Beitrittsdatum")
                 .setSortable(true);
         mitgliederGrid.addColumn(this::getRolleText)
                 .setHeader("Rolle");
-        mitgliederGrid.addColumn(this::getStatusText)
+
+        // Status-Spalte mit Referenz speichern
+        statusColumn = mitgliederGrid.addColumn(this::getStatusText)
                 .setHeader("Status");
+
+        // Status-Spalte initial verstecken (da wir mit "Aktive Mitglieder" starten)
+        statusColumn.setVisible(false);
+
         mitgliederGrid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen");
 
@@ -210,7 +258,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         if (mitgliedschaft.getStatus() == MitgliedschaftStatus.AKTIV) {
             boolean istVereinschef = currentUser.getVereinsmitgliedschaften().stream()
                     .anyMatch(m -> m.getVerein().getId().equals(aktuellerVerein.getId()) &&
-                                   Boolean.TRUE.equals(m.getIstVereinschef()));
+                            Boolean.TRUE.equals(m.getIstVereinschef()));
 
             if (istVereinschef && !Boolean.TRUE.equals(mitgliedschaft.getIstVereinschef())) {
                 Button aufseherButton;
@@ -358,16 +406,19 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
                         .collect(Collectors.toList());
             }
 
-            // Filter nach Datum
-            LocalDate von = vonDatum.getValue();
-            LocalDate bis = bisDatum.getValue();
-            if (von != null && bis != null) {
-                mitglieder = mitglieder.stream()
-                        .filter(m -> !m.getBeitrittDatum().isBefore(von) &&
-                                     !m.getBeitrittDatum().isAfter(bis))
-                        .collect(Collectors.toList());
+            // Filter nach Datum NUR wenn "Alle" Tab aktiv ist
+            if (aktuellerTab == alleTab) {
+                LocalDate von = vonDatum.getValue();
+                LocalDate bis = bisDatum.getValue();
+                if (von != null && bis != null) {
+                    mitglieder = mitglieder.stream()
+                            .filter(m -> !m.getBeitrittDatum().isBefore(von) &&
+                                    !m.getBeitrittDatum().isAfter(bis))
+                            .collect(Collectors.toList());
+                }
             }
 
+            log.info("Finale Anzahl im Grid: {}", mitglieder.size());
             mitgliederGrid.setItems(mitglieder);
         }
     }
@@ -427,6 +478,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
      */
     private String getStatusText(Vereinsmitgliedschaft mitgliedschaft) {
         return switch (mitgliedschaft.getStatus()) {
+            case AKTIV -> "Aktiv";
             case BEANTRAGT -> "Zur Genehmigung";
             case ABGELEHNT -> "Abgelehnt";
             case BEENDET -> "Beendet";
