@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  * View für Aufseher zur Verwaltung von Schießnachweis-Einträgen mit PKI-Signierung und PDF-Export.
  *
  * @author Markus Suchalla
- * @version 1.0.0
+ * @version 1.0.1
  */
 @Route(value = "eintraege-verwaltung", layout = MainLayout.class)
 @PageTitle("Einträgsverwaltung | Digitales Schießbuch")
@@ -59,18 +59,23 @@ public class EintraegeVerwaltungView extends VerticalLayout {
     private final TextField suchfeld = new TextField();
     private final DatePicker vonDatum = new DatePicker("Von");
     private final DatePicker bisDatum = new DatePicker("Bis");
+    private final Button filterButton = new Button("Filtern");
+    private HorizontalLayout filterLayout;
+    private Anchor pdfDownload;
 
     private final Benutzer currentUser;
     private Schiesstand aktuellerSchiesstand;
-    private EintragStatus aktuellerStatus = null; // null = Alle
+    private EintragStatus aktuellerStatus = EintragStatus.UNSIGNIERT; // Standard: Unsigniert
+    private Tab aktuellerTab;
+    private Tab alleTab;
 
     private List<SchiessnachweisEintrag> aktuelleFiltierteEintraege = List.of();
 
     public EintraegeVerwaltungView(SecurityService securityService,
-                                    SchiessnachweisService schiessnachweisService,
-                                    SchiesstandRepository schiesstandRepository,
-                                    PdfExportService pdfExportService,
-                                    SignaturService signaturService) {
+                                   SchiessnachweisService schiessnachweisService,
+                                   SchiesstandRepository schiesstandRepository,
+                                   PdfExportService pdfExportService,
+                                   SignaturService signaturService) {
         this.schiessnachweisService = schiessnachweisService;
         this.schiesstandRepository = schiesstandRepository;
         this.pdfExportService = pdfExportService;
@@ -115,31 +120,39 @@ public class EintraegeVerwaltungView extends VerticalLayout {
 
         add(new H2("Einträgsverwaltung - " + aktuellerSchiesstand.getName()));
 
-        // Tabs für Status-Filter - "Alle" ist standardmäßig ausgewählt
-        Tab alleTab = new Tab("Alle Einträge");
+        // Tabs für Status-Filter - "Unsigniert" ist standardmäßig ausgewählt
         Tab unsigniertTab = new Tab("Unsigniert");
         Tab signiertTab = new Tab("Signiert");
         Tab abgelehntTab = new Tab("Abgelehnt");
+        alleTab = new Tab("Alle Einträge");
 
-        Tabs tabs = new Tabs(alleTab, unsigniertTab, signiertTab, abgelehntTab);
+        // Setze initialen Tab
+        aktuellerTab = unsigniertTab;
+
+        Tabs tabs = new Tabs(unsigniertTab, signiertTab, abgelehntTab, alleTab);
         tabs.setWidthFull();
 
-        // CSS für größeren und breiteren Indikator-Balken (volle Breite des Tabs)
+        // CSS für größeren Indikator-Balken (volle Breite des Tabs) - einheitliche Höhe
         tabs.getElement().getStyle()
-                .set("--lumo-size-xs", "3px")
+                .set("--lumo-size-xs", "4px")
                 .set("--_lumo-tab-marker-width", "100%");
 
         tabs.addSelectedChangeListener(event -> {
             Tab selectedTab = event.getSelectedTab();
-            if (selectedTab == alleTab) {
-                aktuellerStatus = null; // Alle
-            } else if (selectedTab == unsigniertTab) {
+            aktuellerTab = selectedTab;
+
+            if (selectedTab == unsigniertTab) {
                 aktuellerStatus = EintragStatus.UNSIGNIERT;
             } else if (selectedTab == signiertTab) {
                 aktuellerStatus = EintragStatus.SIGNIERT;
             } else if (selectedTab == abgelehntTab) {
                 aktuellerStatus = EintragStatus.ABGELEHNT;
+            } else {
+                aktuellerStatus = null; // Alle
             }
+
+            // Rebuild filter layout basierend auf Tab
+            updateFilterLayout(selectedTab == alleTab);
             updateGrid();
         });
 
@@ -154,23 +167,48 @@ public class EintraegeVerwaltungView extends VerticalLayout {
      * Erstellt das Filter-Layout.
      */
     private HorizontalLayout createFilterLayout() {
+        // Initialisiere Filter-Komponenten
         suchfeld.setPlaceholder("Nach Namen suchen...");
         suchfeld.setWidth("300px");
         suchfeld.addValueChangeListener(e -> updateGrid());
 
         vonDatum.setValue(LocalDate.now().minusMonths(3));
         bisDatum.setValue(LocalDate.now());
-
-        Button filterButton = new Button("Filtern", e -> updateGrid());
+        filterButton.addClickListener(e -> updateGrid());
         filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        Button pdfExportButton = new Button("PDF exportieren", VaadinIcon.DOWNLOAD.create());
-        pdfExportButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        pdfExportButton.addClickListener(e -> exportierePDF());
+        // PDF-Download mit SUCCESS Theme (grüner Button)
+        pdfDownload = new Anchor(createPdfResource(), "");
+        pdfDownload.getElement().setAttribute("download", true);
+        Button pdfButton = new Button("PDF exportieren");
+        pdfButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+        pdfDownload.add(pdfButton);
 
-        HorizontalLayout layout = new HorizontalLayout(suchfeld, vonDatum, bisDatum, filterButton, pdfExportButton);
-        layout.setDefaultVerticalComponentAlignment(Alignment.END);
-        return layout;
+        // Erstelle initiales Layout (ohne Datums-Filter)
+        filterLayout = new HorizontalLayout(suchfeld, pdfDownload);
+        filterLayout.setDefaultVerticalComponentAlignment(Alignment.END);
+        filterLayout.setWidthFull();
+        filterLayout.setSpacing(true);
+        filterLayout.setPadding(false);
+
+        return filterLayout;
+    }
+
+    /**
+     * Aktualisiert das Filter-Layout je nach ausgewähltem Tab.
+     */
+    private void updateFilterLayout(boolean showDateFilters) {
+        if (filterLayout != null) {
+            filterLayout.removeAll();
+
+            if (showDateFilters) {
+                // Mit Datums-Filtern für "Alle" Tab
+                filterLayout.add(suchfeld, vonDatum, bisDatum, filterButton, pdfDownload);
+            } else {
+                // Ohne Datums-Filter für andere Tabs
+                filterLayout.add(suchfeld, pdfDownload);
+            }
+        }
     }
 
     /**
@@ -197,7 +235,7 @@ public class EintraegeVerwaltungView extends VerticalLayout {
         grid.addColumn(this::getStatusText)
                 .setHeader("Status");
         grid.addColumn(eintrag -> eintrag.getAufseher() != null ?
-                eintrag.getAufseher().getVollstaendigerName() : "-")
+                        eintrag.getAufseher().getVollstaendigerName() : "-")
                 .setHeader("Aufseher");
         grid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen");
@@ -232,11 +270,12 @@ public class EintraegeVerwaltungView extends VerticalLayout {
         try {
             log.info("Starte PKI-Signierung für Eintrag {} in EintraegeVerwaltungView", eintrag.getId());
 
-            // Eintrag mit allen Relationen neu aus DB laden, um LazyInitializationException zu vermeiden
-            SchiessnachweisEintrag vollstaendigerEintrag = schiessnachweisService.findeEintrag(eintrag.getId())
+            // Eintrag mit allen Relationen inkl. Verein neu aus DB laden
+            // Verwendet JOIN FETCH um LazyInitializationException zu vermeiden
+            SchiessnachweisEintrag vollstaendigerEintrag = schiessnachweisService.findeEintragMitVerein(eintrag.getId())
                     .orElseThrow(() -> new RuntimeException("Eintrag nicht gefunden"));
 
-            // Verein des Schießstands ermitteln
+            // Verein des Schießstands ermitteln - jetzt ohne LazyInitializationException
             Verein verein = vollstaendigerEintrag.getSchiesstand().getVerein();
 
             log.info("Verwende Verein: {} (ID: {})", verein.getName(), verein.getId());
@@ -328,13 +367,15 @@ public class EintraegeVerwaltungView extends VerticalLayout {
                         .collect(Collectors.toList());
             }
 
-            // Filter nach Datum
-            LocalDate von = vonDatum.getValue();
-            LocalDate bis = bisDatum.getValue();
-            if (von != null && bis != null) {
-                eintraege = eintraege.stream()
-                        .filter(e -> !e.getDatum().isBefore(von) && !e.getDatum().isAfter(bis))
-                        .collect(Collectors.toList());
+            // Filter nach Datum NUR wenn "Alle" Tab aktiv ist
+            if (aktuellerTab == alleTab) {
+                LocalDate von = vonDatum.getValue();
+                LocalDate bis = bisDatum.getValue();
+                if (von != null && bis != null) {
+                    eintraege = eintraege.stream()
+                            .filter(e -> !e.getDatum().isBefore(von) && !e.getDatum().isAfter(bis))
+                            .collect(Collectors.toList());
+                }
             }
 
             // Sortierung: Neueste zuerst
@@ -348,77 +389,35 @@ public class EintraegeVerwaltungView extends VerticalLayout {
     }
 
     /**
-     * Exportiert die aktuell gefilterten Einträge als PDF mit PKI-Zertifikatsdetails.
+     * Erstellt eine StreamResource für den PDF-Export.
      */
-    private void exportierePDF() {
-        if (aktuelleFiltierteEintraege.isEmpty()) {
-            Notification.show("Keine Einträge zum Exportieren vorhanden", 3000, Notification.Position.MIDDLE)
-                    .addThemeVariants(NotificationVariant.LUMO_WARNING);
-            return;
-        }
-
-        try {
-            LocalDate von = vonDatum.getValue() != null ? vonDatum.getValue() : LocalDate.now().minusMonths(3);
-            LocalDate bis = bisDatum.getValue() != null ? bisDatum.getValue() : LocalDate.now();
-
-            log.info("Starte PDF-Export für {} Einträge", aktuelleFiltierteEintraege.size());
-
-            // Verwende die gleiche PDF-Export-Methode wie in MeineEintraegeView
-            // Erstelle einen "virtuellen" Schützen-Namen für den Schießstand-Export
-            String schuetzeName = suchfeld.getValue() != null && !suchfeld.getValue().isEmpty()
-                    ? suchfeld.getValue()
-                    : "Alle Schützen";
-
-            // Nutze die Standard-PDF-Export-Methode mit PKI-Zertifikatsdetails
-            byte[] pdfBytes = pdfExportService.exportiereSchiessnachweise(
-                    currentUser, // Verwende aktuellen Benutzer als "Schütze" für Kopfzeile
-                    aktuelleFiltierteEintraege,
-                    von,
-                    bis
-            );
-
-            // Download-Link erstellen
-            StreamResource resource = new StreamResource(
-                    String.format("eintraege_%s_%s.pdf",
-                            aktuellerSchiesstand.getName().replaceAll("[^a-zA-Z0-9]", "_"),
-                            LocalDate.now()),
-                    () -> new ByteArrayInputStream(pdfBytes)
-            );
-
-            Anchor downloadLink = new Anchor(resource, "");
-            downloadLink.getElement().setAttribute("download", true);
-            downloadLink.setId("pdf-download-link");
-
-            // Temporär zum Layout hinzufügen und automatisch klicken
-            add(downloadLink);
-            downloadLink.getElement().callJsFunction("click");
-
-            // Nach kurzer Zeit wieder entfernen
-            getUI().ifPresent(ui -> ui.access(() -> {
-                try {
-                    Thread.sleep(100);
-                    remove(downloadLink);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+    private StreamResource createPdfResource() {
+        return new StreamResource("eintraege_" + LocalDate.now() + ".pdf", () -> {
+            try {
+                if (aktuelleFiltierteEintraege.isEmpty()) {
+                    return new ByteArrayInputStream(new byte[0]);
                 }
-            }));
 
-            Notification.show(
-                    String.format("PDF mit %d Einträgen und PKI-Zertifikatsdetails wurde erstellt", aktuelleFiltierteEintraege.size()),
-                    3000,
-                    Notification.Position.MIDDLE
-            ).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                LocalDate von = vonDatum.getValue() != null ? vonDatum.getValue() : LocalDate.now().minusMonths(3);
+                LocalDate bis = bisDatum.getValue() != null ? bisDatum.getValue() : LocalDate.now();
 
-            log.info("PDF exportiert: {} Einträge mit PKI-Zertifikaten", aktuelleFiltierteEintraege.size());
+                byte[] pdfBytes = pdfExportService.exportiereSchiessnachweise(
+                        currentUser,
+                        aktuelleFiltierteEintraege,
+                        von,
+                        bis
+                );
 
-        } catch (Exception e) {
-            log.error("Fehler beim PDF-Export", e);
-            Notification.show("Fehler beim PDF-Export: " + e.getMessage(), 5000, Notification.Position.MIDDLE)
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-        }
+                log.info("PDF exportiert: {} Einträge mit PKI-Zertifikaten", aktuelleFiltierteEintraege.size());
+                return new ByteArrayInputStream(pdfBytes);
+            } catch (Exception e) {
+                log.error("Fehler beim Erstellen der PDF", e);
+                Notification.show("Fehler beim Erstellen der PDF: " + e.getMessage())
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return new ByteArrayInputStream(new byte[0]);
+            }
+        });
     }
-
-
 
     /**
      * Gibt den deutschen Text für einen Status zurück.

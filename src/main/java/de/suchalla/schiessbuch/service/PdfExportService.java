@@ -221,26 +221,6 @@ public class PdfExportService {
                 contentStream.newLineAtOffset(margin, footerY);
                 contentStream.showText("Anzahl Einträge: " + eintraege.size());
                 contentStream.endText();
-
-                footerY -= 15;
-                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 9);
-                contentStream.beginText();
-                contentStream.newLineAtOffset(margin, footerY);
-                contentStream.showText("PKI-Signatur-Bescheinigung:");
-                contentStream.endText();
-
-                footerY -= 12;
-                contentStream.setFont(PDType1Font.HELVETICA, 8);
-                contentStream.beginText();
-                contentStream.newLineAtOffset(margin, footerY);
-                contentStream.showText("Alle Einträge wurden mit qualifizierten digitalen PKI-Zertifikaten signiert.");
-                contentStream.endText();
-
-                footerY -= 10;
-                contentStream.beginText();
-                contentStream.newLineAtOffset(margin, footerY);
-                contentStream.showText("Zertifikatshierarchie: Root CA -> Verein CA -> Aufseher");
-                contentStream.endText();
             }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

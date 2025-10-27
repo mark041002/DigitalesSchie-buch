@@ -36,13 +36,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * View für Aufseher und Vereinschefs zur Verwaltung von Mitgliedschaften.
+ * View fÃ¼r Aufseher und Vereinschefs zur Verwaltung von Mitgliedschaften.
  *
  * @author Markus Suchalla
  * @version 1.0.0
  */
 @Route(value = "mitgliedsverwaltung", layout = MainLayout.class)
-@PageTitle("Mitgliedsverwaltung | Digitales Schießbuch")
+@PageTitle("Mitgliedsverwaltung | Digitales SchieÃŸbuch")
 @RolesAllowed({"VEREINS_CHEF", "AUFSEHER", "VEREINS_ADMIN", "ADMIN"})
 @Slf4j
 public class MitgliedschaftenVerwaltenView extends VerticalLayout {
@@ -62,7 +62,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     private Anchor pdfDownload;
 
     private Verein aktuellerVerein;
-    private MitgliedschaftStatus aktuellerStatus = MitgliedschaftStatus.BEANTRAGT;
+    private MitgliedschaftStatus aktuellerStatus = MitgliedschaftStatus.AKTIV;
     private Tab aktuellerTab;
     private Tab alleTab;
     private Grid.Column<Vereinsmitgliedschaft> statusColumn;
@@ -84,7 +84,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     }
 
     /**
-     * Lädt den Verein des aktuellen Benutzers.
+     * LÃ¤dt den Verein des aktuellen Benutzers.
      */
     private void ladeVerein() {
         if (currentUser != null) {
@@ -109,7 +109,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
 
         add(new H2("Mitgliedsverwaltung - " + aktuellerVerein.getName()));
 
-        // Tabs für Status-Filter
+        // Tabs fÃ¼r Status-Filter
         Tab genehmigtTab = new Tab("Aktive Mitglieder");
         Tab beantragtTab = new Tab("Zur Genehmigung");
         Tab abgelehntTab = new Tab("Abgelehnte");
@@ -121,9 +121,10 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         Tabs tabs = new Tabs(genehmigtTab, beantragtTab, abgelehntTab, alleTab);
         tabs.setWidthFull();
 
-        // CSS für größeren Indikator-Balken
+        // CSS fÃ¼r grÃ¶ÃŸeren Indikator-Balken
         tabs.getElement().getStyle()
-                .set("--lumo-size-xs", "4px");
+                .set("--lumo-size-xs", "4px")
+                .set("--_lumo-tab-marker-width", "100%");
 
         tabs.addSelectedChangeListener(event -> {
             Tab selectedTab = event.getSelectedTab();
@@ -189,17 +190,17 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     }
 
     /**
-     * Aktualisiert das Filter-Layout je nach ausgewähltem Tab.
+     * Aktualisiert das Filter-Layout je nach ausgewÃ¤hltem Tab.
      */
     private void updateFilterLayout(boolean showDateFilters) {
         if (filterLayout != null) {
             filterLayout.removeAll();
 
             if (showDateFilters) {
-                // Mit Datums-Filtern für "Alle" Tab
+                // Mit Datums-Filtern fÃ¼r "Alle" Tab
                 filterLayout.add(suchfeld, vonDatum, bisDatum, filterButton, pdfDownload);
             } else {
-                // Ohne Datums-Filter für andere Tabs
+                // Ohne Datums-Filter fÃ¼r andere Tabs
                 filterLayout.add(suchfeld, pdfDownload);
             }
         }
@@ -243,7 +244,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     private HorizontalLayout createActionButtons(Vereinsmitgliedschaft mitgliedschaft) {
         HorizontalLayout layout = new HorizontalLayout();
 
-        // Für beantragte Mitgliedschaften: Genehmigen/Ablehnen
+        // FÃ¼r beantragte Mitgliedschaften: Genehmigen/Ablehnen
         if (mitgliedschaft.getStatus() == MitgliedschaftStatus.BEANTRAGT) {
             Button genehmigenButton = new Button("Genehmigen", e -> genehmigen(mitgliedschaft));
             genehmigenButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_SMALL);
@@ -254,7 +255,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             layout.add(genehmigenButton, ablehnenButton);
         }
 
-        // Für aktive Mitgliedschaften: Aufseher-Status ändern, Entfernen (nur Vereinschef)
+        // FÃ¼r aktive Mitgliedschaften: Aufseher-Status Ã¤ndern, Entfernen (nur Vereinschef)
         if (mitgliedschaft.getStatus() == MitgliedschaftStatus.AKTIV) {
             boolean istVereinschef = currentUser.getVereinsmitgliedschaften().stream()
                     .anyMatch(m -> m.getVerein().getId().equals(aktuellerVerein.getId()) &&
@@ -283,14 +284,14 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     }
 
     /**
-     * Zeigt einen Dialog zur Ablehnung mit Begründung.
+     * Zeigt einen Dialog zur Ablehnung mit BegrÃ¼ndung.
      */
     private void zeigeAblehnungsDialog(Vereinsmitgliedschaft anfrage) {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Beitrittsanfrage ablehnen");
 
         VerticalLayout dialogLayout = new VerticalLayout();
-        TextArea grundField = new TextArea("Begründung (optional)");
+        TextArea grundField = new TextArea("BegrÃ¼ndung (optional)");
         grundField.setWidthFull();
         grundField.setHeight("150px");
 
@@ -319,7 +320,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             Notification.show("Beitrittsanfrage genehmigt")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             updateGrid();
-            log.info("Beitrittsanfrage genehmigt für Benutzer: {}", anfrage.getBenutzer().getEmail());
+            log.info("Beitrittsanfrage genehmigt fÃ¼r Benutzer: {}", anfrage.getBenutzer().getEmail());
         } catch (Exception e) {
             log.error("Fehler beim Genehmigen der Anfrage", e);
             Notification.show("Fehler: " + e.getMessage())
@@ -340,7 +341,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             Notification.show("Beitrittsanfrage abgelehnt")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             updateGrid();
-            log.info("Beitrittsanfrage abgelehnt für Benutzer: {}", anfrage.getBenutzer().getEmail());
+            log.info("Beitrittsanfrage abgelehnt fÃ¼r Benutzer: {}", anfrage.getBenutzer().getEmail());
         } catch (Exception e) {
             log.error("Fehler beim Ablehnen der Anfrage", e);
             Notification.show("Fehler: " + e.getMessage())
@@ -357,9 +358,9 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             String nachricht = istAufseher ? "Mitglied zu Aufseher ernannt" : "Aufseher-Status entzogen";
             Notification.show(nachricht).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             updateGrid();
-            log.info("Aufseher-Status geändert für Benutzer: {}", mitgliedschaft.getBenutzer().getEmail());
+            log.info("Aufseher-Status geÃ¤ndert fÃ¼r Benutzer: {}", mitgliedschaft.getBenutzer().getEmail());
         } catch (Exception e) {
-            log.error("Fehler beim Ändern des Aufseher-Status", e);
+            log.error("Fehler beim Ã„ndern des Aufseher-Status", e);
             Notification.show("Fehler: " + e.getMessage())
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
@@ -383,7 +384,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     }
 
     /**
-     * Aktualisiert das Grid basierend auf dem ausgewählten Status.
+     * Aktualisiert das Grid basierend auf dem ausgewÃ¤hlten Status.
      */
     private void updateGrid() {
         if (aktuellerVerein != null) {
@@ -424,7 +425,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     }
 
     /**
-     * Erstellt eine StreamResource für den PDF-Export.
+     * Erstellt eine StreamResource fÃ¼r den PDF-Export.
      */
     private StreamResource createPdfResource() {
         return new StreamResource("mitgliedschaften_" + LocalDate.now() + ".pdf", () -> {
@@ -462,7 +463,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     }
 
     /**
-     * Gibt den Rollentext für ein Mitglied zurück.
+     * Gibt den Rollentext fÃ¼r ein Mitglied zurÃ¼ck.
      */
     private String getRolleText(Vereinsmitgliedschaft mitgliedschaft) {
         if (Boolean.TRUE.equals(mitgliedschaft.getIstVereinschef())) {
@@ -474,7 +475,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     }
 
     /**
-     * Gibt den Statustext zurück.
+     * Gibt den Statustext zurÃ¼ck.
      */
     private String getStatusText(Vereinsmitgliedschaft mitgliedschaft) {
         return switch (mitgliedschaft.getStatus()) {

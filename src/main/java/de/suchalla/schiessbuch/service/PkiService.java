@@ -4,6 +4,8 @@ import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
+import de.suchalla.schiessbuch.repository.VereinRepository;
+import de.suchalla.schiessbuch.repository.BenutzerRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +50,8 @@ import java.util.Date;
 public class PkiService {
 
     private final DigitalesZertifikatRepository zertifikatRepository;
+    private final VereinRepository vereinRepository;
+    private final BenutzerRepository benutzerRepository;
 
     static {
         // Bouncy Castle Provider registrieren
@@ -134,11 +138,15 @@ public class PkiService {
     @Transactional
     public DigitalesZertifikat createVereinCertificate(Verein verein) {
         try {
-            log.info("Erstelle Vereinszertifikat für: {}", verein.getName());
+            // Verein aus DB laden, um LazyInitializationException zu vermeiden
+            Verein managedVerein = vereinRepository.findById(verein.getId())
+                    .orElseThrow(() -> new RuntimeException("Verein nicht gefunden"));
+
+            log.info("Erstelle Vereinszertifikat für: {}", managedVerein.getName());
 
             // Prüfen ob bereits vorhanden
-            if (zertifikatRepository.existsByVereinAndZertifikatsTyp(verein, "VEREIN")) {
-                return zertifikatRepository.findByVereinAndZertifikatsTyp(verein, "VEREIN")
+            if (zertifikatRepository.existsByVereinAndZertifikatsTyp(managedVerein, "VEREIN")) {
+                return zertifikatRepository.findByVereinAndZertifikatsTyp(managedVerein, "VEREIN")
                         .orElseThrow();
             }
 
@@ -155,7 +163,7 @@ public class PkiService {
             X500Name issuerDN = new X500Name(rootZertifikat.getSubjectDN());
             X500Name subjectDN = new X500Name(String.format(
                     "CN=%s, O=Digitales Schiessbuch, OU=Verein, C=DE",
-                    verein.getName()
+                    managedVerein.getName()
             ));
 
             BigInteger serialNumber = new BigInteger(128, new SecureRandom());
@@ -201,12 +209,12 @@ public class PkiService {
                     .gueltigAb(now)
                     .gueltigBis(validUntil)
                     .widerrufen(false)
-                    .verein(verein)
+                    .verein(managedVerein)
                     .parentZertifikat(rootZertifikat)
                     .build();
 
             zertifikatRepository.save(vereinZertifikat);
-            log.info("Vereinszertifikat erstellt für: {}", verein.getName());
+            log.info("Vereinszertifikat erstellt für: {}", managedVerein.getName());
 
             return vereinZertifikat;
 
@@ -222,19 +230,25 @@ public class PkiService {
     @Transactional
     public DigitalesZertifikat createAufseherCertificate(Benutzer benutzer, Verein verein) {
         try {
+            // Benutzer und Verein aus DB laden, um LazyInitializationException zu vermeiden
+            Benutzer managedBenutzer = benutzerRepository.findById(benutzer.getId())
+                    .orElseThrow(() -> new RuntimeException("Benutzer nicht gefunden"));
+            Verein managedVerein = vereinRepository.findById(verein.getId())
+                    .orElseThrow(() -> new RuntimeException("Verein nicht gefunden"));
+
             log.info("Erstelle Aufseher-Zertifikat für: {} im Verein: {}",
-                    benutzer.getVollstaendigerName(), verein.getName());
+                    managedBenutzer.getVollstaendigerName(), managedVerein.getName());
 
             // Prüfen ob bereits vorhanden
-            if (zertifikatRepository.existsByBenutzer(benutzer)) {
-                return zertifikatRepository.findByBenutzer(benutzer)
+            if (zertifikatRepository.existsByBenutzer(managedBenutzer)) {
+                return zertifikatRepository.findByBenutzer(managedBenutzer)
                         .orElseThrow();
             }
 
             // Vereinszertifikat laden oder erstellen
             DigitalesZertifikat vereinZertifikat = zertifikatRepository
-                    .findByVereinAndZertifikatsTyp(verein, "VEREIN")
-                    .orElseGet(() -> createVereinCertificate(verein));
+                    .findByVereinAndZertifikatsTyp(managedVerein, "VEREIN")
+                    .orElseGet(() -> createVereinCertificate(managedVerein));
 
             // Key Pair für Aufseher generieren
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
@@ -245,8 +259,8 @@ public class PkiService {
             X500Name issuerDN = new X500Name(vereinZertifikat.getSubjectDN());
             X500Name subjectDN = new X500Name(String.format(
                     "CN=%s, O=Digitales Schiessbuch, OU=Aufseher %s, C=DE",
-                    benutzer.getVollstaendigerName(),
-                    verein.getName()
+                    managedBenutzer.getVollstaendigerName(),
+                    managedVerein.getName()
             ));
 
             BigInteger serialNumber = new BigInteger(128, new SecureRandom());
@@ -292,13 +306,13 @@ public class PkiService {
                     .gueltigAb(now)
                     .gueltigBis(validUntil)
                     .widerrufen(false)
-                    .benutzer(benutzer)
-                    .verein(verein)
+                    .benutzer(managedBenutzer)
+                    .verein(managedVerein)
                     .parentZertifikat(vereinZertifikat)
                     .build();
 
             zertifikatRepository.save(aufseherZertifikat);
-            log.info("Aufseher-Zertifikat erstellt für: {}", benutzer.getVollstaendigerName());
+            log.info("Aufseher-Zertifikat erstellt für: {}", managedBenutzer.getVollstaendigerName());
 
             return aufseherZertifikat;
 
@@ -388,4 +402,3 @@ public class PkiService {
         }
     }
 }
-

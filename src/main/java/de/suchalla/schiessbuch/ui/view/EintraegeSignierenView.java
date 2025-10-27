@@ -25,13 +25,13 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 
 /**
- * View zum Signieren von Schießnachweis-Einträgen (für Aufseher) mit PKI-Zertifikaten.
+ * View zum Signieren von SchieÃŸnachweis-EintrÃ¤gen (fÃ¼r Aufseher) mit PKI-Zertifikaten.
  *
  * @author Markus Suchalla
  * @version 1.0.0
  */
 @Route(value = "eintraege-signieren", layout = MainLayout.class)
-@PageTitle("Einträge signieren | Digitales Schießbuch")
+@PageTitle("EintrÃ¤ge signieren | Digitales SchieÃŸbuch")
 @RolesAllowed({"AUFSEHER", "ADMIN"})
 @Slf4j
 public class EintraegeSignierenView extends VerticalLayout {
@@ -46,9 +46,9 @@ public class EintraegeSignierenView extends VerticalLayout {
     private Benutzer currentUser;
 
     public EintraegeSignierenView(SecurityService securityService,
-                                   SchiessnachweisService schiessnachweisService,
-                                   SignaturService signaturService,
-                                   VereinsmitgliedschaftService mitgliedschaftService) {
+                                  SchiessnachweisService schiessnachweisService,
+                                  SignaturService signaturService,
+                                  VereinsmitgliedschaftService mitgliedschaftService) {
         this.securityService = securityService;
         this.schiessnachweisService = schiessnachweisService;
         this.signaturService = signaturService;
@@ -68,16 +68,16 @@ public class EintraegeSignierenView extends VerticalLayout {
      * Erstellt den Inhalt der View.
      */
     private void createContent() {
-        add(new H2("Unsignierte Einträge - PKI-Signierung"));
+        add(new H2("Unsignierte EintrÃ¤ge - PKI-Signierung"));
 
         // Grid
-        grid.addColumn(eintrag -> eintrag.getSchuetze().getVollstaendigerName()).setHeader("Schütze");
+        grid.addColumn(eintrag -> eintrag.getSchuetze().getVollstaendigerName()).setHeader("SchÃ¼tze");
         grid.addColumn(SchiessnachweisEintrag::getDatum).setHeader("Datum").setSortable(true);
         grid.addColumn(eintrag -> eintrag.getDisziplin().getName()).setHeader("Disziplin");
         grid.addColumn(SchiessnachweisEintrag::getKaliber).setHeader("Kaliber");
         grid.addColumn(SchiessnachweisEintrag::getWaffenart).setHeader("Waffenart");
-        grid.addColumn(eintrag -> eintrag.getSchiesstand().getName()).setHeader("Schießstand");
-        grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse).setHeader("Schüsse");
+        grid.addColumn(eintrag -> eintrag.getSchiesstand().getName()).setHeader("SchieÃŸstand");
+        grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse).setHeader("SchÃ¼sse");
         grid.addColumn(SchiessnachweisEintrag::getBemerkung).setHeader("Bemerkung");
 
         grid.addComponentColumn(this::createActionButtons).setHeader("Aktionen");
@@ -86,7 +86,7 @@ public class EintraegeSignierenView extends VerticalLayout {
     }
 
     /**
-     * Erstellt Aktions-Buttons für Grid-Zeilen.
+     * Erstellt Aktions-Buttons fÃ¼r Grid-Zeilen.
      *
      * @param eintrag Der Eintrag
      * @return Layout mit Buttons
@@ -108,11 +108,16 @@ public class EintraegeSignierenView extends VerticalLayout {
      */
     private void signiereEintrag(SchiessnachweisEintrag eintrag) {
         try {
-            // Verein des Schießstands ermitteln
-            Verein verein = eintrag.getSchiesstand().getVerein();
+            // Eintrag mit allen Relationen inkl. Verein neu aus DB laden
+            // Verwendet JOIN FETCH um LazyInitializationException zu vermeiden
+            SchiessnachweisEintrag vollstaendigerEintrag = schiessnachweisService.findeEintragMitVerein(eintrag.getId())
+                    .orElseThrow(() -> new RuntimeException("Eintrag nicht gefunden"));
+
+            // Verein des SchieÃŸstands ermitteln - jetzt ohne LazyInitializationException
+            Verein verein = vollstaendigerEintrag.getSchiesstand().getVerein();
 
             // Mit PKI-Zertifikat signieren
-            signaturService.signEintrag(eintrag, currentUser, verein);
+            signaturService.signEintrag(vollstaendigerEintrag, currentUser, verein);
 
             Notification.show("Eintrag erfolgreich mit PKI-Zertifikat signiert")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -166,7 +171,7 @@ public class EintraegeSignierenView extends VerticalLayout {
     }
 
     /**
-     * Aktualisiert das Grid mit unsignierten Einträgen.
+     * Aktualisiert das Grid mit unsignierten EintrÃ¤gen.
      */
     private void updateGrid() {
         // Lade alle Vereine, in denen der Benutzer Aufseher ist
@@ -177,12 +182,12 @@ public class EintraegeSignierenView extends VerticalLayout {
                 .distinct()
                 .collect(java.util.stream.Collectors.toList());
 
-        // Lade unsignierte Einträge für diese Vereine
+        // Lade unsignierte EintrÃ¤ge fÃ¼r diese Vereine
         List<SchiessnachweisEintrag> eintraege = schiessnachweisService.getUnsignierteEintraegeForVereine(vereineAlsAufseher);
 
         grid.setItems(eintraege);
 
-        log.info("Grid aktualisiert: {} unsignierte Einträge gefunden für {} Vereine",
+        log.info("Grid aktualisiert: {} unsignierte EintrÃ¤ge gefunden fÃ¼r {} Vereine",
                 eintraege.size(), vereineAlsAufseher.size());
     }
 }

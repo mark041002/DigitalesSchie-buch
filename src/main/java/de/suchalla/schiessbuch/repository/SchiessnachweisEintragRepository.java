@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository für SchiessnachweisEintrag-Entitäten.
+ * Repository fÃ¼r SchiessnachweisEintrag-EntitÃ¤ten.
  *
  * @author Markus Suchalla
  * @version 1.0.0
@@ -24,125 +24,125 @@ import java.util.Optional;
 public interface SchiessnachweisEintragRepository extends JpaRepository<SchiessnachweisEintrag, Long> {
 
     /**
-     * Findet alle Einträge eines Schützen.
+     * Findet alle EintrÃ¤ge eines SchÃ¼tzen.
      *
-     * @param schuetze Der Schütze
-     * @return Liste der Einträge
+     * @param schuetze Der SchÃ¼tze
+     * @return Liste der EintrÃ¤ge
      */
     @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
     List<SchiessnachweisEintrag> findBySchuetze(Benutzer schuetze);
 
     /**
-     * Findet alle Einträge eines Schützen mit bestimmtem Status.
+     * Findet alle EintrÃ¤ge eines SchÃ¼tzen mit bestimmtem Status.
      *
-     * @param schuetze Der Schütze
+     * @param schuetze Der SchÃ¼tze
      * @param status Der Status
-     * @return Liste der Einträge
+     * @return Liste der EintrÃ¤ge
      */
     @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
     List<SchiessnachweisEintrag> findBySchuetzeAndStatus(Benutzer schuetze, EintragStatus status);
 
     /**
-     * Findet alle Einträge eines Schützen in einem Zeitraum.
+     * Findet alle EintrÃ¤ge eines SchÃ¼tzen in einem Zeitraum.
      *
-     * @param schuetze Der Schütze
+     * @param schuetze Der SchÃ¼tze
      * @param von Start-Datum
      * @param bis End-Datum
-     * @return Liste der Einträge
+     * @return Liste der EintrÃ¤ge
      */
     @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
     List<SchiessnachweisEintrag> findBySchuetzeAndDatumBetween(Benutzer schuetze, LocalDate von, LocalDate bis);
 
     /**
-     * Findet alle signierten Einträge eines Schützen in einem Zeitraum.
+     * Findet alle signierten EintrÃ¤ge eines SchÃ¼tzen in einem Zeitraum.
      *
-     * @param schuetze Der Schütze
+     * @param schuetze Der SchÃ¼tze
      * @param von Start-Datum
      * @param bis End-Datum
      * @param status Der Status
-     * @return Liste der Einträge
+     * @return Liste der EintrÃ¤ge
      */
     @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
     List<SchiessnachweisEintrag> findBySchuetzeAndDatumBetweenAndStatus(
             Benutzer schuetze, LocalDate von, LocalDate bis, EintragStatus status);
 
     /**
-     * Findet alle Einträge an einem Schießstand.
+     * Findet alle EintrÃ¤ge an einem SchieÃŸstand.
      *
-     * @param schiesstand Der Schießstand
-     * @return Liste der Einträge
+     * @param schiesstand Der SchieÃŸstand
+     * @return Liste der EintrÃ¤ge
      */
     @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
     List<SchiessnachweisEintrag> findBySchiesstand(Schiesstand schiesstand);
 
     /**
-     * Findet alle Einträge an einem Schießstand in einem Zeitraum.
+     * Findet alle EintrÃ¤ge an einem SchieÃŸstand in einem Zeitraum.
      *
-     * @param schiesstand Der Schießstand
+     * @param schiesstand Der SchieÃŸstand
      * @param von Start-Datum
      * @param bis End-Datum
-     * @return Liste der Einträge
+     * @return Liste der EintrÃ¤ge
      */
     @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
     List<SchiessnachweisEintrag> findBySchiesstandAndDatumBetween(
             Schiesstand schiesstand, LocalDate von, LocalDate bis);
 
     /**
-     * Findet alle Einträge an einem Schießstand mit bestimmtem Status.
+     * Findet alle EintrÃ¤ge an einem SchieÃŸstand mit bestimmtem Status.
      *
-     * @param schiesstand Der Schießstand
+     * @param schiesstand Der SchieÃŸstand
      * @param status Der Status
-     * @return Liste der Einträge
+     * @return Liste der EintrÃ¤ge
      */
     @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
     List<SchiessnachweisEintrag> findBySchiesstandAndStatus(Schiesstand schiesstand, EintragStatus status);
 
     /**
-     * Findet alle Einträge eines Schützen mit eager loading aller Beziehungen.
+     * Findet alle EintrÃ¤ge eines SchÃ¼tzen mit eager loading aller Beziehungen.
      *
-     * @param schuetze Der Schütze
-     * @return Liste der Einträge
+     * @param schuetze Der SchÃ¼tze
+     * @return Liste der EintrÃ¤ge
      */
     @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
-           "LEFT JOIN FETCH e.schuetze " +
-           "LEFT JOIN FETCH e.disziplin d " +
-           "LEFT JOIN FETCH e.schiesstand s " +
-           "LEFT JOIN FETCH e.aufseher " +
-           "LEFT JOIN FETCH e.zertifikat " +
-           "WHERE e.schuetze = :schuetze")
+            "LEFT JOIN FETCH e.schuetze " +
+            "LEFT JOIN FETCH e.disziplin d " +
+            "LEFT JOIN FETCH e.schiesstand s " +
+            "LEFT JOIN FETCH e.aufseher " +
+            "LEFT JOIN FETCH e.zertifikat " +
+            "WHERE e.schuetze = :schuetze")
     List<SchiessnachweisEintrag> findBySchuetzeWithDetails(@Param("schuetze") Benutzer schuetze);
 
     /**
-     * Findet alle unsignierten Einträge mit eager loading.
+     * Findet alle unsignierten EintrÃ¤ge mit eager loading.
      *
-     * @return Liste der Einträge
+     * @return Liste der EintrÃ¤ge
      */
     @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
-           "LEFT JOIN FETCH e.schuetze " +
-           "LEFT JOIN FETCH e.disziplin " +
-           "LEFT JOIN FETCH e.schiesstand " +
-           "LEFT JOIN FETCH e.zertifikat " +
-           "WHERE e.istSigniert = false")
+            "LEFT JOIN FETCH e.schuetze " +
+            "LEFT JOIN FETCH e.disziplin " +
+            "LEFT JOIN FETCH e.schiesstand " +
+            "LEFT JOIN FETCH e.zertifikat " +
+            "WHERE e.istSigniert = false")
     List<SchiessnachweisEintrag> findUnsignierteEintraegeWithDetails();
 
 
     /**
-     * Findet alle Einträge eines Schießstands für einen bestimmten Schützen.
+     * Findet alle EintrÃ¤ge eines SchieÃŸstands fÃ¼r einen bestimmten SchÃ¼tzen.
      *
-     * @param schiesstand Der Schießstand
-     * @param schuetze Der Schütze
+     * @param schiesstand Der SchieÃŸstand
+     * @param schuetze Der SchÃ¼tze
      * @param von Start-Datum
      * @param bis End-Datum
-     * @return Liste der Einträge
+     * @return Liste der EintrÃ¤ge
      */
     @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
-           "LEFT JOIN FETCH e.schuetze " +
-           "LEFT JOIN FETCH e.disziplin " +
-           "LEFT JOIN FETCH e.schiesstand " +
-           "LEFT JOIN FETCH e.aufseher " +
-           "LEFT JOIN FETCH e.zertifikat " +
-           "WHERE e.schiesstand = :schiesstand " +
-           "AND e.schuetze = :schuetze AND e.datum BETWEEN :von AND :bis ORDER BY e.datum DESC")
+            "LEFT JOIN FETCH e.schuetze " +
+            "LEFT JOIN FETCH e.disziplin " +
+            "LEFT JOIN FETCH e.schiesstand " +
+            "LEFT JOIN FETCH e.aufseher " +
+            "LEFT JOIN FETCH e.zertifikat " +
+            "WHERE e.schiesstand = :schiesstand " +
+            "AND e.schuetze = :schuetze AND e.datum BETWEEN :von AND :bis ORDER BY e.datum DESC")
     List<SchiessnachweisEintrag> findBySchiesstandUndSchuetzeImZeitraum(
             @Param("schiesstand") Schiesstand schiesstand,
             @Param("schuetze") Benutzer schuetze,
@@ -150,11 +150,11 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
             @Param("bis") LocalDate bis);
 
     /**
-     * Zählt Einträge eines Schützen mit bestimmtem Status.
+     * ZÃ¤hlt EintrÃ¤ge eines SchÃ¼tzen mit bestimmtem Status.
      *
-     * @param schuetze Der Schütze
+     * @param schuetze Der SchÃ¼tze
      * @param status Der Status
-     * @return Anzahl der Einträge
+     * @return Anzahl der EintrÃ¤ge
      */
     long countBySchuetzeAndStatus(Benutzer schuetze, EintragStatus status);
 
@@ -165,24 +165,41 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      * @return Optional mit Eintrag
      */
     @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
-           "LEFT JOIN FETCH e.schuetze " +
-           "LEFT JOIN FETCH e.disziplin " +
-           "LEFT JOIN FETCH e.schiesstand " +
-           "LEFT JOIN FETCH e.aufseher " +
-           "LEFT JOIN FETCH e.zertifikat " +
-           "WHERE e.id = :id")
+            "LEFT JOIN FETCH e.schuetze " +
+            "LEFT JOIN FETCH e.disziplin " +
+            "LEFT JOIN FETCH e.schiesstand " +
+            "LEFT JOIN FETCH e.aufseher " +
+            "LEFT JOIN FETCH e.zertifikat " +
+            "WHERE e.id = :id")
     Optional<SchiessnachweisEintrag> findByIdWithDetails(@Param("id") Long id);
 
     /**
-     * Findet alle Einträge mit allen Beziehungen.
+     * Findet einen Eintrag mit allen Beziehungen inkl. Verein über Schiesstand.
+     * Verhindert LazyInitializationException beim Zugriff auf schiesstand.verein.
      *
-     * @return Liste aller Einträge
+     * @param id Die Eintrags-ID
+     * @return Optional mit Eintrag
      */
     @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
-           "LEFT JOIN FETCH e.schuetze " +
-           "LEFT JOIN FETCH e.disziplin " +
-           "LEFT JOIN FETCH e.schiesstand " +
-           "LEFT JOIN FETCH e.aufseher " +
-           "LEFT JOIN FETCH e.zertifikat")
+            "LEFT JOIN FETCH e.schuetze " +
+            "LEFT JOIN FETCH e.disziplin " +
+            "LEFT JOIN FETCH e.schiesstand s " +
+            "LEFT JOIN FETCH s.verein " +
+            "LEFT JOIN FETCH e.aufseher " +
+            "LEFT JOIN FETCH e.zertifikat " +
+            "WHERE e.id = :id")
+    Optional<SchiessnachweisEintrag> findByIdWithVerein(@Param("id") Long id);
+
+    /**
+     * Findet alle EintrÃ¤ge mit allen Beziehungen.
+     *
+     * @return Liste aller EintrÃ¤ge
+     */
+    @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
+            "LEFT JOIN FETCH e.schuetze " +
+            "LEFT JOIN FETCH e.disziplin " +
+            "LEFT JOIN FETCH e.schiesstand " +
+            "LEFT JOIN FETCH e.aufseher " +
+            "LEFT JOIN FETCH e.zertifikat")
     List<SchiessnachweisEintrag> findAllWithDetails();
 }
