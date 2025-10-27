@@ -82,6 +82,10 @@ public class SchiessnachweisEintrag {
     @Column(name = "digitale_signatur", length = 500)
     private String digitaleSignatur;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "zertifikat_id")
+    private DigitalesZertifikat zertifikat;
+
     @Column(name = "ablehnungsgrund", length = 1000)
     private String ablehnungsgrund;
 

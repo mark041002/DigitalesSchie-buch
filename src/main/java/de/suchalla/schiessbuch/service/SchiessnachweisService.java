@@ -265,4 +265,20 @@ public class SchiessnachweisService {
     public long zaehleUnsignierteEintraege(Benutzer schuetze) {
         return eintragRepository.countBySchuetzeAndStatus(schuetze, EintragStatus.UNSIGNIERT);
     }
+
+    /**
+     * Findet alle unsignierten Einträge für eine Liste von Vereinen.
+     *
+     * @param vereine Liste der Vereine
+     * @return Liste der unsignierten Einträge
+     */
+    @Transactional(readOnly = true)
+    public List<SchiessnachweisEintrag> getUnsignierteEintraegeForVereine(List<de.suchalla.schiessbuch.model.entity.Verein> vereine) {
+        return vereine.stream()
+                .flatMap(verein -> verein.getSchiesstaende().stream())
+                .flatMap(schiesstand -> eintragRepository.findBySchiesstandAndStatus(
+                        schiesstand, EintragStatus.UNSIGNIERT).stream())
+                .distinct()
+                .collect(java.util.stream.Collectors.toList());
+    }
 }

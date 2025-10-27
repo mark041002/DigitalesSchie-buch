@@ -122,3 +122,4 @@ public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmi
            "WHERE m.verein = :verein")
     List<Vereinsmitgliedschaft> findByVereinWithDetails(@Param("verein") Verein verein);
 }
+

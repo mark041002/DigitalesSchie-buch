@@ -5,6 +5,7 @@ import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
 import de.suchalla.schiessbuch.model.enums.SchiesstandTyp;
 import de.suchalla.schiessbuch.repository.*;
+import de.suchalla.schiessbuch.service.PkiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -31,6 +32,7 @@ public class DataInitializer implements CommandLineRunner {
     private final SchiesstandRepository schiesstandRepository;
     private final VereinsmitgliedschaftRepository mitgliedschaftRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PkiService pkiService;
 
     @Override
     public void run(String... args) {
@@ -197,6 +199,33 @@ public class DataInitializer implements CommandLineRunner {
             mitgliedschaftRepository.save(mitgliedschaftSchuetze);
             log.info("Schützen-Mitgliedschaft erstellt für: {}", schuetze.getVollstaendigerName());
 
+            // PKI-Zertifikate erstellen
+            log.info("Erstelle PKI-Zertifikate...");
+
+            // Vereinszertifikat erstellen
+            try {
+                DigitalesZertifikat vereinsZertifikat = pkiService.createVereinCertificate(verein);
+                log.info("Vereinszertifikat erstellt für: {} (SN: {})", verein.getName(), vereinsZertifikat.getSeriennummer());
+            } catch (Exception e) {
+                log.error("Fehler beim Erstellen des Vereinszertifikats", e);
+            }
+
+            // Aufseher-Zertifikat erstellen
+            try {
+                DigitalesZertifikat aufseherZertifikat = pkiService.createAufseherCertificate(aufseher, verein);
+                log.info("Aufseher-Zertifikat erstellt für: {} (SN: {})", aufseher.getVollstaendigerName(), aufseherZertifikat.getSeriennummer());
+            } catch (Exception e) {
+                log.error("Fehler beim Erstellen des Aufseher-Zertifikats", e);
+            }
+
+            // Vereinschef-Zertifikat erstellen (da Vereinschefs auch Aufseher sind)
+            try {
+                DigitalesZertifikat vereinschefZertifikat = pkiService.createAufseherCertificate(vereinschef, verein);
+                log.info("Vereinschef-Zertifikat erstellt für: {} (SN: {})", vereinschef.getVollstaendigerName(), vereinschefZertifikat.getSeriennummer());
+            } catch (Exception e) {
+                log.error("Fehler beim Erstellen des Vereinschef-Zertifikats", e);
+            }
+
             log.info("Datenbank-Initialisierung abgeschlossen!");
             log.info("===============================================");
             log.info("Login-Daten:");
@@ -204,6 +233,8 @@ public class DataInitializer implements CommandLineRunner {
             log.info("  Schütze:  schuetze@test.de / test123");
             log.info("  Aufseher: aufseher@test.de / test123");
             log.info("  Vereinschef: vereinschef@test.de / test123");
+            log.info("===============================================");
+            log.info("PKI-Zertifikate wurden erstellt");
             log.info("===============================================");
 
         } catch (Exception e) {

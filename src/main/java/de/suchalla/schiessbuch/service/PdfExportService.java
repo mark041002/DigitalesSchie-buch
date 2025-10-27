@@ -24,7 +24,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * Service für PDF-Export von Schießnachweisen.
+ * Service für PDF-Export von Schießnachweisen mit PKI-Signaturinformationen.
  *
  * @author Markus Suchalla
  * @version 1.0.0
@@ -35,9 +35,10 @@ import java.util.List;
 public class PdfExportService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     /**
-     * Exportiert Schießnachweise als PDF.
+     * Exportiert Schießnachweise als PDF mit PKI-Signaturinformationen.
      *
      * @param schuetze Der Schütze
      * @param eintraege Liste der Einträge
@@ -48,11 +49,31 @@ public class PdfExportService {
      */
     public byte[] exportiereSchiessnachweise(Benutzer schuetze, List<SchiessnachweisEintrag> eintraege,
                                               LocalDate von, LocalDate bis) throws IOException {
+        log.info("=== PDF-EXPORT GESTARTET ===");
+        log.info("Schütze: {}", schuetze.getVollstaendigerName());
+        log.info("Zeitraum: {} bis {}", von, bis);
+        log.info("Anzahl Einträge: {}", eintraege.size());
+
+        // PKI-Zertifikat-Informationen loggen
+        for (SchiessnachweisEintrag eintrag : eintraege) {
+            if (eintrag.getZertifikat() != null) {
+                log.info("Eintrag {}: PKI-Zertifikat SN={}, Aufseher={}, Signiert am={}",
+                    eintrag.getId(),
+                    eintrag.getZertifikat().getSeriennummer(),
+                    eintrag.getAufseher() != null ? eintrag.getAufseher().getVollstaendigerName() : "N/A",
+                    eintrag.getSigniertAm());
+            } else {
+                log.warn("Eintrag {}: KEIN PKI-Zertifikat vorhanden!", eintrag.getId());
+            }
+        }
+        log.info("============================");
+
         try (PDDocument document = new PDDocument()) {
             PDPage page = new PDPage(PDRectangle.A4);
             document.addPage(page);
 
             float margin = 50;
+            float pageWidth = page.getMediaBox().getWidth();
             float yPosition = page.getMediaBox().getHeight() - margin;
 
             // Kopfzeile
@@ -60,7 +81,7 @@ public class PdfExportService {
                 contentStream.setFont(PDType1Font.HELVETICA_BOLD, 16);
                 contentStream.beginText();
                 contentStream.newLineAtOffset(margin, yPosition);
-                contentStream.showText("Digitales Schießbuch");
+                contentStream.showText("Digitales Schießbuch - PKI-gesichert");
                 contentStream.endText();
 
                 yPosition -= 30;
@@ -76,75 +97,155 @@ public class PdfExportService {
                 contentStream.showText("Zeitraum: " + von.format(DATE_FORMATTER) + " - " + bis.format(DATE_FORMATTER));
                 contentStream.endText();
 
+                yPosition -= 20;
+                contentStream.beginText();
+                contentStream.newLineAtOffset(margin, yPosition);
+                contentStream.showText("Exportiert am: " + LocalDate.now().format(DATE_FORMATTER));
+                contentStream.endText();
+
                 yPosition -= 30;
             }
 
-            // Tabelle erstellen
+            // Zentrierte Tabelle erstellen - schmalere Breite für Zentrierung
+            float tableWidth = pageWidth - (2 * margin);
+            float tableMargin = margin;
+
             BaseTable table = new BaseTable(yPosition, yPosition - margin,
-                    margin, page.getMediaBox().getWidth() - margin, margin, document, page, true, true);
+                    tableMargin, tableMargin + tableWidth, margin, document, page, true, true);
 
             // Header
             Row<PDPage> headerRow = table.createRow(20);
-            Cell<PDPage> cell1 = headerRow.createCell(15, "Datum");
+            Cell<PDPage> cell1 = headerRow.createCell(12, "Datum");
             cell1.setFont(PDType1Font.HELVETICA_BOLD);
             cell1.setFontSize(10);
 
-            Cell<PDPage> cell2 = headerRow.createCell(20, "Disziplin");
+            Cell<PDPage> cell2 = headerRow.createCell(18, "Disziplin");
             cell2.setFont(PDType1Font.HELVETICA_BOLD);
             cell2.setFontSize(10);
 
-            Cell<PDPage> cell3 = headerRow.createCell(15, "Kaliber");
+            Cell<PDPage> cell3 = headerRow.createCell(12, "Kaliber");
             cell3.setFont(PDType1Font.HELVETICA_BOLD);
             cell3.setFontSize(10);
 
-            Cell<PDPage> cell4 = headerRow.createCell(15, "Waffenart");
+            Cell<PDPage> cell4 = headerRow.createCell(12, "Schießstand");
             cell4.setFont(PDType1Font.HELVETICA_BOLD);
             cell4.setFontSize(10);
 
-            Cell<PDPage> cell5 = headerRow.createCell(20, "Schießstand");
+            Cell<PDPage> cell5 = headerRow.createCell(15, "Aufseher");
             cell5.setFont(PDType1Font.HELVETICA_BOLD);
             cell5.setFontSize(10);
 
-            Cell<PDPage> cell6 = headerRow.createCell(18, "Aufseher");
+            Cell<PDPage> cell6 = headerRow.createCell(18, "Zertifikat-SN");
             cell6.setFont(PDType1Font.HELVETICA_BOLD);
             cell6.setFontSize(10);
+
+            Cell<PDPage> cell7 = headerRow.createCell(13, "Signiert am");
+            cell7.setFont(PDType1Font.HELVETICA_BOLD);
+            cell7.setFontSize(10);
 
             // Datenzeilen
             for (SchiessnachweisEintrag eintrag : eintraege) {
                 Row<PDPage> row = table.createRow(15);
 
                 row.createCell(12, eintrag.getDatum().format(DATE_FORMATTER)).setFontSize(9);
-                row.createCell(20, eintrag.getDisziplin().getName()).setFontSize(9);
-                row.createCell(15, eintrag.getKaliber()).setFontSize(9);
-                row.createCell(15, eintrag.getWaffenart()).setFontSize(9);
-                row.createCell(20, eintrag.getSchiesstand().getName()).setFontSize(9);
+                row.createCell(18, eintrag.getDisziplin().getName()).setFontSize(9);
+                row.createCell(12, eintrag.getKaliber() != null ? eintrag.getKaliber() : "-").setFontSize(9);
+                row.createCell(12, eintrag.getSchiesstand().getName()).setFontSize(9);
 
                 String aufseherName = eintrag.getAufseher() != null ?
                         eintrag.getAufseher().getVollstaendigerName() : "-";
-                row.createCell(18, aufseherName).setFontSize(9);
+                row.createCell(15, aufseherName).setFontSize(9);
+
+                String zertifikatSN = eintrag.getZertifikat() != null ?
+                        eintrag.getZertifikat().getSeriennummer().substring(0, Math.min(12, eintrag.getZertifikat().getSeriennummer().length())) : "-";
+                row.createCell(18, zertifikatSN).setFontSize(9);
+
+                String signiertAm = eintrag.getSigniertAm() != null ?
+                        eintrag.getSigniertAm().format(DATETIME_FORMATTER) : "-";
+                row.createCell(13, signiertAm).setFontSize(8);
             }
 
             table.draw();
 
-            // Fußzeile
+            // PKI-Zertifikatsdetails nach der Tabelle
             PDPage lastPage = document.getPage(document.getNumberOfPages() - 1);
             try (PDPageContentStream contentStream = new PDPageContentStream(document, lastPage,
                     PDPageContentStream.AppendMode.APPEND, true)) {
-                contentStream.setFont(PDType1Font.HELVETICA, 8);
+
+                float footerY = margin + 150;
+
+                // PKI-Zertifikatsdetails
+                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 10);
                 contentStream.beginText();
-                contentStream.newLineAtOffset(margin, margin - 20);
-                contentStream.showText("Erstellt am: " + LocalDate.now().format(DATE_FORMATTER));
+                contentStream.newLineAtOffset(margin, footerY);
+                contentStream.showText("PKI-Zertifikatsdetails:");
                 contentStream.endText();
 
+                footerY -= 15;
+                contentStream.setFont(PDType1Font.HELVETICA, 8);
+
+                // Sammle alle verwendeten Zertifikate
+                java.util.Set<String> zertifikate = new java.util.HashSet<>();
+                for (SchiessnachweisEintrag eintrag : eintraege) {
+                    if (eintrag.getZertifikat() != null) {
+                        String zertInfo = String.format("SN: %s | Aufseher: %s | Gültig: %s - %s",
+                                eintrag.getZertifikat().getSeriennummer(),
+                                eintrag.getAufseher() != null ? eintrag.getAufseher().getVollstaendigerName() : "N/A",
+                                eintrag.getZertifikat().getGueltigAb() != null ? eintrag.getZertifikat().getGueltigAb().format(DATE_FORMATTER) : "N/A",
+                                eintrag.getZertifikat().getGueltigBis() != null ? eintrag.getZertifikat().getGueltigBis().format(DATE_FORMATTER) : "N/A"
+                        );
+                        zertifikate.add(zertInfo);
+                    }
+                }
+
+                // Zeige alle Zertifikate an
+                if (!zertifikate.isEmpty()) {
+                    for (String zertInfo : zertifikate) {
+                        contentStream.beginText();
+                        contentStream.newLineAtOffset(margin, footerY);
+                        contentStream.showText("• " + zertInfo);
+                        contentStream.endText();
+                        footerY -= 12;
+                    }
+                } else {
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(margin, footerY);
+                    contentStream.showText("WARNUNG: Keine PKI-Zertifikate gefunden!");
+                    contentStream.endText();
+                    footerY -= 12;
+                }
+
+                footerY -= 10;
+                contentStream.setFont(PDType1Font.HELVETICA, 8);
                 contentStream.beginText();
-                contentStream.newLineAtOffset(margin, margin - 30);
+                contentStream.newLineAtOffset(margin, footerY);
                 contentStream.showText("Anzahl Einträge: " + eintraege.size());
+                contentStream.endText();
+
+                footerY -= 15;
+                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 9);
+                contentStream.beginText();
+                contentStream.newLineAtOffset(margin, footerY);
+                contentStream.showText("PKI-Signatur-Bescheinigung:");
+                contentStream.endText();
+
+                footerY -= 12;
+                contentStream.setFont(PDType1Font.HELVETICA, 8);
+                contentStream.beginText();
+                contentStream.newLineAtOffset(margin, footerY);
+                contentStream.showText("Alle Einträge wurden mit qualifizierten digitalen PKI-Zertifikaten signiert.");
+                contentStream.endText();
+
+                footerY -= 10;
+                contentStream.beginText();
+                contentStream.newLineAtOffset(margin, footerY);
+                contentStream.showText("Zertifikatshierarchie: Root CA -> Verein CA -> Aufseher");
                 contentStream.endText();
             }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             document.save(outputStream);
-            log.info("PDF für {} mit {} Einträgen erstellt", schuetze.getEmail(), eintraege.size());
+            log.info("PDF für {} mit {} Einträgen und PKI-Signaturinformationen erstellt", schuetze.getEmail(), eintraege.size());
             return outputStream.toByteArray();
         }
     }

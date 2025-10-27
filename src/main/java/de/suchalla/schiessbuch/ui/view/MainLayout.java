@@ -125,6 +125,8 @@ public class MainLayout extends AppLayout {
                         .anyMatch(m -> Boolean.TRUE.equals(m.getIstAufseher()))) {
                     vereinNav.addItem(new SideNavItem("Einträge signieren", EintraegeSignierenView.class,
                             VaadinIcon.EDIT.create()));
+                    vereinNav.addItem(new SideNavItem("Meine Zertifikate", ZertifikateView.class,
+                            VaadinIcon.DIPLOMA.create()));
                 }
 
                 // Vereinschef-Funktionen
@@ -138,6 +140,8 @@ public class MainLayout extends AppLayout {
                             VaadinIcon.RECORDS.create()));
                     vereinNav.addItem(new SideNavItem("Mitgliedsverwaltung", MitgliedschaftenVerwaltenView.class,
                             VaadinIcon.USERS.create()));
+                    vereinNav.addItem(new SideNavItem("Vereins-Zertifikate", ZertifikateView.class,
+                            VaadinIcon.DIPLOMA.create()));
                 }
 
                 vereinNav.getStyle().set("padding-left", "var(--lumo-space-m)");
@@ -158,6 +162,7 @@ public class MainLayout extends AppLayout {
                 adminNav.addItem(new SideNavItem("Vereine", VereineVerwaltungView.class, VaadinIcon.BUILDING.create()));
                 adminNav.addItem(new SideNavItem("Schießstände", SchiesstaendeVerwaltungView.class, VaadinIcon.CROSSHAIRS.create()));
                 adminNav.addItem(new SideNavItem("Disziplinen", DisziplinenVerwaltungView.class, VaadinIcon.LIST.create()));
+                adminNav.addItem(new SideNavItem("Alle Zertifikate", ZertifikateView.class, VaadinIcon.DIPLOMA.create()));
                 adminNav.getStyle().set("padding-left", "var(--lumo-space-m)");
 
                 Details adminDetails = new Details("Administration", adminNav);

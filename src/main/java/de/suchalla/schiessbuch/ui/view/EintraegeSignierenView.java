@@ -14,17 +14,18 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
+import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
+import de.suchalla.schiessbuch.service.SignaturService;
+import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
 import jakarta.annotation.security.RolesAllowed;
+import lombok.extern.slf4j.Slf4j;
 
-import java.security.MessageDigest;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * View zum Signieren von Schießnachweis-Einträgen (für Aufseher).
+ * View zum Signieren von Schießnachweis-Einträgen (für Aufseher) mit PKI-Zertifikaten.
  *
  * @author Markus Suchalla
  * @version 1.0.0
@@ -32,21 +33,29 @@ import java.util.List;
 @Route(value = "eintraege-signieren", layout = MainLayout.class)
 @PageTitle("Einträge signieren | Digitales Schießbuch")
 @RolesAllowed({"AUFSEHER", "ADMIN"})
+@Slf4j
 public class EintraegeSignierenView extends VerticalLayout {
 
     private final SecurityService securityService;
     private final SchiessnachweisService schiessnachweisService;
+    private final SignaturService signaturService;
+    private final VereinsmitgliedschaftService mitgliedschaftService;
 
     private final Grid<SchiessnachweisEintrag> grid = new Grid<>(SchiessnachweisEintrag.class, false);
 
     private Benutzer currentUser;
 
     public EintraegeSignierenView(SecurityService securityService,
-                                   SchiessnachweisService schiessnachweisService) {
+                                   SchiessnachweisService schiessnachweisService,
+                                   SignaturService signaturService,
+                                   VereinsmitgliedschaftService mitgliedschaftService) {
         this.securityService = securityService;
         this.schiessnachweisService = schiessnachweisService;
+        this.signaturService = signaturService;
+        this.mitgliedschaftService = mitgliedschaftService;
 
-        this.currentUser = securityService.getAuthenticatedUser().orElse(null);
+        this.currentUser = securityService.getAuthenticatedUser()
+                .orElseThrow(() -> new IllegalStateException("Benutzer nicht authentifiziert"));
 
         setSpacing(true);
         setPadding(true);
@@ -59,7 +68,7 @@ public class EintraegeSignierenView extends VerticalLayout {
      * Erstellt den Inhalt der View.
      */
     private void createContent() {
-        add(new H2("Unsignierte Einträge"));
+        add(new H2("Unsignierte Einträge - PKI-Signierung"));
 
         // Grid
         grid.addColumn(eintrag -> eintrag.getSchuetze().getVollstaendigerName()).setHeader("Schütze");
@@ -83,7 +92,7 @@ public class EintraegeSignierenView extends VerticalLayout {
      * @return Layout mit Buttons
      */
     private HorizontalLayout createActionButtons(SchiessnachweisEintrag eintrag) {
-        Button signierenButton = new Button("Signieren", e -> signiereEintrag(eintrag));
+        Button signierenButton = new Button("PKI-Signieren", e -> signiereEintrag(eintrag));
         signierenButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_SMALL);
 
         Button ablehnenButton = new Button("Ablehnen", e -> zeigeAblehnungsDialog(eintrag));
@@ -93,16 +102,19 @@ public class EintraegeSignierenView extends VerticalLayout {
     }
 
     /**
-     * Signiert einen Eintrag.
+     * Signiert einen Eintrag mit PKI-Zertifikat.
      *
      * @param eintrag Der zu signierende Eintrag
      */
     private void signiereEintrag(SchiessnachweisEintrag eintrag) {
         try {
-            String signatur = generiereSignatur(eintrag);
-            schiessnachweisService.signiereEintrag(eintrag.getId(), currentUser, signatur);
+            // Verein des Schießstands ermitteln
+            Verein verein = eintrag.getSchiesstand().getVerein();
 
-            Notification.show("Eintrag erfolgreich signiert")
+            // Mit PKI-Zertifikat signieren
+            signaturService.signEintrag(eintrag, currentUser, verein);
+
+            Notification.show("Eintrag erfolgreich mit PKI-Zertifikat signiert")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
             updateGrid();
@@ -154,43 +166,23 @@ public class EintraegeSignierenView extends VerticalLayout {
     }
 
     /**
-     * Generiert eine digitale Signatur für einen Eintrag.
-     *
-     * @param eintrag Der Eintrag
-     * @return Digitale Signatur als Hex-String
-     */
-    private String generiereSignatur(SchiessnachweisEintrag eintrag) {
-        try {
-            String daten = eintrag.getId() + "|" +
-                    eintrag.getSchuetze().getId() + "|" +
-                    eintrag.getDatum() + "|" +
-                    currentUser.getId() + "|" +
-                    LocalDateTime.now();
-
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(daten.getBytes());
-
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-
-            return hexString.toString();
-        } catch (Exception e) {
-            return "SIGNATUR_FEHLER_" + System.currentTimeMillis();
-        }
-    }
-
-    /**
      * Aktualisiert das Grid mit unsignierten Einträgen.
      */
     private void updateGrid() {
-        // Hier müsste man die Schießstände des Aufsehers laden
-        // Vereinfacht: Alle unsignierten Einträge
-        List<SchiessnachweisEintrag> eintraege = new ArrayList<>();
-        // TODO: Filtern nach Schießständen, für die der Aufseher zuständig ist
+        // Lade alle Vereine, in denen der Benutzer Aufseher ist
+        List<Verein> vereineAlsAufseher = mitgliedschaftService.findeMitgliedschaften(currentUser).stream()
+                .filter(m -> m.getStatus() == de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus.AKTIV
+                        && Boolean.TRUE.equals(m.getIstAufseher()))
+                .map(de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft::getVerein)
+                .distinct()
+                .collect(java.util.stream.Collectors.toList());
+
+        // Lade unsignierte Einträge für diese Vereine
+        List<SchiessnachweisEintrag> eintraege = schiessnachweisService.getUnsignierteEintraegeForVereine(vereineAlsAufseher);
+
         grid.setItems(eintraege);
+
+        log.info("Grid aktualisiert: {} unsignierte Einträge gefunden für {} Vereine",
+                eintraege.size(), vereineAlsAufseher.size());
     }
 }

@@ -6,6 +6,8 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -16,24 +18,28 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.StreamResource;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
+import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.enums.EintragStatus;
 import de.suchalla.schiessbuch.repository.SchiesstandRepository;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
+import de.suchalla.schiessbuch.service.PdfExportService;
+import de.suchalla.schiessbuch.service.SignaturService;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
 
-import java.security.MessageDigest;
+import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * View für Aufseher zur Verwaltung von Schießnachweis-Einträgen.
+ * View für Aufseher zur Verwaltung von Schießnachweis-Einträgen mit PKI-Signierung und PDF-Export.
  *
  * @author Markus Suchalla
  * @version 1.0.0
@@ -46,6 +52,8 @@ public class EintraegeVerwaltungView extends VerticalLayout {
 
     private final SchiessnachweisService schiessnachweisService;
     private final SchiesstandRepository schiesstandRepository;
+    private final PdfExportService pdfExportService;
+    private final SignaturService signaturService;
 
     private final Grid<SchiessnachweisEintrag> grid = new Grid<>(SchiessnachweisEintrag.class, false);
     private final TextField suchfeld = new TextField();
@@ -56,11 +64,17 @@ public class EintraegeVerwaltungView extends VerticalLayout {
     private Schiesstand aktuellerSchiesstand;
     private EintragStatus aktuellerStatus = null; // null = Alle
 
+    private List<SchiessnachweisEintrag> aktuelleFiltierteEintraege = List.of();
+
     public EintraegeVerwaltungView(SecurityService securityService,
                                     SchiessnachweisService schiessnachweisService,
-                                    SchiesstandRepository schiesstandRepository) {
+                                    SchiesstandRepository schiesstandRepository,
+                                    PdfExportService pdfExportService,
+                                    SignaturService signaturService) {
         this.schiessnachweisService = schiessnachweisService;
         this.schiesstandRepository = schiesstandRepository;
+        this.pdfExportService = pdfExportService;
+        this.signaturService = signaturService;
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
         setSpacing(true);
@@ -150,7 +164,11 @@ public class EintraegeVerwaltungView extends VerticalLayout {
         Button filterButton = new Button("Filtern", e -> updateGrid());
         filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        HorizontalLayout layout = new HorizontalLayout(suchfeld, vonDatum, bisDatum, filterButton);
+        Button pdfExportButton = new Button("PDF exportieren", VaadinIcon.DOWNLOAD.create());
+        pdfExportButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+        pdfExportButton.addClickListener(e -> exportierePDF());
+
+        HorizontalLayout layout = new HorizontalLayout(suchfeld, vonDatum, bisDatum, filterButton, pdfExportButton);
         layout.setDefaultVerticalComponentAlignment(Alignment.END);
         return layout;
     }
@@ -208,21 +226,33 @@ public class EintraegeVerwaltungView extends VerticalLayout {
     }
 
     /**
-     * Signiert einen Eintrag.
+     * Signiert einen Eintrag mit PKI-Zertifikat.
      */
     private void signiereEintrag(SchiessnachweisEintrag eintrag) {
         try {
-            String signatur = generiereSignatur(eintrag);
-            schiessnachweisService.signiereEintrag(eintrag.getId(), currentUser, signatur);
+            log.info("Starte PKI-Signierung für Eintrag {} in EintraegeVerwaltungView", eintrag.getId());
 
-            Notification.show("Eintrag erfolgreich signiert")
+            // Eintrag mit allen Relationen neu aus DB laden, um LazyInitializationException zu vermeiden
+            SchiessnachweisEintrag vollstaendigerEintrag = schiessnachweisService.findeEintrag(eintrag.getId())
+                    .orElseThrow(() -> new RuntimeException("Eintrag nicht gefunden"));
+
+            // Verein des Schießstands ermitteln
+            Verein verein = vollstaendigerEintrag.getSchiesstand().getVerein();
+
+            log.info("Verwende Verein: {} (ID: {})", verein.getName(), verein.getId());
+            log.info("Aufseher: {} (ID: {})", currentUser.getVollstaendigerName(), currentUser.getId());
+
+            // Mit PKI-Zertifikat signieren über SignaturService
+            signaturService.signEintrag(vollstaendigerEintrag, currentUser, verein);
+
+            Notification.show("Eintrag erfolgreich mit PKI-Zertifikat signiert")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
             updateGrid();
-            log.info("Eintrag signiert: {}", eintrag.getId());
+            log.info("PKI-Signierung erfolgreich abgeschlossen für Eintrag {}", eintrag.getId());
 
         } catch (Exception e) {
-            log.error("Fehler beim Signieren", e);
+            log.error("Fehler beim PKI-Signieren von Eintrag {}", eintrag.getId(), e);
             Notification.show("Fehler beim Signieren: " + e.getMessage())
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
@@ -312,35 +342,83 @@ public class EintraegeVerwaltungView extends VerticalLayout {
                     .sorted(Comparator.comparing(SchiessnachweisEintrag::getDatum).reversed())
                     .collect(Collectors.toList());
 
+            aktuelleFiltierteEintraege = eintraege;
             grid.setItems(eintraege);
         }
     }
 
     /**
-     * Generiert eine digitale Signatur für einen Eintrag.
+     * Exportiert die aktuell gefilterten Einträge als PDF mit PKI-Zertifikatsdetails.
      */
-    private String generiereSignatur(SchiessnachweisEintrag eintrag) {
+    private void exportierePDF() {
+        if (aktuelleFiltierteEintraege.isEmpty()) {
+            Notification.show("Keine Einträge zum Exportieren vorhanden", 3000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_WARNING);
+            return;
+        }
+
         try {
-            String daten = eintrag.getSchuetze().getId() + "|" +
-                    eintrag.getDatum() + "|" +
-                    eintrag.getDisziplin().getId() + "|" +
-                    eintrag.getAnzahlSchuesse() + "|" +
-                    currentUser.getId();
+            LocalDate von = vonDatum.getValue() != null ? vonDatum.getValue() : LocalDate.now().minusMonths(3);
+            LocalDate bis = bisDatum.getValue() != null ? bisDatum.getValue() : LocalDate.now();
 
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(daten.getBytes());
+            log.info("Starte PDF-Export für {} Einträge", aktuelleFiltierteEintraege.size());
 
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
+            // Verwende die gleiche PDF-Export-Methode wie in MeineEintraegeView
+            // Erstelle einen "virtuellen" Schützen-Namen für den Schießstand-Export
+            String schuetzeName = suchfeld.getValue() != null && !suchfeld.getValue().isEmpty()
+                    ? suchfeld.getValue()
+                    : "Alle Schützen";
+
+            // Nutze die Standard-PDF-Export-Methode mit PKI-Zertifikatsdetails
+            byte[] pdfBytes = pdfExportService.exportiereSchiessnachweise(
+                    currentUser, // Verwende aktuellen Benutzer als "Schütze" für Kopfzeile
+                    aktuelleFiltierteEintraege,
+                    von,
+                    bis
+            );
+
+            // Download-Link erstellen
+            StreamResource resource = new StreamResource(
+                    String.format("eintraege_%s_%s.pdf",
+                            aktuellerSchiesstand.getName().replaceAll("[^a-zA-Z0-9]", "_"),
+                            LocalDate.now()),
+                    () -> new ByteArrayInputStream(pdfBytes)
+            );
+
+            Anchor downloadLink = new Anchor(resource, "");
+            downloadLink.getElement().setAttribute("download", true);
+            downloadLink.setId("pdf-download-link");
+
+            // Temporär zum Layout hinzufügen und automatisch klicken
+            add(downloadLink);
+            downloadLink.getElement().callJsFunction("click");
+
+            // Nach kurzer Zeit wieder entfernen
+            getUI().ifPresent(ui -> ui.access(() -> {
+                try {
+                    Thread.sleep(100);
+                    remove(downloadLink);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }));
+
+            Notification.show(
+                    String.format("PDF mit %d Einträgen und PKI-Zertifikatsdetails wurde erstellt", aktuelleFiltierteEintraege.size()),
+                    3000,
+                    Notification.Position.MIDDLE
+            ).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+            log.info("PDF exportiert: {} Einträge mit PKI-Zertifikaten", aktuelleFiltierteEintraege.size());
+
         } catch (Exception e) {
-            throw new RuntimeException("Fehler beim Generieren der Signatur", e);
+            log.error("Fehler beim PDF-Export", e);
+            Notification.show("Fehler beim PDF-Export: " + e.getMessage(), 5000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
     }
+
+
 
     /**
      * Gibt den deutschen Text für einen Status zurück.

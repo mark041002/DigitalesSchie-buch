@@ -307,4 +307,36 @@ public class VereinsmitgliedschaftService {
     public List<Vereinsmitgliedschaft> findeMitgliedschaftenNachStatus(Verein verein, MitgliedschaftStatus status) {
         return mitgliedschaftRepository.findByVereinAndStatusWithDetails(verein, status);
     }
+
+    /**
+     * Gibt alle Vereine zurück, in denen der Benutzer Vereinschef ist.
+     *
+     * @param benutzer Der Benutzer
+     * @return Liste der Vereine
+     */
+    @Transactional(readOnly = true)
+    public List<Verein> getVereineWhereUserIsChef(Benutzer benutzer) {
+        return mitgliedschaftRepository.findByBenutzer(benutzer).stream()
+                .filter(m -> m.getStatus() == MitgliedschaftStatus.AKTIV && m.getAktiv())
+                .filter(Vereinsmitgliedschaft::getIstVereinschef)
+                .map(Vereinsmitgliedschaft::getVerein)
+                .distinct()
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Gibt alle Vereine zurück, in denen der Benutzer Aufseher ist.
+     *
+     * @param benutzer Der Benutzer
+     * @return Liste der Vereine
+     */
+    @Transactional(readOnly = true)
+    public List<Verein> getVereineWhereUserIsAufseher(Benutzer benutzer) {
+        return mitgliedschaftRepository.findByBenutzer(benutzer).stream()
+                .filter(m -> m.getStatus() == MitgliedschaftStatus.AKTIV && m.getAktiv())
+                .filter(Vereinsmitgliedschaft::getIstAufseher)
+                .map(Vereinsmitgliedschaft::getVerein)
+                .distinct()
+                .collect(java.util.stream.Collectors.toList());
+    }
 }
