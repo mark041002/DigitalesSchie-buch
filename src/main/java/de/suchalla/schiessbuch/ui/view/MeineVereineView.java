@@ -13,7 +13,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
-import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.security.SecurityService;
@@ -78,6 +77,7 @@ public class MeineVereineView extends VerticalLayout {
             case BEANTRAGT -> "Beantragt";
             case ABGELEHNT -> "Abgelehnt";
             case BEENDET -> "Beendet";
+            case VERLASSEN -> "Verlassen";
         }).setHeader("Status");
 
         grid.addComponentColumn(this::createActionButtons).setHeader("Aktionen");
@@ -97,27 +97,27 @@ public class MeineVereineView extends VerticalLayout {
         layout.setSpacing(true);
         layout.setPadding(true);
 
-        H3 title = new H3("Geben Sie die Vereins-ID ein:");
+        H3 title = new H3("Geben Sie die Vereinsnummer ein:");
 
-        TextField vereinIdField = new TextField("Vereins-ID");
-        vereinIdField.setWidthFull();
-        vereinIdField.setPlaceholder("ID des Vereins eingeben");
+        TextField vereinsNummerField = new TextField("Vereinsnummer");
+        vereinsNummerField.setWidthFull();
+        vereinsNummerField.setPlaceholder("Vereinsnummer eingeben (z.B. DSB-12345)");
 
         Button beitretenButton = new Button("Beitreten", e -> {
-             if (vereinIdField.getValue() == null || vereinIdField.getValue().isEmpty()) {
-                 Notification.show("Bitte geben Sie eine Vereins-ID ein")
+             if (vereinsNummerField.getValue() == null || vereinsNummerField.getValue().isEmpty()) {
+                 Notification.show("Bitte geben Sie eine Vereinsnummer ein")
                          .addThemeVariants(NotificationVariant.LUMO_ERROR);
                  return;
              }
 
-             vereinBeitreten(vereinIdField.getValue());
+             vereinBeitreten(vereinsNummerField.getValue());
              dialog.close();
          });
          beitretenButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
          Button abbrechenButton = new Button("Abbrechen", e -> dialog.close());
 
-         layout.add(title, vereinIdField);
+         layout.add(title, vereinsNummerField);
          dialog.add(layout);
          dialog.getFooter().add(abbrechenButton, beitretenButton);
          dialog.open();
@@ -134,6 +134,13 @@ public class MeineVereineView extends VerticalLayout {
             Button verlassenButton = new Button("Verlassen", e -> vereinVerlassen(mitgliedschaft));
             verlassenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
             return verlassenButton;
+        } else if (mitgliedschaft.getStatus() == de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus.VERLASSEN
+                || mitgliedschaft.getStatus() == de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus.ABGELEHNT
+                || mitgliedschaft.getStatus() == de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus.BEENDET) {
+            Button loeschenButton = new Button("Löschen", e -> mitgliedschaftLoeschen(mitgliedschaft));
+            loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+            loeschenButton.getElement().setAttribute("title", "Eintrag endgültig löschen");
+            return loeschenButton;
         }
         return new Button();
     }
@@ -141,10 +148,14 @@ public class MeineVereineView extends VerticalLayout {
     /**
      * Tritt einem Verein bei.
      */
-    private void vereinBeitreten(String vereinIdStr) {
+    private void vereinBeitreten(String vereinsNummer) {
         try {
-            Long vereinId = Long.parseLong(vereinIdStr);
-            Verein verein = verbandService.findeVerein(vereinId)
+            if (vereinsNummer == null || vereinsNummer.isBlank()) {
+                Notification.show("Ungültige Vereinsnummer").addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
+
+            Verein verein = verbandService.findeVereinByVereinsNummer(vereinsNummer)
                     .orElseThrow(() -> new IllegalArgumentException("Verein nicht gefunden"));
 
             // Verein gefunden, Verband wird automatisch aus dem Verein bestimmt
@@ -155,8 +166,6 @@ public class MeineVereineView extends VerticalLayout {
 
             updateGrid();
 
-        } catch (NumberFormatException e) {
-            Notification.show("Ungültige Vereins-ID").addThemeVariants(NotificationVariant.LUMO_ERROR);
         } catch (Exception e) {
             Notification.show("Fehler: " + e.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
@@ -171,6 +180,21 @@ public class MeineVereineView extends VerticalLayout {
         try {
             mitgliedschaftService.vereinVerlassen(mitgliedschaft.getId());
             Notification.show("Verein verlassen").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            updateGrid();
+        } catch (Exception e) {
+            Notification.show("Fehler: " + e.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
+    }
+
+    /**
+     * Löscht eine Mitgliedschaft endgültig.
+     *
+     * @param mitgliedschaft Die Mitgliedschaft
+     */
+    private void mitgliedschaftLoeschen(Vereinsmitgliedschaft mitgliedschaft) {
+        try {
+            mitgliedschaftService.loescheMitgliedschaft(mitgliedschaft.getId());
+            Notification.show("Mitgliedschaft gelöscht").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             updateGrid();
         } catch (Exception e) {
             Notification.show("Fehler: " + e.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);

@@ -216,11 +216,30 @@ public class VereinsmitgliedschaftService {
         Vereinsmitgliedschaft mitgliedschaft = mitgliedschaftRepository.findById(mitgliedschaftId)
                 .orElseThrow(() -> new IllegalArgumentException("Mitgliedschaft nicht gefunden"));
 
-        mitgliedschaft.setStatus(MitgliedschaftStatus.BEENDET);
+        mitgliedschaft.setStatus(MitgliedschaftStatus.VERLASSEN);
         mitgliedschaft.setAktiv(false);
         mitgliedschaft.setAustrittDatum(LocalDate.now());
 
         mitgliedschaftRepository.save(mitgliedschaft);
+    }
+
+    /**
+     * Löscht eine Mitgliedschaft endgültig aus der Datenbank.
+     *
+     * @param mitgliedschaftId Die Mitgliedschafts-ID
+     */
+    public void loescheMitgliedschaft(Long mitgliedschaftId) {
+        Vereinsmitgliedschaft mitgliedschaft = mitgliedschaftRepository.findById(mitgliedschaftId)
+                .orElseThrow(() -> new IllegalArgumentException("Mitgliedschaft nicht gefunden"));
+
+        // Nur Mitgliedschaften mit Status VERLASSEN, ABGELEHNT oder BEENDET dürfen gelöscht werden
+        if (mitgliedschaft.getStatus() != MitgliedschaftStatus.VERLASSEN
+            && mitgliedschaft.getStatus() != MitgliedschaftStatus.ABGELEHNT
+            && mitgliedschaft.getStatus() != MitgliedschaftStatus.BEENDET) {
+            throw new IllegalArgumentException("Nur beendete, abgelehnte oder verlassene Mitgliedschaften können gelöscht werden");
+        }
+
+        mitgliedschaftRepository.deleteById(mitgliedschaftId);
     }
 
     /**

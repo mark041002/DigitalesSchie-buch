@@ -25,7 +25,12 @@ public enum MitgliedschaftStatus {
     /**
      * Mitgliedschaft wurde beendet.
      */
-    BEENDET("Beendet");
+    BEENDET("Beendet"),
+
+    /**
+     * Benutzer hat den Verein verlassen.
+     */
+    VERLASSEN("Verlassen");
 
     private final String bezeichnung;
 
@@ -42,4 +47,3 @@ public enum MitgliedschaftStatus {
         return bezeichnung;
     }
 }
-

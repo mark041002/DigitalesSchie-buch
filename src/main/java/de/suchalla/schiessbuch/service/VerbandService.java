@@ -165,6 +165,20 @@ public class VerbandService {
     }
 
     /**
+     * Findet einen Verein anhand der Vereinsnummer.
+     *
+     * @param vereinsNummer Die Vereinsnummer
+     * @return Optional mit Verein
+     */
+    @Transactional(readOnly = true)
+    public Optional<Verein> findeVereinByVereinsNummer(String vereinsNummer) {
+        if (vereinsNummer == null) {
+            return Optional.empty();
+        }
+        return vereinRepository.findByVereinsNummer(vereinsNummer.trim());
+    }
+
+    /**
      * Findet alle Vereine.
      *
      * @return Liste aller Vereine
