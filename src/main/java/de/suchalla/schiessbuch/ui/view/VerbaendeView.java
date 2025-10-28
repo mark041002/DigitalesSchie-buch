@@ -67,7 +67,9 @@ public class VerbaendeView extends VerticalLayout {
         // Grid konfigurieren
         grid.addColumn(Verband::getName).setHeader("Verbandsname").setSortable(true);
         grid.addColumn(Verband::getBeschreibung).setHeader("Beschreibung");
-        grid.addColumn(verband -> verband.getVereine().size()).setHeader("Anzahl Vereine");
+        grid.addColumn(verband -> verband.getVereine().size())
+                .setHeader("Anzahl Vereine")
+                .setClassNameGenerator(item -> "align-right");
         // Status-Spalte: zeigt mit Icon an, ob der aktuelle Benutzer beigetreten ist
         grid.addComponentColumn(verband -> {
             Benutzer currentUser = securityService.getAuthenticatedUser().orElse(null);
@@ -81,6 +83,13 @@ public class VerbaendeView extends VerticalLayout {
             return icon;
         }).setHeader("Beigetreten");
         grid.addComponentColumn(this::createActionButtons).setHeader("Aktionen");
+
+        // CSS für rechtsbündige Ausrichtung
+        grid.getElement().executeJs(
+                "const style = document.createElement('style');" +
+                "style.textContent = '.align-right { text-align: right; }';" +
+                "document.head.appendChild(style);"
+        );
 
         add(grid);
     }

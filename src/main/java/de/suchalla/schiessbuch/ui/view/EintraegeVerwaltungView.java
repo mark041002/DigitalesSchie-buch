@@ -231,7 +231,11 @@ public class EintraegeVerwaltungView extends VerticalLayout {
         grid.addColumn(SchiessnachweisEintrag::getWaffenart)
                 .setHeader("Waffenart");
         grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse)
-                .setHeader("Schüsse");
+                .setHeader("Schüsse")
+                .setClassNameGenerator(item -> "align-right");
+        grid.addColumn(SchiessnachweisEintrag::getErgebnis)
+                .setHeader("Ergebnis")
+                .setClassNameGenerator(item -> "align-right");
         grid.addColumn(this::getStatusText)
                 .setHeader("Status");
         grid.addColumn(eintrag -> eintrag.getAufseher() != null ?
@@ -239,6 +243,13 @@ public class EintraegeVerwaltungView extends VerticalLayout {
                 .setHeader("Aufseher");
         grid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen");
+
+        // CSS für rechtsbündige Ausrichtung
+        grid.getElement().executeJs(
+                "const style = document.createElement('style');" +
+                "style.textContent = '.align-right { text-align: right; }';" +
+                "document.head.appendChild(style);"
+        );
 
         layout.add(grid);
         return layout;
@@ -430,3 +441,4 @@ public class EintraegeVerwaltungView extends VerticalLayout {
         };
     }
 }
+

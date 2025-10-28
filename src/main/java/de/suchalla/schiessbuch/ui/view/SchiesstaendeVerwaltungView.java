@@ -117,12 +117,22 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
         add(formLayout, speichernButton);
 
         // Grid
-        grid.addColumn(Schiesstand::getId).setHeader("ID").setWidth("80px");
+        grid.addColumn(Schiesstand::getId)
+                .setHeader("ID")
+                .setWidth("80px")
+                .setClassNameGenerator(item -> "align-right");
         grid.addColumn(Schiesstand::getName).setHeader("Name");
         grid.addColumn(schiesstand -> getTypText(schiesstand.getTyp())).setHeader("Typ");
         grid.addColumn(schiesstand -> schiesstand.getVerein() != null ?
                 schiesstand.getVerein().getName() : "-").setHeader("Verein");
         grid.addColumn(Schiesstand::getAdresse).setHeader("Adresse");
+
+        // CSS für rechtsbündige Ausrichtung
+        grid.getElement().executeJs(
+                "const style = document.createElement('style');" +
+                "style.textContent = '.align-right { text-align: right; }';" +
+                "document.head.appendChild(style);"
+        );
 
         add(grid);
     }

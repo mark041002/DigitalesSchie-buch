@@ -89,12 +89,25 @@ public class MeineEintraegeView extends VerticalLayout {
         grid.addColumn(eintrag -> eintrag.getDisziplin().getName()).setHeader("Disziplin");
         grid.addColumn(SchiessnachweisEintrag::getKaliber).setHeader("Kaliber");
         grid.addColumn(SchiessnachweisEintrag::getWaffenart).setHeader("Waffenart");
+        grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse)
+                .setHeader("Schüsse")
+                .setClassNameGenerator(item -> "align-right");
+        grid.addColumn(SchiessnachweisEintrag::getErgebnis)
+                .setHeader("Ergebnis")
+                .setClassNameGenerator(item -> "align-right");
         grid.addColumn(eintrag -> eintrag.getSchiesstand().getName()).setHeader("Schießstand");
         grid.addColumn(eintrag -> getStatusText(eintrag.getStatus())).setHeader("Status");
         grid.addColumn(eintrag -> eintrag.getAufseher() != null ?
                 eintrag.getAufseher().getVollstaendigerName() : "-").setHeader("Aufseher");
 
         grid.addComponentColumn(this::createActionButtons).setHeader("Aktionen");
+
+        // CSS für rechtsbündige Ausrichtung
+        grid.getElement().executeJs(
+                "const style = document.createElement('style');" +
+                "style.textContent = '.align-right { text-align: right; }';" +
+                "document.head.appendChild(style);"
+        );
 
         add(grid);
     }

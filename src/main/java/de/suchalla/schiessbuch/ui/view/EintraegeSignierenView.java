@@ -71,16 +71,28 @@ public class EintraegeSignierenView extends VerticalLayout {
         add(new H2("Unsignierte EintrÃ¤ge - PKI-Signierung"));
 
         // Grid
-        grid.addColumn(eintrag -> eintrag.getSchuetze().getVollstaendigerName()).setHeader("SchÃ¼tze");
+        grid.addColumn(eintrag -> eintrag.getSchuetze().getVollstaendigerName()).setHeader("Schütze");
         grid.addColumn(SchiessnachweisEintrag::getDatum).setHeader("Datum").setSortable(true);
         grid.addColumn(eintrag -> eintrag.getDisziplin().getName()).setHeader("Disziplin");
         grid.addColumn(SchiessnachweisEintrag::getKaliber).setHeader("Kaliber");
         grid.addColumn(SchiessnachweisEintrag::getWaffenart).setHeader("Waffenart");
-        grid.addColumn(eintrag -> eintrag.getSchiesstand().getName()).setHeader("SchieÃŸstand");
-        grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse).setHeader("SchÃ¼sse");
+        grid.addColumn(eintrag -> eintrag.getSchiesstand().getName()).setHeader("Schießstand");
+        grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse)
+                .setHeader("Schüsse")
+                .setClassNameGenerator(item -> "align-right");
+        grid.addColumn(SchiessnachweisEintrag::getErgebnis)
+                .setHeader("Ergebnis")
+                .setClassNameGenerator(item -> "align-right");
         grid.addColumn(SchiessnachweisEintrag::getBemerkung).setHeader("Bemerkung");
 
         grid.addComponentColumn(this::createActionButtons).setHeader("Aktionen");
+
+        // CSS für rechtsbündige Ausrichtung
+        grid.getElement().executeJs(
+                "const style = document.createElement('style');" +
+                "style.textContent = '.align-right { text-align: right; }';" +
+                "document.head.appendChild(style);"
+        );
 
         add(grid);
     }

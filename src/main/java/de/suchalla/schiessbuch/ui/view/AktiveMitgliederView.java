@@ -138,8 +138,12 @@ public class AktiveMitgliederView extends VerticalLayout {
         eintraegeGrid.addColumn(eintrag -> eintrag.getDisziplin().getName()).setHeader("Disziplin");
         eintraegeGrid.addColumn(SchiessnachweisEintrag::getKaliber).setHeader("Kaliber");
         eintraegeGrid.addColumn(SchiessnachweisEintrag::getWaffenart).setHeader("Waffenart");
-        eintraegeGrid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse).setHeader("Schüsse");
-        eintraegeGrid.addColumn(SchiessnachweisEintrag::getErgebnis).setHeader("Ergebnis");
+        eintraegeGrid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse)
+                .setHeader("Schüsse")
+                .setClassNameGenerator(item -> "align-right");
+        eintraegeGrid.addColumn(SchiessnachweisEintrag::getErgebnis)
+                .setHeader("Ergebnis")
+                .setClassNameGenerator(item -> "align-right");
         eintraegeGrid.addColumn(eintrag -> eintrag.getSchiesstand().getName()).setHeader("Schießstand");
         eintraegeGrid.addColumn(eintrag -> getStatusText(eintrag.getStatus())).setHeader("Status");
         eintraegeGrid.addColumn(eintrag -> eintrag.getAufseher() != null ?
@@ -147,6 +151,13 @@ public class AktiveMitgliederView extends VerticalLayout {
 
         eintraegeGrid.setAllRowsVisible(false);
         eintraegeGrid.setHeight("400px");
+
+        // CSS für rechtsbündige Ausrichtung
+        eintraegeGrid.getElement().executeJs(
+                "const style = document.createElement('style');" +
+                "style.textContent = '.align-right { text-align: right; }';" +
+                "document.head.appendChild(style);"
+        );
 
         Button filterButton = new Button("Filtern", e -> {
             LocalDate von = vonDatum.getValue();

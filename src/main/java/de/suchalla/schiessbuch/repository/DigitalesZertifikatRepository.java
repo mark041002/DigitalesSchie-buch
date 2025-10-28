@@ -30,6 +30,13 @@ public interface DigitalesZertifikatRepository extends JpaRepository<DigitalesZe
     Optional<DigitalesZertifikat> findBySeriennummer(String seriennummer);
 
     /**
+     * Findet Zertifikat nach Seriennummer mit EAGER loading aller Details
+     * (für öffentliche Verifizierung)
+     */
+    @Query("SELECT z FROM DigitalesZertifikat z LEFT JOIN FETCH z.benutzer LEFT JOIN FETCH z.verein LEFT JOIN FETCH z.parentZertifikat WHERE z.seriennummer = :seriennummer")
+    Optional<DigitalesZertifikat> findBySeriennummerWithDetails(String seriennummer);
+
+    /**
      * Findet Zertifikat für einen Benutzer (Aufseher)
      */
     Optional<DigitalesZertifikat> findByBenutzer(Benutzer benutzer);

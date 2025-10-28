@@ -175,6 +175,19 @@ public class MainLayout extends AppLayout {
             }
         }
 
+        // Öffentliche Funktionen - ganz unten, für alle sichtbar
+        SideNav oeffentlichNav = new SideNav();
+        oeffentlichNav.addItem(new SideNavItem("Zertifikat verifizieren", ZertifikatVerifizierungView.class, VaadinIcon.CHECK_CIRCLE.create()));
+        oeffentlichNav.getStyle().set("padding-left", "var(--lumo-space-m)");
+
+        Details oeffentlichDetails = new Details("Öffentlich", oeffentlichNav);
+        oeffentlichDetails.setOpened(false);
+        oeffentlichDetails.getStyle()
+                .set("margin-top", "var(--lumo-space-s)")
+                .set("border-bottom", "1px solid var(--lumo-contrast-10pct)");
+
+        drawerLayout.add(oeffentlichDetails);
+
         addToDrawer(drawerLayout);
     }
 }

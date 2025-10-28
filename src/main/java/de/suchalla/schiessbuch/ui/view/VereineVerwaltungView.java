@@ -61,11 +61,23 @@ public class VereineVerwaltungView extends VerticalLayout {
         add(formLayout, speichernButton);
 
         // Grid
-        grid.addColumn(Verein::getId).setHeader("ID").setWidth("80px");
+        grid.addColumn(Verein::getId)
+                .setHeader("ID")
+                .setWidth("80px")
+                .setClassNameGenerator(item -> "align-right");
         grid.addColumn(Verein::getName).setHeader("Name");
         grid.addColumn(Verein::getVereinsNummer).setHeader("Vereinsnummer");
         grid.addColumn(Verein::getAdresse).setHeader("Adresse");
-        grid.addColumn(verein -> verein.getMitgliedschaften().size()).setHeader("Mitglieder");
+        grid.addColumn(verein -> verein.getMitgliedschaften().size())
+                .setHeader("Mitglieder")
+                .setClassNameGenerator(item -> "align-right");
+
+        // CSS für rechtsbündige Ausrichtung
+        grid.getElement().executeJs(
+                "const style = document.createElement('style');" +
+                        "style.textContent = '.align-right { text-align: right; }';" +
+                        "document.head.appendChild(style);"
+        );
 
         add(grid);
     }

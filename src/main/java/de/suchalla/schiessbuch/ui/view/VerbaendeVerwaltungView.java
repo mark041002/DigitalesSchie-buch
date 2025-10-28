@@ -60,12 +60,24 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         add(formLayout, speichernButton);
 
         // Grid
-        grid.addColumn(Verband::getId).setHeader("ID").setWidth("80px");
+        grid.addColumn(Verband::getId)
+                .setHeader("ID")
+                .setWidth("80px")
+                .setClassNameGenerator(item -> "align-right");
         grid.addColumn(Verband::getName).setHeader("Name");
         grid.addColumn(Verband::getBeschreibung).setHeader("Beschreibung");
-        grid.addColumn(verband -> verband.getVereine().size()).setHeader("Anzahl Vereine");
+        grid.addColumn(verband -> verband.getVereine().size())
+                .setHeader("Anzahl Vereine")
+                .setClassNameGenerator(item -> "align-right");
 
         grid.addComponentColumn(this::createActionButtons).setHeader("Aktionen");
+
+        // CSS für rechtsbündige Ausrichtung
+        grid.getElement().executeJs(
+                "const style = document.createElement('style');" +
+                "style.textContent = '.align-right { text-align: right; }';" +
+                "document.head.appendChild(style);"
+        );
 
         add(grid);
     }
@@ -114,4 +126,3 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         grid.setItems(verbandService.findeAlleVerbaende());
     }
 }
-
