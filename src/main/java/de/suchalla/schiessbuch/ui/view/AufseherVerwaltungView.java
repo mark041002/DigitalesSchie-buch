@@ -14,7 +14,7 @@ import jakarta.annotation.security.RolesAllowed;
  */
 @Route(value = "vereins/aufseher", layout = MainLayout.class)
 @PageTitle("Aufseher | Digitales Schießbuch")
-@RolesAllowed({"VEREINS_ADMIN"})
+@RolesAllowed({"VEREINS_CHEF", "ADMIN"})
 public class AufseherVerwaltungView extends VerticalLayout {
 
     public AufseherVerwaltungView() {

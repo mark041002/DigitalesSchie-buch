@@ -42,8 +42,8 @@ import java.util.stream.Collectors;
  * @version 1.0.0
  */
 @Route(value = "mitgliedsverwaltung", layout = MainLayout.class)
-@PageTitle("Mitgliedsverwaltung | Digitales SchieÃŸbuch")
-@RolesAllowed({"VEREINS_CHEF", "AUFSEHER", "VEREINS_ADMIN", "ADMIN"})
+@PageTitle("Mitgliedsverwaltung | Digitales Schießbuch")
+@RolesAllowed({"VEREINS_CHEF", "AUFSEHER", "ADMIN"})
 @Slf4j
 public class MitgliedschaftenVerwaltenView extends VerticalLayout {
 

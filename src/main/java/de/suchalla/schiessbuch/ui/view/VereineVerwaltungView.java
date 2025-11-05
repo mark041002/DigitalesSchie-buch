@@ -2,18 +2,28 @@ package de.suchalla.schiessbuch.ui.view;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.QueryParameters;
+import com.vaadin.flow.component.UI;
 import de.suchalla.schiessbuch.model.entity.Verein;
+import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.service.VerbandService;
 import jakarta.annotation.security.RolesAllowed;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * View für Vereinsverwaltung (nur für Admins).
@@ -23,7 +33,7 @@ import jakarta.annotation.security.RolesAllowed;
  */
 @Route(value = "admin/vereine", layout = MainLayout.class)
 @PageTitle("Vereine | Digitales Schießbuch")
-@RolesAllowed({"ADMIN", "SOFTWARE_ADMIN"})
+@RolesAllowed("ADMIN")
 public class VereineVerwaltungView extends VerticalLayout {
 
     private final VerbandService verbandService;
@@ -32,6 +42,7 @@ public class VereineVerwaltungView extends VerticalLayout {
     private final TextField nameField = new TextField("Name");
     private final TextField adresseField = new TextField("Adresse");
     private final TextField vereinsNummerField = new TextField("Vereinsnummer");
+    private final ComboBox<Verband> verbandComboBox = new ComboBox<>("Verband");
 
     public VereineVerwaltungView(VerbandService verbandService) {
         this.verbandService = verbandService;
@@ -49,7 +60,12 @@ public class VereineVerwaltungView extends VerticalLayout {
         // Formular
         nameField.setRequired(true);
 
-        FormLayout formLayout = new FormLayout(nameField, adresseField, vereinsNummerField);
+        verbandComboBox.setRequired(true);
+        verbandComboBox.setItems(verbandService.findeAlleVerbaende());
+        verbandComboBox.setItemLabelGenerator(Verband::getName);
+        verbandComboBox.setPlaceholder("Verband auswählen...");
+
+        FormLayout formLayout = new FormLayout(nameField, adresseField, vereinsNummerField, verbandComboBox);
         formLayout.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0", 1),
                 new FormLayout.ResponsiveStep("500px", 2)
@@ -70,7 +86,32 @@ public class VereineVerwaltungView extends VerticalLayout {
         grid.addColumn(Verein::getAdresse).setHeader("Adresse");
         grid.addColumn(verein -> verein.getMitgliedschaften().size())
                 .setHeader("Mitglieder")
+                .setWidth("120px")
                 .setClassNameGenerator(item -> "align-right");
+        grid.addColumn(verein -> {
+            // Vereinschef finden
+            return verein.getMitgliedschaften().stream()
+                    .filter(m -> Boolean.TRUE.equals(m.getIstVereinschef()))
+                    .findFirst()
+                    .map(m -> m.getBenutzer().getVollstaendigerName())
+                    .orElse("-");
+        }).setHeader("Vereinschef");
+
+        // Aktionen-Spalte mit Mitglieder und Löschen Buttons
+        grid.addComponentColumn(verein -> {
+            Button mitgliederButton = new Button("Mitglieder");
+            mitgliederButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
+            mitgliederButton.addClickListener(e -> navigiereZuMitgliederverwaltung(verein));
+
+            Button loeschenButton = new Button("Löschen");
+            loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+            loeschenButton.addClickListener(e -> zeigeLoeschDialog(verein));
+
+            HorizontalLayout actions = new HorizontalLayout(mitgliederButton, loeschenButton);
+            actions.setSpacing(true);
+            actions.setPadding(false);
+            return actions;
+        }).setHeader("Aktionen").setWidth("200px").setFlexGrow(0);
 
         // CSS für rechtsbündige Ausrichtung
         grid.getElement().executeJs(
@@ -86,15 +127,25 @@ public class VereineVerwaltungView extends VerticalLayout {
         String name = nameField.getValue();
         String adresse = adresseField.getValue();
         String vereinsNummer = vereinsNummerField.getValue();
+        Verband verband = verbandComboBox.getValue();
+
         if (name == null || name.trim().isEmpty()) {
             Notification.show("Name ist erforderlich")
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return;
         }
+
+        if (verband == null) {
+            Notification.show("Verband ist erforderlich")
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
+
         Verein verein = new Verein();
         verein.setName(name);
         verein.setAdresse(adresse);
         verein.setVereinsNummer(vereinsNummer);
+        verein.setVerband(verband);
 
         try {
             verbandService.erstelleVerein(verein);
@@ -103,6 +154,7 @@ public class VereineVerwaltungView extends VerticalLayout {
             nameField.clear();
             adresseField.clear();
             vereinsNummerField.clear();
+            verbandComboBox.clear();
             updateGrid();
 
         } catch (Exception e) {
@@ -112,5 +164,43 @@ public class VereineVerwaltungView extends VerticalLayout {
 
     private void updateGrid() {
         grid.setItems(verbandService.findeAlleVereine());
+        grid.getDataProvider().refreshAll();
+    }
+
+    private void navigiereZuVereinDetails(Verein verein) {
+        Map<String, List<String>> parametersMap = new HashMap<>();
+        parametersMap.put("vereinId", List.of(String.valueOf(verein.getId())));
+        QueryParameters queryParameters = new QueryParameters(parametersMap);
+
+        UI.getCurrent().navigate(VereinDetailsView.class, queryParameters);
+    }
+
+    private void navigiereZuMitgliederverwaltung(Verein verein) {
+        Map<String, List<String>> parametersMap = new HashMap<>();
+        parametersMap.put("vereinId", List.of(String.valueOf(verein.getId())));
+        QueryParameters queryParameters = new QueryParameters(parametersMap);
+
+        UI.getCurrent().navigate(MitgliederVerwaltungView.class, queryParameters);
+    }
+
+    private void zeigeLoeschDialog(Verein verein) {
+        ConfirmDialog dialog = new ConfirmDialog();
+        dialog.setHeader("Verein löschen");
+        dialog.setText("Sind Sie sicher, dass Sie den Verein \"" + verein.getName() + "\" löschen möchten?");
+        dialog.setCancelable(true);
+        dialog.setConfirmText("Löschen");
+        dialog.setRejectText("Abbrechen");
+        dialog.addConfirmListener(e -> loescheVerein(verein));
+        dialog.open();
+    }
+
+    private void loescheVerein(Verein verein) {
+        try {
+            verbandService.loescheVerein(verein.getId());
+            Notification.show("Verein erfolgreich gelöscht").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            updateGrid();
+        } catch (Exception e) {
+            Notification.show("Fehler: " + e.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
     }
 }

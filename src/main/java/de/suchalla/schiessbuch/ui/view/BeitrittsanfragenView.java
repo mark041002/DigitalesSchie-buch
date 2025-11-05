@@ -25,7 +25,7 @@ import java.util.List;
  */
 @Route(value = "beitrittsanfragen", layout = MainLayout.class)
 @PageTitle("Beitrittsanfragen | Digitales Schießbuch")
-@RolesAllowed({"VEREINS_CHEF", "VEREINS_ADMIN", "ADMIN"})
+@RolesAllowed({"VEREINS_CHEF", "ADMIN"})
 @Slf4j
 public class BeitrittsanfragenView extends VerticalLayout {
 

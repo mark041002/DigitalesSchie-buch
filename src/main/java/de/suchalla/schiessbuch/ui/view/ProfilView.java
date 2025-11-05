@@ -310,8 +310,7 @@ public class ProfilView extends VerticalLayout {
             case "SCHUETZE" -> "Schütze";
             case "AUFSEHER" -> "Aufseher";
             case "VEREINS_CHEF" -> "Vereinschef";
-            case "VEREINS_ADMIN" -> "Vereins-Admin";
-            case "SOFTWARE_ADMIN" -> "Administrator";
+            case "ADMIN" -> "Administrator";
             default -> rolle;
         };
     }

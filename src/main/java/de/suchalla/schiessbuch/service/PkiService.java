@@ -79,10 +79,9 @@ public class PkiService {
                 // Zertifikat erstellen
                 BigInteger serialNumber = new BigInteger(128, new SecureRandom());
                 LocalDateTime now = LocalDateTime.now();
-                LocalDateTime validUntil = now.plusYears(20);
 
                 Date notBefore = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
-                Date notAfter = Date.from(validUntil.atZone(ZoneId.systemDefault()).toInstant());
+                Date notAfter = Date.from(now.plusYears(100).atZone(ZoneId.systemDefault()).toInstant());
 
                 X509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
                         rootDN,
@@ -116,7 +115,7 @@ public class PkiService {
                         .zertifikatPEM(convertToPEM(rootCert))
                         .privateKeyPEM(convertPrivateKeyToPEM(rootKeyPair.getPrivate()))
                         .gueltigAb(now)
-                        .gueltigBis(validUntil)
+                        .gueltigBis(null) // Unbegrenzt gültig
                         .widerrufen(false)
                         .build();
 
@@ -168,7 +167,7 @@ public class PkiService {
 
             BigInteger serialNumber = new BigInteger(128, new SecureRandom());
             LocalDateTime now = LocalDateTime.now();
-            LocalDateTime validUntil = now.plusYears(5);
+            LocalDateTime validUntil = now.plusYears(100); // Praktisch unbegrenzt
 
             Date notBefore = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
             Date notAfter = Date.from(validUntil.atZone(ZoneId.systemDefault()).toInstant());
@@ -207,7 +206,7 @@ public class PkiService {
                     .zertifikatPEM(convertToPEM(vereinCert))
                     .privateKeyPEM(convertPrivateKeyToPEM(vereinKeyPair.getPrivate()))
                     .gueltigAb(now)
-                    .gueltigBis(validUntil)
+                    .gueltigBis(null) // Unbegrenzt gültig
                     .widerrufen(false)
                     .verein(managedVerein)
                     .parentZertifikat(rootZertifikat)
@@ -265,10 +264,9 @@ public class PkiService {
 
             BigInteger serialNumber = new BigInteger(128, new SecureRandom());
             LocalDateTime now = LocalDateTime.now();
-            LocalDateTime validUntil = now.plusYears(3);
 
             Date notBefore = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
-            Date notAfter = Date.from(validUntil.atZone(ZoneId.systemDefault()).toInstant());
+            Date notAfter = Date.from(now.plusYears(100).atZone(ZoneId.systemDefault()).toInstant());
 
             X509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
                     issuerDN,
@@ -304,7 +302,7 @@ public class PkiService {
                     .zertifikatPEM(convertToPEM(aufseherCert))
                     .privateKeyPEM(convertPrivateKeyToPEM(aufseherKeyPair.getPrivate()))
                     .gueltigAb(now)
-                    .gueltigBis(validUntil)
+                    .gueltigBis(null) // Unbegrenzt gültig
                     .widerrufen(false)
                     .benutzer(managedBenutzer)
                     .verein(managedVerein)

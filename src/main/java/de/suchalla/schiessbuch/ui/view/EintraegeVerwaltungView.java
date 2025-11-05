@@ -18,6 +18,10 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.OptionalParameter;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.server.StreamResource;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
@@ -46,9 +50,9 @@ import java.util.stream.Collectors;
  */
 @Route(value = "eintraege-verwaltung", layout = MainLayout.class)
 @PageTitle("Einträgsverwaltung | Digitales Schießbuch")
-@RolesAllowed({"AUFSEHER", "VEREINS_CHEF", "VEREINS_ADMIN", "ADMIN"})
+@RolesAllowed({"AUFSEHER", "VEREINS_CHEF", "ADMIN"})
 @Slf4j
-public class EintraegeVerwaltungView extends VerticalLayout {
+public class EintraegeVerwaltungView extends VerticalLayout implements HasUrlParameter<String> {
 
     private final SchiessnachweisService schiessnachweisService;
     private final SchiesstandRepository schiesstandRepository;
@@ -70,6 +74,7 @@ public class EintraegeVerwaltungView extends VerticalLayout {
     private Tab alleTab;
 
     private List<SchiessnachweisEintrag> aktuelleFiltierteEintraege = List.of();
+    private Long uebergebeneSchiesstandId; // Über URL übergebene Schießstand-ID
 
     public EintraegeVerwaltungView(SecurityService securityService,
                                    SchiessnachweisService schiessnachweisService,
@@ -84,15 +89,41 @@ public class EintraegeVerwaltungView extends VerticalLayout {
 
         setSpacing(true);
         setPadding(true);
+    }
+
+    @Override
+    public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
+        // Prüfe Query-Parameter
+        QueryParameters queryParams = event.getLocation().getQueryParameters();
+        if (queryParams.getParameters().containsKey("schiesstandId")) {
+            try {
+                uebergebeneSchiesstandId = Long.parseLong(
+                    queryParams.getParameters().get("schiesstandId").get(0)
+                );
+            } catch (NumberFormatException e) {
+                log.warn("Ungültige schiesstandId: {}", e.getMessage());
+            }
+        }
 
         ladeSchiesstand();
         createContent();
     }
 
     /**
-     * Lädt den Schießstand des aktuellen Benutzers.
+     * Lädt den Schießstand des aktuellen Benutzers oder den über URL-Parameter angegebenen.
      */
     private void ladeSchiesstand() {
+        // Wenn eine schiesstandId über URL übergeben wurde, verwende diese
+        if (uebergebeneSchiesstandId != null) {
+            aktuellerSchiesstand = schiesstandRepository.findById(uebergebeneSchiesstandId)
+                    .orElse(null);
+            if (aktuellerSchiesstand != null) {
+                log.info("Schießstand über URL geladen: {}", aktuellerSchiesstand.getName());
+                return;
+            }
+        }
+
+        // Sonst: Standard-Logik - lade Schießstand des aktuellen Benutzers
         if (currentUser != null) {
             // Findet den ersten Schießstand, bei dem der Benutzer Aufseher ist
             currentUser.getVereinsmitgliedschaften().stream()

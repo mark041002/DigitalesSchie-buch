@@ -47,9 +47,7 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
         // Titel und Beschreibung
         H2 title = new H2("Zertifikat verifizieren");
         Paragraph beschreibung = new Paragraph(
-                "Geben Sie die Seriennummer eines Zertifikats ein, um dessen Echtheit zu überprüfen. " +
-                        "Diese Funktion steht allen Personen zur Verfügung, insbesondere Behörden, " +
-                        "um nachzuvollziehen, wer einen Schießnachweis bestätigt hat."
+                "Geben Sie die Seriennummer eines Zertifikats ein, um dessen Echtheit zu überprüfen. Diese Funktion steht allen Personen zur Verfügung, um nachzuvollziehen, wer einen Schießnachweis bestätigt hat."
         );
         beschreibung.getStyle().set("color", "var(--lumo-secondary-text-color)");
 

@@ -2,6 +2,7 @@ package de.suchalla.schiessbuch;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Hauptklasse der Digitales Schießbuch Anwendung.
@@ -10,6 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @version 1.0.0
  */
 @SpringBootApplication
+@EnableScheduling
 public class DigitalesSchiessbuchApplication {
 
     /**
@@ -21,4 +23,3 @@ public class DigitalesSchiessbuchApplication {
         SpringApplication.run(DigitalesSchiessbuchApplication.class, args);
     }
 }
-

@@ -69,8 +69,15 @@ public class MeineVereineView extends VerticalLayout {
         // Grid
         grid.addColumn(mitgliedschaft -> mitgliedschaft.getVerein().getName()).setHeader("Verein");
         grid.addColumn(mitgliedschaft -> mitgliedschaft.getVerein().getVerband().getName()).setHeader("Verband");
-        grid.addColumn(mitgliedschaft -> mitgliedschaft.getIstAufseher() ? "Ja" : "Nein")
-                .setHeader("Aufseher");
+        grid.addColumn(mitgliedschaft -> {
+            if (mitgliedschaft.getIstVereinschef()) {
+                return "Vereinschef";
+            } else if (mitgliedschaft.getIstAufseher()) {
+                return "Aufseher";
+            } else {
+                return "Schütze";
+            }
+        }).setHeader("Rolle");
         grid.addColumn(Vereinsmitgliedschaft::getBeitrittDatum).setHeader("Beitrittsdatum");
         grid.addColumn(mitgliedschaft -> switch (mitgliedschaft.getStatus()) {
             case AKTIV -> "Aktiv";

@@ -3,14 +3,17 @@ package de.suchalla.schiessbuch.service;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
+import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
 import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.repository.VereinsmitgliedschaftRepository;
+import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -28,6 +31,7 @@ public class VereinsmitgliedschaftService {
 
     private final VereinsmitgliedschaftRepository mitgliedschaftRepository;
     private final VereinRepository vereinRepository;
+    private final DigitalesZertifikatRepository zertifikatRepository;
 
     /**
      * Beantragt eine Vereinsmitgliedschaft.
@@ -255,6 +259,7 @@ public class VereinsmitgliedschaftService {
 
     /**
      * Setzt den Aufseher-Status einer Mitgliedschaft.
+     * Wenn der Aufseher-Status entzogen wird, wird das gueltigBis-Datum des Zertifikats auf jetzt gesetzt.
      *
      * @param mitgliedschaftId Die Mitgliedschafts-ID
      * @param istAufseher Der neue Aufseher-Status
@@ -268,7 +273,20 @@ public class VereinsmitgliedschaftService {
             throw new IllegalArgumentException("Nur aktive Mitglieder können zu Aufsehern ernannt werden");
         }
 
+        boolean warVorherAufseher = Boolean.TRUE.equals(mitgliedschaft.getIstAufseher());
         mitgliedschaft.setIstAufseher(istAufseher);
+
+        // Wenn Aufseher-Status entzogen wird, Zertifikat-Gültigkeit beenden
+        if (warVorherAufseher && !istAufseher) {
+            Optional<DigitalesZertifikat> zertifikat = zertifikatRepository.findByBenutzer(mitgliedschaft.getBenutzer());
+            if (zertifikat.isPresent()) {
+                DigitalesZertifikat cert = zertifikat.get();
+                // Setze gueltigBis auf jetzt, damit das Zertifikat ab jetzt ungültig ist
+                cert.setGueltigBis(LocalDateTime.now());
+                zertifikatRepository.save(cert);
+            }
+        }
+
         return mitgliedschaftRepository.save(mitgliedschaft);
     }
 

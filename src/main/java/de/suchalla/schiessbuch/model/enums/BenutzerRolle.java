@@ -23,19 +23,9 @@ public enum BenutzerRolle {
     VEREINS_CHEF("Vereinschef"),
 
     /**
-     * Vereinsadministrator.
-     */
-    VEREINS_ADMIN("Vereinsadministrator"),
-
-    /**
      * Administrator mit vollen Rechten.
      */
-    ADMIN("Administrator"),
-
-    /**
-     * Software-Administrator mit vollen Rechten.
-     */
-    SOFTWARE_ADMIN("Software-Administrator");
+    ADMIN("Administrator");
 
     private final String bezeichnung;
 

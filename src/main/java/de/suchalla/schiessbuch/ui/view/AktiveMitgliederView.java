@@ -36,7 +36,7 @@ import java.util.List;
  */
 @Route(value = "aktive-mitglieder", layout = MainLayout.class)
 @PageTitle("Aktive Mitglieder | Digitales Schießbuch")
-@RolesAllowed({"VEREINS_CHEF", "VEREINS_ADMIN", "ADMIN"})
+@RolesAllowed({"VEREINS_CHEF", "ADMIN"})
 @Slf4j
 public class AktiveMitgliederView extends VerticalLayout {
 

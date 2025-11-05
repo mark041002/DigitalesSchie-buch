@@ -117,9 +117,7 @@ public class Benutzer {
      * @return true wenn Admin
      */
     public boolean istAdmin() {
-        return rolle == BenutzerRolle.ADMIN ||
-               rolle == BenutzerRolle.SOFTWARE_ADMIN ||
-               rolle == BenutzerRolle.VEREINS_ADMIN;
+        return rolle == BenutzerRolle.ADMIN;
     }
 
     @Override

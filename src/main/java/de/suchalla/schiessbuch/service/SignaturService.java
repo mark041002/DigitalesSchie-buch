@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 
 /**
  * Service für digitale Signaturen mit PKI-Zertifikaten.
@@ -116,11 +117,19 @@ public class SignaturService {
 
     /**
      * Verifiziert die Signatur eines Eintrags.
+     * Prüft, ob das Zertifikat zum Zeitpunkt der Signierung gültig war.
      */
     public boolean verifyEintrag(SchiessnachweisEintrag eintrag) {
         try {
             if (!eintrag.getIstSigniert() || eintrag.getDigitaleSignatur() == null || eintrag.getZertifikat() == null) {
                 log.warn("Eintrag {} ist nicht signiert", eintrag.getId());
+                return false;
+            }
+
+            // Prüfe, ob das Zertifikat zum Zeitpunkt der Signierung gültig war
+            LocalDateTime signiertAm = eintrag.getSigniertAm();
+            if (signiertAm != null && !eintrag.getZertifikat().warGueltigAm(signiertAm)) {
+                log.warn("Zertifikat war zum Signaturzeitpunkt {} nicht gültig", signiertAm);
                 return false;
             }
 

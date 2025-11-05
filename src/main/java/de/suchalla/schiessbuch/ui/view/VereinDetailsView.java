@@ -12,13 +12,19 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeEnterEvent;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.VereinService;
+import de.suchalla.schiessbuch.service.VerbandService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * View für Vereinschefs zur Bearbeitung von Vereinsdetails.
@@ -28,11 +34,12 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Route(value = "verein-details", layout = MainLayout.class)
 @PageTitle("Vereinsdetails | Digitales Schießbuch")
-@RolesAllowed({"VEREINS_CHEF", "VEREINS_ADMIN", "ADMIN"})
+@RolesAllowed({"VEREINS_CHEF", "ADMIN"})
 @Slf4j
-public class VereinDetailsView extends VerticalLayout {
+public class VereinDetailsView extends VerticalLayout implements BeforeEnterObserver {
 
     private final VereinService vereinService;
+    private final VerbandService verbandService;
     private final VereinsmitgliedschaftService mitgliedschaftService;
     private final Benutzer currentUser;
 
@@ -45,8 +52,10 @@ public class VereinDetailsView extends VerticalLayout {
 
     public VereinDetailsView(SecurityService securityService,
                              VereinService vereinService,
+                             VerbandService verbandService,
                              VereinsmitgliedschaftService mitgliedschaftService) {
         this.vereinService = vereinService;
+        this.verbandService = verbandService;
         this.mitgliedschaftService = mitgliedschaftService;
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
@@ -54,7 +63,31 @@ public class VereinDetailsView extends VerticalLayout {
         setPadding(true);
 
         createContent();
-        ladeVereinsdaten();
+    }
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        // Überprüfe, ob ein Vereins-Parameter übergeben wurde
+        Optional<String> vereinIdParam = event.getLocation().getQueryParameters()
+                .getParameters().getOrDefault("vereinId", List.of()).stream().findFirst();
+
+        if (vereinIdParam.isPresent()) {
+            try {
+                Long vereinId = Long.parseLong(vereinIdParam.get());
+                Optional<Verein> vereinOptional = verbandService.findeVerein(vereinId);
+                if (vereinOptional.isPresent()) {
+                    aktuellerVerein = vereinOptional.get();
+                    ladeVereinsdaten();
+                } else {
+                    Notification.show("Verein nicht gefunden").addThemeVariants(NotificationVariant.LUMO_ERROR);
+                }
+            } catch (NumberFormatException e) {
+                Notification.show("Ungültige Vereins-ID").addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+        } else {
+            // Fallback: Lade den ersten Verein, bei dem der Benutzer Vereinschef ist
+            ladeErsteVereinschef();
+        }
     }
 
     /**
@@ -99,23 +132,34 @@ public class VereinDetailsView extends VerticalLayout {
      * Lädt die Vereinsdaten.
      */
     private void ladeVereinsdaten() {
+        if (aktuellerVerein == null) {
+            Notification.show("Kein Verein ausgewählt")
+                    .addThemeVariants(NotificationVariant.LUMO_WARNING);
+            return;
+        }
+
+        nameField.setValue(aktuellerVerein.getName() != null ? aktuellerVerein.getName() : "");
+        vereinsNummerField.setValue(aktuellerVerein.getVereinsNummer() != null ?
+                aktuellerVerein.getVereinsNummer() : "");
+        adresseField.setValue(aktuellerVerein.getAdresse() != null ? aktuellerVerein.getAdresse() : "");
+        beschreibungField.setValue(aktuellerVerein.getBeschreibung() != null ?
+                aktuellerVerein.getBeschreibung() : "");
+    }
+
+    /**
+     * Lädt den ersten Verein, bei dem der Benutzer Vereinschef ist.
+     */
+    private void ladeErsteVereinschef() {
         if (currentUser == null) {
             return;
         }
 
-        // Lade den ersten Verein, bei dem der Benutzer Vereinschef ist
-        // In einer echten Anwendung würde man hier eine Auswahl anbieten
         mitgliedschaftService.findeMitgliedschaften(currentUser).stream()
                 .filter(m -> Boolean.TRUE.equals(m.getIstVereinschef()))
                 .findFirst()
                 .ifPresent(mitgliedschaft -> {
                     aktuellerVerein = mitgliedschaft.getVerein();
-                    nameField.setValue(aktuellerVerein.getName() != null ? aktuellerVerein.getName() : "");
-                    vereinsNummerField.setValue(aktuellerVerein.getVereinsNummer() != null ?
-                            aktuellerVerein.getVereinsNummer() : "");
-                    adresseField.setValue(aktuellerVerein.getAdresse() != null ? aktuellerVerein.getAdresse() : "");
-                    beschreibungField.setValue(aktuellerVerein.getBeschreibung() != null ?
-                            aktuellerVerein.getBeschreibung() : "");
+                    ladeVereinsdaten();
                 });
 
         if (aktuellerVerein == null) {
@@ -159,4 +203,3 @@ public class VereinDetailsView extends VerticalLayout {
         }
     }
 }
-

@@ -51,7 +51,7 @@ public class DataInitializer implements CommandLineRunner {
                     .passwort(passwordEncoder.encode("admin123"))
                     .vorname("System")
                     .nachname("Administrator")
-                    .rolle(BenutzerRolle.SOFTWARE_ADMIN)
+                    .rolle(BenutzerRolle.ADMIN)
                     .aktiv(true)
                     .build();
             benutzerRepository.save(admin);

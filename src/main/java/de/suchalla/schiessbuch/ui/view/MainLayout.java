@@ -49,25 +49,29 @@ public class MainLayout extends AppLayout {
         logoLink.addClassName("logo-h1"); // Optional: eigene Klasse für H1-Optik
 
         String username = currentUser != null ? currentUser.getVollstaendigerName() : "Gast";
-        Button logout = new Button("Abmelden (" + username + ")", e -> securityService.logout());
+        Button logout = new Button("Abmelden", e -> securityService.logout());
         logout.setIcon(VaadinIcon.SIGN_OUT.create());
         logout.getStyle()
                 .set("font-size", "clamp(0.8rem, 2vw, 1rem)")
                 .set("white-space", "nowrap");
 
-        // Profil-Link neben Abmelden-Button
+        // Profil-Link neben Abmelden-Button mit Benutzernamen
         Icon profilIcon = VaadinIcon.USER.create();
         profilIcon.getStyle().set("margin-right", "4px");
-        Span profilText = new Span("Profil");
+        Span profilText = new Span(username);
+        profilText.getStyle().set("line-height", "1");
         HorizontalLayout profilContent = new HorizontalLayout(profilIcon, profilText);
         profilContent.setPadding(false);
         profilContent.setSpacing(false);
         profilContent.setAlignItems(FlexComponent.Alignment.CENTER);
+        profilContent.getStyle().set("gap", "4px");
         RouterLink profilLink = new RouterLink("", ProfilView.class);
         profilLink.add(profilContent);
         profilLink.getElement().getStyle().set("text-decoration", "none");
         profilLink.getElement().getStyle().set("color", "inherit");
         profilLink.getElement().getStyle().set("margin-right", "8px");
+        profilLink.getElement().getStyle().set("display", "flex");
+        profilLink.getElement().getStyle().set("align-items", "center");
 
         HorizontalLayout header = new HorizontalLayout(new DrawerToggle(), logoLink, profilLink, logout);
         header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
@@ -76,7 +80,8 @@ public class MainLayout extends AppLayout {
         header.addClassNames(LumoUtility.Padding.Vertical.NONE, LumoUtility.Padding.Horizontal.MEDIUM);
         header.getStyle()
                 .set("flex-wrap", "nowrap")
-                .set("gap", "var(--lumo-space-s)");
+                .set("gap", "var(--lumo-space-s)")
+                .set("padding", "var(--lumo-space-xs) var(--lumo-space-s)");
 
         addToNavbar(header);
     }
@@ -88,15 +93,12 @@ public class MainLayout extends AppLayout {
         VerticalLayout drawerLayout = new VerticalLayout();
         drawerLayout.setPadding(false);
         drawerLayout.setSpacing(false);
-
-        // Dashboard für alle
-        SideNav mainNav = new SideNav();
-        mainNav.addItem(new SideNavItem("Dashboard", DashboardView.class, VaadinIcon.DASHBOARD.create()));
-        drawerLayout.add(mainNav);
+        drawerLayout.getStyle().set("padding", "var(--lumo-space-xs)");
 
         if (currentUser != null) {
             // Block für persönliche Funktionen (zuklappbar)
             SideNav persoenlichNav = new SideNav();
+            persoenlichNav.addItem(new SideNavItem("Dashboard", DashboardView.class, VaadinIcon.HOME.create()));
             persoenlichNav.addItem(new SideNavItem("Meine Einträge", MeineEintraegeView.class, VaadinIcon.BOOK.create()));
             persoenlichNav.addItem(new SideNavItem("Neuer Eintrag", NeuerEintragView.class, VaadinIcon.PLUS.create()));
             persoenlichNav.addItem(new SideNavItem("Meine Vereine", MeineVereineView.class, VaadinIcon.GROUP.create()));
@@ -161,7 +163,6 @@ public class MainLayout extends AppLayout {
                 adminNav.addItem(new SideNavItem("Verbände", VerbaendeVerwaltungView.class, VaadinIcon.GLOBE.create()));
                 adminNav.addItem(new SideNavItem("Vereine", VereineVerwaltungView.class, VaadinIcon.BUILDING.create()));
                 adminNav.addItem(new SideNavItem("Schießstände", SchiesstaendeVerwaltungView.class, VaadinIcon.CROSSHAIRS.create()));
-                adminNav.addItem(new SideNavItem("Disziplinen", DisziplinenVerwaltungView.class, VaadinIcon.LIST.create()));
                 adminNav.addItem(new SideNavItem("Alle Zertifikate", ZertifikateView.class, VaadinIcon.DIPLOMA.create()));
                 adminNav.getStyle().set("padding-left", "var(--lumo-space-m)");
 

@@ -43,6 +43,10 @@ public class Schiesstand {
     @JoinColumn(name = "verein_id")
     private Verein verein;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vereinschef_id")
+    private Benutzer aufseher;
+
     @Column(length = 500)
     private String adresse;
 

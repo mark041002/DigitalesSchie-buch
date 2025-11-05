@@ -224,8 +224,17 @@ public class VerbandService {
      * Löscht einen Verein.
      *
      * @param vereinId Die Vereins-ID
+     * @throws IllegalStateException wenn Verein noch Mitglieder hat
      */
     public void loescheVerein(Long vereinId) {
-        vereinRepository.deleteById(vereinId);
+        Verein verein = vereinRepository.findById(vereinId)
+                .orElseThrow(() -> new IllegalArgumentException("Verein nicht gefunden"));
+
+        if (!verein.getMitgliedschaften().isEmpty()) {
+            throw new IllegalStateException(
+                    "Verein kann nicht gelöscht werden, da noch Mitglieder vorhanden sind");
+        }
+
+        vereinRepository.delete(verein);
     }
 }

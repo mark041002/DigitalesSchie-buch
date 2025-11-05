@@ -78,10 +78,9 @@ public class DigitalesZertifikat {
     private LocalDateTime gueltigAb;
 
     /**
-     * Gültig bis
+     * Gültig bis (null = unbegrenzt gültig)
      */
-    @NotNull(message = "Gültig bis darf nicht leer sein")
-    @Column(name = "gueltig_bis", nullable = false)
+    @Column(name = "gueltig_bis")
     private LocalDateTime gueltigBis;
 
     /**
@@ -149,7 +148,20 @@ public class DigitalesZertifikat {
             return false;
         }
         LocalDateTime now = LocalDateTime.now();
-        return now.isAfter(gueltigAb) && now.isBefore(gueltigBis);
+        // Wenn gueltigBis null ist, ist das Zertifikat unbegrenzt gültig
+        return now.isAfter(gueltigAb) && (gueltigBis == null || now.isBefore(gueltigBis));
+    }
+
+    /**
+     * Prüft, ob das Zertifikat zu einem bestimmten Zeitpunkt gültig war
+     * (wichtig für historische Signaturprüfung)
+     */
+    public boolean warGueltigAm(LocalDateTime zeitpunkt) {
+        if (widerrufen && widerrufenAm != null && zeitpunkt.isAfter(widerrufenAm)) {
+            return false;
+        }
+        // Wenn gueltigBis null ist, ist das Zertifikat unbegrenzt gültig
+        return zeitpunkt.isAfter(gueltigAb) && (gueltigBis == null || zeitpunkt.isBefore(gueltigBis));
     }
 
     /**
@@ -171,4 +183,3 @@ public class DigitalesZertifikat {
                 '}';
     }
 }
-

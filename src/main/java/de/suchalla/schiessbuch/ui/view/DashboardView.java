@@ -297,12 +297,11 @@ public class DashboardView extends VerticalLayout {
      */
     private String getRollenText(BenutzerRolle rolle) {
         return switch (rolle) {
-            case SOFTWARE_ADMIN -> "Software-Administrator";
             case ADMIN -> "Administrator";
-            case VEREINS_ADMIN -> "Vereins-Administrator";
             case VEREINS_CHEF -> "Vereinschef";
             case AUFSEHER -> "Aufseher";
             case SCHUETZE -> "Schütze";
+            default -> rolle.getBezeichnung();
         };
     }
 }
