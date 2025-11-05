@@ -3,7 +3,9 @@ package de.suchalla.schiessbuch.ui.view;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -59,8 +61,10 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
         this.mitgliedschaftService = mitgliedschaftService;
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
-        setSpacing(true);
-        setPadding(true);
+        setSpacing(false);
+        setPadding(false);
+        setSizeFull();
+        addClassName("view-container");
 
         createContent();
     }
@@ -94,7 +98,34 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
      * Erstellt den Inhalt der View.
      */
     private void createContent() {
-        add(new H2("Vereinsdetails bearbeiten"));
+        // Content-Wrapper für zentrierte Inhalte
+        VerticalLayout contentWrapper = new VerticalLayout();
+        contentWrapper.setSpacing(false);
+        contentWrapper.setPadding(false);
+        contentWrapper.addClassName("content-wrapper");
+
+        // Header-Bereich
+        Div header = new Div();
+        header.addClassName("gradient-header");
+        header.setWidthFull();
+
+        // Text-Container
+        Div textContainer = new Div();
+
+        H2 title = new H2("Vereinsdetails bearbeiten");
+        title.getStyle().set("margin", "0");
+
+        Span subtitle = new Span("Verwalten Sie die Details Ihres Vereins");
+        subtitle.addClassName("subtitle");
+
+        textContainer.add(title, subtitle);
+        header.add(textContainer);
+        contentWrapper.add(header);
+
+        // Form-Container mit weißem Hintergrund
+        Div formContainer = new Div();
+        formContainer.addClassName("form-container");
+        formContainer.setWidthFull();
 
         // Formular
         FormLayout formLayout = new FormLayout();
@@ -125,7 +156,9 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
 
         HorizontalLayout buttonLayout = new HorizontalLayout(speichernButton, abbrechenButton);
 
-        add(formLayout, buttonLayout);
+        formContainer.add(formLayout, buttonLayout);
+        contentWrapper.add(formContainer);
+        add(contentWrapper);
     }
 
     /**

@@ -202,4 +202,20 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
             "LEFT JOIN FETCH e.aufseher " +
             "LEFT JOIN FETCH e.zertifikat")
     List<SchiessnachweisEintrag> findAllWithDetails();
+    /**
+     * Findet alle unsignierten EintrÃ¤ge (OFFEN oder UNSIGNIERT) fÃ¼r eine Liste von SchieÃŸstÃ¤nden.
+     *
+     * @param schiesstaende Liste der SchieÃŸstÃ¤nde
+     * @return Liste der unsignierten EintrÃ¤ge
+     */
+    @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
+            "LEFT JOIN FETCH e.schuetze " +
+            "LEFT JOIN FETCH e.disziplin " +
+            "LEFT JOIN FETCH e.schiesstand s " +
+            "LEFT JOIN FETCH e.aufseher " +
+            "LEFT JOIN FETCH e.zertifikat " +
+            "WHERE s IN :schiesstaende " +
+            "AND (e.status = 'OFFEN' OR e.status = 'UNSIGNIERT') " +
+            "ORDER BY e.datum DESC")
+    List<SchiessnachweisEintrag> findUnsignierteEintraegeForSchiesstaende(@Param("schiesstaende") List<Schiesstand> schiesstaende);
 }

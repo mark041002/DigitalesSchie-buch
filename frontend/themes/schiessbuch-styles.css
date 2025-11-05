@@ -1,0 +1,799 @@
+/* Digitales Schießbuch - Zentrale Styles */
+
+/* ========================================
+   Globale Einstellungen
+   ======================================== */
+
+/* Verhindere horizontales Scrollen */
+html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+/* ========================================
+   Layout & Container
+   ======================================== */
+
+/* View-Container mit Gradient-Hintergrund */
+.view-container {
+    background: linear-gradient(135deg,
+        var(--lumo-contrast-5pct) 0%,
+        var(--lumo-contrast-10pct) 50%,
+        var(--lumo-contrast-5pct) 100%);
+    min-height: 100%;
+    padding: var(--lumo-space-m);
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+/* Content-Wrapper für zentrierte Inhalte */
+.content-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    padding: var(--lumo-space-m);
+    padding-bottom: var(--lumo-space-xl);
+    box-sizing: border-box;
+    overflow-x: hidden;
+    min-height: min-content;
+}
+
+/* ========================================
+   Mobile Responsive Styles
+   ======================================== */
+
+/* Mobile: Header-Buttons ausblenden */
+@media (max-width: 768px) {
+    .header-desktop-only {
+        display: none !important;
+    }
+
+    .drawer-mobile-only {
+        display: flex !important;
+    }
+
+    /* Logo-Text kürzen auf sehr kleinen Bildschirmen */
+    .header-logo-text {
+        font-size: var(--lumo-font-size-m) !important;
+    }
+
+    /* View-Container weniger Padding auf Mobile, mehr Platz unten */
+    .view-container {
+        padding: var(--lumo-space-s);
+        padding-bottom: var(--lumo-space-xl);
+        min-height: 100%;
+        height: auto;
+    }
+
+    .content-wrapper {
+        padding: var(--lumo-space-s);
+        padding-bottom: var(--lumo-space-xl);
+    }
+
+    /* Stats-Grid auf Mobile: eine Spalte */
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Quick-Actions auf Mobile: kleinere Buttons, aber sichtbar */
+    .quick-actions {
+        gap: var(--lumo-space-s) !important;
+        margin-bottom: var(--lumo-space-l) !important;
+    }
+}
+
+/* Desktop: Mobile-Buttons ausblenden */
+@media (min-width: 769px) {
+    .drawer-mobile-only {
+        display: none !important;
+    }
+}
+
+/* Sehr kleine Bildschirme (Smartphones im Hochformat) */
+@media (max-width: 480px) {
+    .header-logo-text {
+        font-size: var(--lumo-font-size-s) !important;
+    }
+
+    /* Gradient-Header auf Mobile: weniger Padding */
+    .gradient-header {
+        padding: var(--lumo-space-m) !important;
+    }
+
+    .gradient-header h2 {
+        font-size: var(--lumo-font-size-xl) !important;
+    }
+}
+
+/* ========================================
+   Header-Bereiche
+   ======================================== */
+
+/* Gradient-Header (Primary) */
+.gradient-header {
+    background: linear-gradient(135deg,
+        var(--lumo-primary-color) 0%,
+        var(--lumo-primary-color-50pct) 100%);
+    padding: var(--lumo-space-l);
+    border-radius: var(--lumo-border-radius-l);
+    margin-bottom: var(--lumo-space-l);
+    box-shadow: var(--lumo-box-shadow-s);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--lumo-space-m);
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* Header Titel */
+.gradient-header h2,
+.gradient-header h3 {
+    margin: 0;
+    color: var(--lumo-primary-contrast-color);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
+}
+
+/* Header Untertitel */
+.gradient-header .subtitle {
+    color: var(--lumo-primary-contrast-color);
+    opacity: 0.9;
+    display: block;
+    margin-top: var(--lumo-space-xs);
+}
+
+/* ========================================
+   Grid & Tabellen
+   ======================================== */
+
+/* Grid-Container mit weißem Hintergrund */
+.grid-container {
+    background-color: var(--lumo-base-color);
+    border-radius: var(--lumo-border-radius-l);
+    padding: var(--lumo-space-m);
+    box-shadow: var(--lumo-box-shadow-s);
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto; /* Horizontales Scrollen ermöglichen */
+    overflow-y: visible;
+}
+
+/* Grid selbst - WICHTIG für Größe */
+.grid-container vaadin-grid {
+    height: auto;
+    min-height: 400px;
+    width: 100%;
+    min-width: 600px; /* Mindestbreite für Grid, triggert Scroll auf kleinen Screens */
+}
+
+/* Grid mit abgerundeten Ecken */
+vaadin-grid.rounded-grid {
+    border-radius: var(--lumo-border-radius-l);
+    overflow: hidden;
+    min-width: 600px; /* Mindestbreite für Grid */
+}
+
+/* Responsive Grid: Auf sehr kleinen Bildschirmen kompakter */
+@media (max-width: 768px) {
+    .grid-container {
+        padding: var(--lumo-space-s);
+        margin-left: calc(-1 * var(--lumo-space-s));
+        margin-right: calc(-1 * var(--lumo-space-s));
+        border-radius: 0; /* Keine Rundung auf Mobile */
+    }
+
+    .grid-container vaadin-grid {
+        min-width: 800px; /* Mehr Breite auf Mobile = mehr Scroll */
+    }
+
+    vaadin-grid.rounded-grid {
+        min-width: 800px;
+    }
+
+    /* Grid Cells - weniger Padding auf Mobile */
+    vaadin-grid::part(cell) {
+        padding: var(--lumo-space-xs) var(--lumo-space-s);
+        font-size: var(--lumo-font-size-s);
+    }
+
+    vaadin-grid::part(header-cell) {
+        padding: var(--lumo-space-xs) var(--lumo-space-s);
+        font-size: var(--lumo-font-size-xs);
+    }
+}
+
+/* Scrollbar Styling für bessere UX */
+.grid-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.grid-container::-webkit-scrollbar-track {
+    background: var(--lumo-contrast-10pct);
+    border-radius: var(--lumo-border-radius-m);
+}
+
+.grid-container::-webkit-scrollbar-thumb {
+    background: var(--lumo-contrast-30pct);
+    border-radius: var(--lumo-border-radius-m);
+}
+
+.grid-container::-webkit-scrollbar-thumb:hover {
+    background: var(--lumo-contrast-50pct);
+}
+
+/* Rechtsbündige Spalten */
+vaadin-grid .align-right {
+    text-align: right;
+}
+
+/* ========================================
+   Moderne Grid-Styles
+   ======================================== */
+
+/* Grid Header - moderner Look mit Gradient */
+vaadin-grid::part(header-cell) {
+    background: linear-gradient(180deg,
+        var(--lumo-contrast-5pct) 0%,
+        var(--lumo-contrast-10pct) 100%);
+    font-weight: 600;
+    font-size: var(--lumo-font-size-s);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--lumo-secondary-text-color);
+    border-bottom: 2px solid var(--lumo-primary-color-10pct);
+}
+
+/* Grid Rows - sanfte Hover-Effekte */
+vaadin-grid::part(row) {
+    transition: all 0.2s ease;
+}
+
+vaadin-grid::part(row):hover {
+    background-color: var(--lumo-primary-color-10pct);
+    cursor: pointer;
+}
+
+/* Alternierende Zeilen für bessere Lesbarkeit */
+vaadin-grid::part(even-row) {
+    background-color: var(--lumo-contrast-5pct);
+}
+
+vaadin-grid::part(even-row):hover {
+    background-color: var(--lumo-primary-color-10pct);
+}
+
+/* Grid Cells - bessere Abstände */
+vaadin-grid::part(cell) {
+    padding: var(--lumo-space-s) var(--lumo-space-m);
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* Selected Row - deutliche Hervorhebung */
+vaadin-grid::part(selected-row) {
+    background: var(--lumo-primary-color-10pct);
+    border-left: 3px solid var(--lumo-primary-color);
+}
+
+vaadin-grid::part(selected-row-cell) {
+    background: transparent;
+}
+
+/* Grid Body - sanfter Hintergrund */
+vaadin-grid::part(body-cell) {
+    font-size: var(--lumo-font-size-m);
+    color: var(--lumo-body-text-color);
+}
+
+/* Grid erste und letzte Spalte */
+vaadin-grid::part(first-column-cell) {
+    padding-left: var(--lumo-space-l);
+}
+
+vaadin-grid::part(last-column-cell) {
+    padding-right: var(--lumo-space-l);
+}
+
+/* Grid Footer */
+vaadin-grid::part(footer-cell) {
+    background: var(--lumo-contrast-5pct);
+    font-weight: 600;
+    border-top: 2px solid var(--lumo-primary-color-10pct);
+}
+
+/* Sortier-Icons */
+vaadin-grid-sorter::part(order) {
+    background: var(--lumo-primary-color);
+    color: var(--lumo-primary-contrast-color);
+    border-radius: 50%;
+    font-size: var(--lumo-font-size-xxs);
+}
+
+/* Grid Details Row */
+vaadin-grid::part(details-opened-row) {
+    background: var(--lumo-base-color);
+    border-left: 3px solid var(--lumo-primary-color);
+}
+
+vaadin-grid::part(details-opened-row-cell) {
+    padding: var(--lumo-space-l);
+    background: var(--lumo-contrast-5pct);
+}
+
+/* Loading State */
+vaadin-grid::part(loading-indicator) {
+    background: var(--lumo-primary-color);
+}
+
+/* Empty State */
+vaadin-grid[empty]::before {
+    content: "Keine Daten vorhanden";
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--lumo-space-xl);
+    color: var(--lumo-secondary-text-color);
+    font-style: italic;
+}
+
+/* ========================================
+   Formulare
+   ======================================== */
+
+/* Form-Container mit weißem Hintergrund */
+.form-container {
+    background-color: var(--lumo-base-color);
+    border-radius: var(--lumo-border-radius-l);
+    padding: var(--lumo-space-l);
+    box-shadow: var(--lumo-box-shadow-s);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Filter-Box */
+.filter-box {
+    background: var(--lumo-contrast-5pct);
+    padding: var(--lumo-space-m);
+    border-radius: var(--lumo-border-radius-m);
+    margin-bottom: var(--lumo-space-m);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ========================================
+   Cards & Stat-Karten
+   ======================================== */
+
+/* Statistik-Grid */
+.stats-grid {
+    display: grid;
+    gap: var(--lumo-space-m);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    width: 100%;
+}
+
+/* Responsive: Bei sehr kleinen Bildschirmen (unter 600px) eine Spalte */
+@media (max-width: 600px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Responsive: Bei sehr kleinen Bildschirmen (unter 450px) reduziere min-width */
+@media (max-width: 450px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: var(--lumo-space-s);
+    }
+}
+
+/* Stat-Card */
+.stat-card {
+    background: var(--lumo-base-color);
+    border-radius: var(--lumo-border-radius-l);
+    padding: var(--lumo-space-l);
+    box-shadow: var(--lumo-box-shadow-s);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: default;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--lumo-box-shadow-m);
+}
+
+/* Responsive stat-card für kleinere Bildschirme */
+@media (max-width: 450px) {
+    .stat-card {
+        padding: var(--lumo-space-m);
+    }
+}
+
+/* Card mit Hover-Effekt */
+.card-hover {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--lumo-box-shadow-m);
+}
+
+/* ========================================
+   Badges & Status-Anzeigen
+   ======================================== */
+
+/* Badge-Container */
+.badge-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Moderne Badges für Grids */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--lumo-space-xs) var(--lumo-space-s);
+    border-radius: var(--lumo-border-radius-m);
+    font-size: var(--lumo-font-size-s);
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.badge-primary {
+    background: var(--lumo-primary-color-10pct);
+    color: var(--lumo-primary-text-color);
+}
+
+.badge-success {
+    background: var(--lumo-success-color-10pct);
+    color: var(--lumo-success-text-color);
+}
+
+.badge-error {
+    background: var(--lumo-error-color-10pct);
+    color: var(--lumo-error-text-color);
+}
+
+.badge-contrast {
+    background: var(--lumo-contrast-10pct);
+    color: var(--lumo-body-text-color);
+}
+
+/* Zahlen-Hervorhebung in Grids */
+.grid-number {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: var(--lumo-primary-text-color);
+    padding: var(--lumo-space-xs) var(--lumo-space-s);
+    background: var(--lumo-contrast-5pct);
+    border-radius: var(--lumo-border-radius-s);
+    display: inline-block;
+}
+
+/* Datum-Styling in Grids */
+.grid-date {
+    color: var(--lumo-secondary-text-color);
+    font-size: var(--lumo-font-size-s);
+}
+
+/* Icon + Text Kombination in Grid */
+.grid-icon-text {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--lumo-space-xs);
+}
+
+.grid-icon-text vaadin-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--lumo-secondary-text-color);
+}
+
+/* ========================================
+   Buttons & Actions
+   ======================================== */
+
+/* Quick-Actions Container */
+.quick-actions {
+    display: flex;
+    gap: var(--lumo-space-m);
+    flex-wrap: wrap;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Action-Button in Cards */
+.action-button-group {
+    display: flex;
+    gap: var(--lumo-space-s);
+    flex-wrap: wrap;
+}
+
+/* ========================================
+   Responsive & Utilities
+   ======================================== */
+
+/* Smooth Scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Flex-Helper */
+.flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Responsive Breiten */
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: var(--lumo-space-s);
+    }
+
+    .gradient-header {
+        padding: var(--lumo-space-m);
+    }
+
+    .grid-container,
+    .form-container {
+        padding: var(--lumo-space-s);
+    }
+
+    /* Sidebar schmaler auf mobilen Geräten */
+    vaadin-app-layout::part(drawer) {
+        min-width: 240px;
+        width: 240px;
+    }
+
+    /* Grid-Container: Horizontal scrollbar für Tabellen auf Mobile */
+    .grid-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling auf iOS */
+    }
+
+    /* Grid: Kleinere Schrift auf Mobile */
+    vaadin-grid {
+        font-size: var(--lumo-font-size-s);
+        min-width: 600px; /* Mindestbreite, damit Grid scrollbar wird */
+    }
+
+    /* Grid Header: Kleinere Schrift */
+    vaadin-grid::part(header-cell) {
+        font-size: var(--lumo-font-size-xs);
+        padding: var(--lumo-space-xs) var(--lumo-space-s);
+    }
+
+    /* Grid Cells: Weniger Padding auf Mobile */
+    vaadin-grid::part(cell) {
+        padding: var(--lumo-space-xs) var(--lumo-space-s);
+    }
+
+    /* Grid erste und letzte Spalte: Weniger Padding */
+    vaadin-grid::part(first-column-cell) {
+        padding-left: var(--lumo-space-s);
+    }
+
+    vaadin-grid::part(last-column-cell) {
+        padding-right: var(--lumo-space-s);
+    }
+}
+
+/* Zusätzliche Regeln für sehr kleine Bildschirme */
+@media (max-width: 480px) {
+    .view-container {
+        padding: var(--lumo-space-s);
+    }
+
+    .gradient-header {
+        padding: var(--lumo-space-s);
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .quick-actions {
+        flex-direction: column;
+    }
+
+    /* Grid: Noch kleinere Schrift auf sehr kleinen Bildschirmen */
+    vaadin-grid {
+        font-size: var(--lumo-font-size-xs);
+    }
+
+    /* Grid Header: Noch weniger Padding */
+    vaadin-grid::part(header-cell) {
+        padding: var(--lumo-space-xs);
+    }
+
+    /* Grid Cells: Minimales Padding */
+    vaadin-grid::part(cell) {
+        padding: var(--lumo-space-xs);
+    }
+}
+
+/* ========================================
+   Text-Utilities
+   ======================================== */
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-muted {
+    color: var(--lumo-secondary-text-color);
+}
+
+/* ========================================
+   Spacing-Utilities
+   ======================================== */
+
+.mb-l {
+    margin-bottom: var(--lumo-space-l);
+}
+
+.mb-m {
+    margin-bottom: var(--lumo-space-m);
+}
+
+.mb-s {
+    margin-bottom: var(--lumo-space-s);
+}
+
+.mt-l {
+    margin-top: var(--lumo-space-l);
+}
+
+.mt-m {
+    margin-top: var(--lumo-space-m);
+}
+
+.mt-s {
+    margin-top: var(--lumo-space-s);
+}
+
+/* ========================================
+   Sidebar / Navigation
+   ======================================== */
+
+/* App-Layout - verhindere horizontales Scrollen */
+vaadin-app-layout {
+    overflow-x: hidden;
+}
+
+vaadin-app-layout::part(navbar) {
+    overflow-x: hidden;
+}
+
+/* AppLayout Content - Scrollbar für den Hauptinhalt */
+vaadin-app-layout::part(content) {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+}
+
+/* Sidebar Container - scrollbar bei Bedarf */
+vaadin-app-layout::part(drawer) {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+    min-width: 280px;
+    width: 280px;
+}
+
+/* Details - volle Breite */
+vaadin-details {
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Details Summary - bessere Typografie */
+vaadin-details::part(summary) {
+    padding: var(--lumo-space-s) var(--lumo-space-m);
+    border-radius: var(--lumo-border-radius-m);
+    font-weight: 500;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+vaadin-details[opened]::part(summary) {
+    color: var(--lumo-primary-text-color);
+}
+
+/* Details Content - volle Breite, besserer Abstand */
+vaadin-details::part(content) {
+    padding: var(--lumo-space-xs) var(--lumo-space-s);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* SideNav - volle Breite mit gleichem Padding links und rechts */
+vaadin-side-nav {
+    width: 100%;
+    padding: 0 var(--lumo-space-s);
+    box-sizing: border-box;
+}
+
+/* SideNav Items - moderne Hover-Effekte, volle Breite */
+vaadin-side-nav-item {
+    border-radius: var(--lumo-border-radius-m);
+    margin: 2px 0;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+vaadin-side-nav-item::part(link) {
+    border-radius: var(--lumo-border-radius-m);
+    padding: var(--lumo-space-s) var(--lumo-space-m);
+    transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+vaadin-side-nav-item:hover::part(link) {
+    background-color: var(--lumo-primary-color-10pct);
+    transform: translateX(4px);
+}
+
+vaadin-side-nav-item[selected]::part(link) {
+    background: linear-gradient(90deg, var(--lumo-primary-color-10pct) 0%, var(--lumo-primary-color-10pct) 100%);
+    border-left: 3px solid var(--lumo-primary-color);
+    font-weight: 600;
+}
+
+/* ========================================
+   Globale Vaadin-Komponenten Optimierung
+   ======================================== */
+
+/* Alle Vaadin-Komponenten: box-sizing */
+vaadin-grid,
+vaadin-text-field,
+vaadin-number-field,
+vaadin-date-picker,
+vaadin-combo-box,
+vaadin-button,
+vaadin-horizontal-layout,
+vaadin-vertical-layout {
+    box-sizing: border-box;
+}
+
+/* Horizontal Layouts - verhindere Overflow */
+vaadin-horizontal-layout {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Vertical Layouts - verhindere Overflow */
+vaadin-vertical-layout {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Grid - verhindere horizontales Scrollen auf Viewport-Ebene */
+vaadin-grid {
+    max-width: 100%;
+    overflow-x: auto; /* Erlaubt nur Grid-internes Scrollen */
+}

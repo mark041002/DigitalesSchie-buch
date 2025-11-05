@@ -5,11 +5,15 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
@@ -18,11 +22,11 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.BeforeEvent;
-import com.vaadin.flow.router.HasUrlParameter;
-import com.vaadin.flow.router.OptionalParameter;
+import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.router.PreserveOnRefresh;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
@@ -51,8 +55,9 @@ import java.util.stream.Collectors;
 @Route(value = "eintraege-verwaltung", layout = MainLayout.class)
 @PageTitle("Einträgsverwaltung | Digitales Schießbuch")
 @RolesAllowed({"AUFSEHER", "VEREINS_CHEF", "ADMIN"})
+@PreserveOnRefresh
 @Slf4j
-public class EintraegeVerwaltungView extends VerticalLayout implements HasUrlParameter<String> {
+public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnterObserver {
 
     private final SchiessnachweisService schiessnachweisService;
     private final SchiesstandRepository schiesstandRepository;
@@ -75,6 +80,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements HasUrlPar
 
     private List<SchiessnachweisEintrag> aktuelleFiltierteEintraege = List.of();
     private Long uebergebeneSchiesstandId; // Über URL übergebene Schießstand-ID
+    private boolean contentCreated = false; // Flag um mehrfaches Erstellen zu verhindern
 
     public EintraegeVerwaltungView(SecurityService securityService,
                                    SchiessnachweisService schiessnachweisService,
@@ -87,12 +93,20 @@ public class EintraegeVerwaltungView extends VerticalLayout implements HasUrlPar
         this.signaturService = signaturService;
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
-        setSpacing(true);
-        setPadding(true);
+        setSpacing(false);
+        setPadding(false);
+        setSizeFull();
+        addClassName("view-container");
     }
 
     @Override
-    public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
+    public void beforeEnter(BeforeEnterEvent event) {
+        // Verhindere mehrfaches Erstellen des Contents
+        if (contentCreated) {
+            log.debug("Content bereits erstellt, Navigation wird übersprungen");
+            return;
+        }
+
         // Prüfe Query-Parameter
         QueryParameters queryParams = event.getLocation().getQueryParameters();
         if (queryParams.getParameters().containsKey("schiesstandId")) {
@@ -107,6 +121,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements HasUrlPar
 
         ladeSchiesstand();
         createContent();
+        contentCreated = true; // Markiere als erstellt
     }
 
     /**
@@ -144,12 +159,42 @@ public class EintraegeVerwaltungView extends VerticalLayout implements HasUrlPar
      */
     private void createContent() {
         if (aktuellerSchiesstand == null) {
-            add(new H2("Kein Schießstand verfügbar"));
-            add("Sie müssen Aufseher oder Vereinschef in einem Verein mit Schießstand sein.");
+            // Fallback-Anzeige wenn kein Schießstand verfügbar
+            VerticalLayout errorLayout = new VerticalLayout();
+            errorLayout.addClassName("view-container");
+            errorLayout.add(new H2("Kein Schießstand verfügbar"));
+            errorLayout.add("Sie müssen Aufseher oder Vereinschef in einem Verein mit Schießstand sein.");
+            add(errorLayout);
             return;
         }
 
-        add(new H2("Einträgsverwaltung - " + aktuellerSchiesstand.getName()));
+        // Content-Wrapper für zentrierte Inhalte
+        VerticalLayout contentWrapper = new VerticalLayout();
+        contentWrapper.setSpacing(false);
+        contentWrapper.setPadding(false);
+        contentWrapper.addClassName("content-wrapper");
+
+        // Header-Bereich
+        Div header = new Div();
+        header.addClassName("gradient-header");
+        header.setWidthFull();
+
+        H2 title = new H2("Einträgsverwaltung");
+        title.getStyle().set("margin", "0");
+
+        Span schiesstandName = new Span(aktuellerSchiesstand.getName());
+        schiesstandName.getStyle()
+                .set("font-size", "var(--lumo-font-size-m)")
+                .set("color", "var(--lumo-secondary-text-color)")
+                .set("font-weight", "500");
+
+        header.add(title, schiesstandName);
+        contentWrapper.add(header);
+
+        // Tabs-Container mit weißem Hintergrund
+        Div tabsContainer = new Div();
+        tabsContainer.addClassName("tabs-container");
+        tabsContainer.setWidthFull();
 
         // Tabs für Status-Filter - "Unsigniert" ist standardmäßig ausgewählt
         Tab unsigniertTab = new Tab("Unsigniert");
@@ -187,10 +232,24 @@ public class EintraegeVerwaltungView extends VerticalLayout implements HasUrlPar
             updateGrid();
         });
 
-        add(tabs);
-        add(createFilterLayout());
-        add(createGridLayout());
+        tabsContainer.add(tabs);
+        contentWrapper.add(tabsContainer);
 
+        // Filter-Container
+        Div filterContainer = new Div();
+        filterContainer.addClassName("filter-box");
+        filterContainer.setWidthFull();
+        filterContainer.add(createFilterLayout());
+        contentWrapper.add(filterContainer);
+
+        // Grid-Container
+        Div gridContainer = new Div();
+        gridContainer.addClassName("grid-container");
+        gridContainer.setWidthFull();
+        gridContainer.add(createGridLayout());
+        contentWrapper.add(gridContainer);
+
+        add(contentWrapper);
         updateGrid();
     }
 
@@ -201,26 +260,36 @@ public class EintraegeVerwaltungView extends VerticalLayout implements HasUrlPar
         // Initialisiere Filter-Komponenten
         suchfeld.setPlaceholder("Nach Namen suchen...");
         suchfeld.setWidth("300px");
+        suchfeld.setPrefixComponent(VaadinIcon.SEARCH.create());
         suchfeld.addValueChangeListener(e -> updateGrid());
 
         vonDatum.setValue(LocalDate.now().minusMonths(3));
+        vonDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
+        vonDatum.setWidth("200px");
+
         bisDatum.setValue(LocalDate.now());
+        bisDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
+        bisDatum.setWidth("200px");
+
         filterButton.addClickListener(e -> updateGrid());
         filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        filterButton.setIcon(new Icon(VaadinIcon.FILTER));
 
         // PDF-Download mit SUCCESS Theme (grüner Button)
         pdfDownload = new Anchor(createPdfResource(), "");
         pdfDownload.getElement().setAttribute("download", true);
-        Button pdfButton = new Button("PDF exportieren");
+        Button pdfButton = new Button("PDF exportieren", new Icon(VaadinIcon.DOWNLOAD));
         pdfButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
         pdfDownload.add(pdfButton);
 
         // Erstelle initiales Layout (ohne Datums-Filter)
         filterLayout = new HorizontalLayout(suchfeld, pdfDownload);
         filterLayout.setDefaultVerticalComponentAlignment(Alignment.END);
+        filterLayout.setAlignItems(FlexComponent.Alignment.END);
         filterLayout.setWidthFull();
         filterLayout.setSpacing(true);
         filterLayout.setPadding(false);
+        filterLayout.getStyle().set("flex-wrap", "wrap");
 
         return filterLayout;
     }
@@ -247,33 +316,49 @@ public class EintraegeVerwaltungView extends VerticalLayout implements HasUrlPar
      */
     private VerticalLayout createGridLayout() {
         VerticalLayout layout = new VerticalLayout();
+        layout.setSpacing(false);
+        layout.setPadding(false);
 
         // Grid konfigurieren
+        grid.setHeight("600px");
+        grid.addClassName("rounded-grid");
+
         grid.addColumn(eintrag -> eintrag.getSchuetze().getVollstaendigerName())
                 .setHeader("Schütze")
-                .setSortable(true);
+                .setSortable(true)
+                .setAutoWidth(true);
         grid.addColumn(SchiessnachweisEintrag::getDatum)
                 .setHeader("Datum")
-                .setSortable(true);
+                .setSortable(true)
+                .setAutoWidth(true);
         grid.addColumn(eintrag -> eintrag.getDisziplin().getName())
-                .setHeader("Disziplin");
+                .setHeader("Disziplin")
+                .setAutoWidth(true);
         grid.addColumn(SchiessnachweisEintrag::getKaliber)
-                .setHeader("Kaliber");
+                .setHeader("Kaliber")
+                .setAutoWidth(true);
         grid.addColumn(SchiessnachweisEintrag::getWaffenart)
-                .setHeader("Waffenart");
+                .setHeader("Waffenart")
+                .setAutoWidth(true);
         grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse)
                 .setHeader("Schüsse")
+                .setAutoWidth(true)
                 .setClassNameGenerator(item -> "align-right");
         grid.addColumn(SchiessnachweisEintrag::getErgebnis)
                 .setHeader("Ergebnis")
+                .setAutoWidth(true)
                 .setClassNameGenerator(item -> "align-right");
         grid.addColumn(this::getStatusText)
-                .setHeader("Status");
+                .setHeader("Status")
+                .setAutoWidth(true);
         grid.addColumn(eintrag -> eintrag.getAufseher() != null ?
                         eintrag.getAufseher().getVollstaendigerName() : "-")
-                .setHeader("Aufseher");
+                .setHeader("Aufseher")
+                .setAutoWidth(true);
         grid.addComponentColumn(this::createActionButtons)
-                .setHeader("Aktionen");
+                .setHeader("Aktionen")
+                .setWidth("250px")
+                .setFlexGrow(0);
 
         // CSS für rechtsbündige Ausrichtung
         grid.getElement().executeJs(
@@ -291,6 +376,8 @@ public class EintraegeVerwaltungView extends VerticalLayout implements HasUrlPar
      */
     private HorizontalLayout createActionButtons(SchiessnachweisEintrag eintrag) {
         HorizontalLayout layout = new HorizontalLayout();
+        layout.setSpacing(true);
+        layout.getStyle().set("flex-wrap", "wrap");
 
         if (eintrag.getStatus() == EintragStatus.UNSIGNIERT) {
             Button signierenButton = new Button("Signieren", e -> signiereEintrag(eintrag));

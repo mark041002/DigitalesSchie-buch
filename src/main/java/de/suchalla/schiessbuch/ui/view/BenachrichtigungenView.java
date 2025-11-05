@@ -1,7 +1,9 @@
 package de.suchalla.schiessbuch.ui.view;
 
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -30,14 +32,17 @@ public class BenachrichtigungenView extends VerticalLayout {
 
     private final Grid<Benachrichtigung> grid = new Grid<>(Benachrichtigung.class, false);
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+    private Div emptyStateMessage;
 
     public BenachrichtigungenView(SecurityService securityService,
                                    BenachrichtigungsService benachrichtigungsService) {
         this.securityService = securityService;
         this.benachrichtigungsService = benachrichtigungsService;
 
-        setSpacing(true);
-        setPadding(true);
+        setSpacing(false);
+        setPadding(false);
+        setSizeFull();
+        addClassName("view-container");
 
         createContent();
         updateGrid();
@@ -47,7 +52,30 @@ public class BenachrichtigungenView extends VerticalLayout {
      * Erstellt den Inhalt der View.
      */
     private void createContent() {
-        add(new H2("Benachrichtigungen"));
+        // Content-Wrapper für zentrierte Inhalte
+        VerticalLayout contentWrapper = new VerticalLayout();
+        contentWrapper.setSpacing(false);
+        contentWrapper.setPadding(false);
+        contentWrapper.addClassName("content-wrapper");
+
+        // Header-Bereich
+        Div header = new Div();
+        header.addClassName("gradient-header");
+        header.setWidthFull();
+
+        H2 title = new H2("Benachrichtigungen");
+        title.getStyle().set("margin", "0");
+
+        Span subtitle = new Span("Ihre aktuellen Mitteilungen und Updates");
+        subtitle.addClassName("subtitle");
+
+        header.add(title, subtitle);
+        contentWrapper.add(header);
+
+        // Grid-Container mit weißem Hintergrund
+        Div gridContainer = new Div();
+        gridContainer.addClassName("grid-container");
+        gridContainer.setWidthFull();
 
         grid.addColumn(benachrichtigung -> benachrichtigung.getGelesen() ? "" : "●")
                 .setHeader("").setWidth("50px");
@@ -65,7 +93,26 @@ public class BenachrichtigungenView extends VerticalLayout {
             });
         });
 
-        add(grid);
+        grid.addClassName("rounded-grid");
+        grid.getStyle().set("min-height", "400px");
+
+        // Empty State Message erstellen
+        emptyStateMessage = new Div();
+        emptyStateMessage.setText("Keine Benachrichtigungen vorhanden. Sie sind auf dem neuesten Stand!");
+        emptyStateMessage.getStyle()
+                .set("text-align", "center")
+                .set("padding", "var(--lumo-space-xl)")
+                .set("color", "var(--lumo-secondary-text-color)")
+                .set("font-size", "var(--lumo-font-size-m)")
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("border", "2px dashed var(--lumo-contrast-20pct)")
+                .set("margin", "var(--lumo-space-m)");
+        emptyStateMessage.setVisible(false);
+
+        gridContainer.add(grid, emptyStateMessage);
+        contentWrapper.add(gridContainer);
+        add(contentWrapper);
     }
 
     /**
@@ -77,6 +124,11 @@ public class BenachrichtigungenView extends VerticalLayout {
             List<Benachrichtigung> benachrichtigungen =
                     benachrichtigungsService.findeBenachrichtigungen(currentUser);
             grid.setItems(benachrichtigungen);
+
+            // Zeige/Verstecke Empty State Message
+            boolean isEmpty = benachrichtigungen.isEmpty();
+            grid.setVisible(!isEmpty);
+            emptyStateMessage.setVisible(isEmpty);
         }
     }
 }

@@ -1,0 +1,286 @@
+/* Moderne Verbesserungen für das Digitale Schießbuch */
+
+/* Einheitlicher Container für Views */
+.view-container {
+    background: linear-gradient(135deg,
+        var(--lumo-contrast-5pct) 0%,
+        var(--lumo-contrast-10pct) 50%,
+        var(--lumo-contrast-5pct) 100%);
+    min-height: calc(100vh - 60px);
+    padding: var(--lumo-space-m);
+}
+
+/* Content-Wrapper für zentrierte Inhalte */
+.content-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* Grid/Table Container mit grauem Hintergrund */
+.table-container {
+    background-color: var(--lumo-base-color);
+    border-radius: var(--lumo-border-radius-l);
+    padding: var(--lumo-space-m);
+    box-shadow: var(--lumo-box-shadow-s);
+}
+
+/* Form Container mit grauem Hintergrund */
+.form-container {
+    background-color: var(--lumo-base-color);
+    border-radius: var(--lumo-border-radius-l);
+    padding: var(--lumo-space-l);
+    box-shadow: var(--lumo-box-shadow-s);
+}
+
+/* Smooth Scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Card Hover-Effekte */
+.card-hover {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--lumo-box-shadow-m);
+}
+
+/* Grid Row Hover */
+vaadin-grid::part(row):hover {
+    background-color: var(--lumo-primary-color-10pct);
+}
+
+/* Button Hover Animationen */
+vaadin-button {
+    transition: all 0.2s ease;
+}
+
+vaadin-button:hover:not([disabled]) {
+    transform: translateY(-2px);
+    box-shadow: var(--lumo-box-shadow-s);
+}
+
+/* Badge Pulse Animation für wichtige Status */
+.badge-pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Gradient Text für Überschriften */
+.gradient-text {
+    background: linear-gradient(135deg, var(--lumo-primary-color), var(--lumo-primary-color-50pct));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Loading Skeleton */
+.skeleton {
+    background: linear-gradient(90deg,
+        var(--lumo-contrast-10pct) 25%,
+        var(--lumo-contrast-5pct) 50%,
+        var(--lumo-contrast-10pct) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Icon Rotation bei Hover */
+.icon-rotate-hover vaadin-icon {
+    transition: transform 0.3s ease;
+}
+
+.icon-rotate-hover:hover vaadin-icon {
+    transform: rotate(15deg);
+}
+
+/* Moderne Schatten-Varianten */
+.shadow-soft {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-medium {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.shadow-hard {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}
+
+/* Glassmorphism-Effekt */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive Grid Spacing */
+@media (max-width: 768px) {
+    vaadin-grid {
+        font-size: 0.875rem;
+    }
+
+    /* Quick-Actions: Bessere Darstellung auf Mobile */
+    .quick-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--lumo-space-s);
+        justify-content: center;
+    }
+
+    /* Stat-Cards: Eine Spalte auf Mobile */
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Grid-Container: Touch-freundliche Scrollbar */
+    .grid-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Tabellen-Hinweis für Mobile Nutzer */
+    .grid-container::before {
+        content: "→ Wischen Sie zum Scrollen →";
+        display: block;
+        text-align: center;
+        font-size: var(--lumo-font-size-xs);
+        color: var(--lumo-secondary-text-color);
+        padding: var(--lumo-space-xs);
+        background: var(--lumo-warning-color-10pct);
+        border-radius: var(--lumo-border-radius-s);
+        margin-bottom: var(--lumo-space-xs);
+    }
+}
+
+/* Sehr kleine Bildschirme (Smartphones im Hochformat) */
+@media (max-width: 480px) {
+    /* Quick-Actions: Volle Breite auf sehr kleinen Bildschirmen */
+    .quick-actions > * {
+        flex: 1 1 100% !important;
+        max-width: 100%;
+    }
+
+    /* Gradient-Header: Kompaktere Darstellung */
+    .gradient-header {
+        padding: var(--lumo-space-m) !important;
+    }
+
+    .gradient-header h2 {
+        font-size: var(--lumo-font-size-l) !important;
+    }
+}
+
+/* Success/Error Feedback Animationen */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+.shake {
+    animation: shake 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Badge-Varianten mit Icons */
+vaadin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Tooltip-Style */
+[title] {
+    position: relative;
+}
+
+/* Focus-Ring für Accessibility */
+*:focus-visible {
+    outline: 2px solid var(--lumo-primary-color);
+    outline-offset: 2px;
+    border-radius: var(--lumo-border-radius-s);
+}
+
+/* Zebra-Streifen für bessere Lesbarkeit */
+.striped-layout > *:nth-child(even) {
+    background-color: var(--lumo-contrast-5pct);
+}
+
+/* Moderne Divider */
+.divider {
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent,
+        var(--lumo-contrast-20pct),
+        transparent);
+    margin: var(--lumo-space-m) 0;
+}
+
+/* Status-Indikatoren */
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.status-indicator.active {
+    background-color: var(--lumo-success-color);
+    box-shadow: 0 0 8px var(--lumo-success-color);
+}
+
+.status-indicator.pending {
+    background-color: var(--lumo-warning-color);
+    box-shadow: 0 0 8px var(--lumo-warning-color);
+}
+
+.status-indicator.inactive {
+    background-color: var(--lumo-error-color);
+    box-shadow: 0 0 8px var(--lumo-error-color);
+}
+
+/* Dark Mode Unterstützung */
+@media (prefers-color-scheme: dark) {
+    .glass-effect {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Print-Optimierungen */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    vaadin-grid {
+        box-shadow: none !important;
+    }
+}
+

@@ -3,12 +3,16 @@ package de.suchalla.schiessbuch.ui.view;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
-import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
@@ -42,6 +46,7 @@ public class MeineEintraegeView extends VerticalLayout {
     private final Grid<SchiessnachweisEintrag> grid = new Grid<>(SchiessnachweisEintrag.class, false);
     private final DatePicker vonDatum = new DatePicker("Von");
     private final DatePicker bisDatum = new DatePicker("Bis");
+    private Div emptyStateMessage;
 
     private final Benutzer currentUser;
 
@@ -52,8 +57,10 @@ public class MeineEintraegeView extends VerticalLayout {
         this.pdfExportService = pdfExportService;
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
-        setSpacing(true);
-        setPadding(true);
+        setSpacing(false);
+        setPadding(false);
+        setSizeFull();
+        addClassName("view-container");
 
         createContent();
         updateGrid();
@@ -63,53 +70,187 @@ public class MeineEintraegeView extends VerticalLayout {
      * Erstellt den Inhalt der View.
      */
     private void createContent() {
-        add(new H2("Meine Schießnachweis-Einträge"));
+        // Content-Wrapper für zentrierte Inhalte
+        VerticalLayout contentWrapper = new VerticalLayout();
+        contentWrapper.setSpacing(false);
+        contentWrapper.setPadding(false);
+        contentWrapper.addClassName("content-wrapper");
 
-        // Filter
+        // Header-Bereich
+        Div header = new Div();
+        header.addClassName("gradient-header");
+        header.setWidthFull();
+
+        // Text-Container
+        Div textContainer = new Div();
+
+        H2 title = new H2("Meine Schießnachweis-Einträge");
+        title.getStyle().set("margin", "0");
+
+        Span subtitle = new Span("Übersicht Ihrer dokumentierten Schießaktivitäten");
+        subtitle.addClassName("subtitle");
+
+        textContainer.add(title, subtitle);
+
+        // Button für neuen Eintrag
+        Button neuerEintragButton = new Button("Neuer Eintrag", new Icon(VaadinIcon.PLUS_CIRCLE));
+        neuerEintragButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_CONTRAST);
+        neuerEintragButton.addClickListener(e ->
+            getUI().ifPresent(ui -> ui.navigate(NeuerEintragView.class))
+        );
+
+        header.add(textContainer, neuerEintragButton);
+        contentWrapper.add(header);
+
+        // Filter-Bereich mit modernem Styling - alles nebeneinander
+        Div filterBox = new Div();
+        filterBox.addClassName("filter-box");
+
         vonDatum.setValue(LocalDate.now().minusMonths(3));
-        bisDatum.setValue(LocalDate.now());
+        vonDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
+        vonDatum.setWidth("200px");
 
-        Button filterButton = new Button("Filtern", e -> updateGrid());
+        bisDatum.setValue(LocalDate.now());
+        bisDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
+        bisDatum.setWidth("200px");
+
+        Button filterButton = new Button("Filtern", new Icon(VaadinIcon.FILTER));
         filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        filterButton.addClickListener(e -> updateGrid());
 
         // PDF-Download als Anchor
         Anchor pdfDownload = new Anchor(createPdfResource(), "");
         pdfDownload.getElement().setAttribute("download", true);
-        Button pdfButton = new Button("PDF exportieren");
+        Button pdfButton = new Button("PDF exportieren", new Icon(VaadinIcon.DOWNLOAD));
         pdfButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
         pdfDownload.add(pdfButton);
 
-        FormLayout filterLayout = new FormLayout(vonDatum, bisDatum);
-        HorizontalLayout buttonLayout = new HorizontalLayout(filterButton, pdfDownload);
+        // Alles in einem HorizontalLayout nebeneinander
+        HorizontalLayout filterLayout = new HorizontalLayout(vonDatum, bisDatum, filterButton, pdfDownload);
+        filterLayout.setAlignItems(FlexComponent.Alignment.END);
+        filterLayout.setSpacing(true);
+        filterLayout.setWidthFull();
+        filterLayout.getStyle().set("flex-wrap", "wrap");
 
-        add(filterLayout, buttonLayout);
+        filterBox.add(filterLayout);
+        contentWrapper.add(filterBox);
 
-        // Grid
-        grid.addColumn(SchiessnachweisEintrag::getDatum).setHeader("Datum").setSortable(true);
-        grid.addColumn(eintrag -> eintrag.getDisziplin().getName()).setHeader("Disziplin");
-        grid.addColumn(SchiessnachweisEintrag::getKaliber).setHeader("Kaliber");
-        grid.addColumn(SchiessnachweisEintrag::getWaffenart).setHeader("Waffenart");
+        // Grid-Container mit weißem Hintergrund
+        Div gridContainer = new Div();
+        gridContainer.addClassName("grid-container");
+        gridContainer.setWidthFull();
+
+        // Grid mit modernem Styling
+        grid.setHeight("600px");
+        grid.addClassName("rounded-grid");
+        grid.addColumn(SchiessnachweisEintrag::getDatum)
+                .setHeader("Datum")
+                .setSortable(true)
+                .setAutoWidth(true);
+
+        grid.addColumn(eintrag -> eintrag.getDisziplin().getName())
+                .setHeader("Disziplin")
+                .setAutoWidth(true)
+                .setFlexGrow(1);
+
+        grid.addColumn(SchiessnachweisEintrag::getKaliber)
+                .setHeader("Kaliber")
+                .setAutoWidth(true);
+
+        grid.addColumn(SchiessnachweisEintrag::getWaffenart)
+                .setHeader("Waffenart")
+                .setAutoWidth(true);
+
         grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse)
                 .setHeader("Schüsse")
+                .setAutoWidth(true)
                 .setClassNameGenerator(item -> "align-right");
+
         grid.addColumn(SchiessnachweisEintrag::getErgebnis)
                 .setHeader("Ergebnis")
+                .setAutoWidth(true)
                 .setClassNameGenerator(item -> "align-right");
-        grid.addColumn(eintrag -> eintrag.getSchiesstand().getName()).setHeader("Schießstand");
-        grid.addColumn(eintrag -> getStatusText(eintrag.getStatus())).setHeader("Status");
+
+        grid.addColumn(eintrag -> eintrag.getSchiesstand().getName())
+                .setHeader("Schießstand")
+                .setAutoWidth(true);
+
+        grid.addComponentColumn(this::createStatusBadge)
+                .setHeader("Status")
+                .setAutoWidth(true);
+
         grid.addColumn(eintrag -> eintrag.getAufseher() != null ?
-                eintrag.getAufseher().getVollstaendigerName() : "-").setHeader("Aufseher");
+                eintrag.getAufseher().getVollstaendigerName() : "-")
+                .setHeader("Aufseher")
+                .setAutoWidth(true);
 
-        grid.addComponentColumn(this::createActionButtons).setHeader("Aktionen");
+        grid.addComponentColumn(this::createActionButtons)
+                .setHeader("Aktionen")
+                .setAutoWidth(true);
 
-        // CSS für rechtsbündige Ausrichtung
-        grid.getElement().executeJs(
-                "const style = document.createElement('style');" +
-                "style.textContent = '.align-right { text-align: right; }';" +
-                "document.head.appendChild(style);"
+        grid.addThemeVariants(
+                com.vaadin.flow.component.grid.GridVariant.LUMO_ROW_STRIPES,
+                com.vaadin.flow.component.grid.GridVariant.LUMO_WRAP_CELL_CONTENT
         );
 
-        add(grid);
+        // Empty State Message erstellen
+        emptyStateMessage = new Div();
+        emptyStateMessage.setText("Keine Einträge im ausgewählten Zeitraum gefunden. Erstellen Sie einen neuen Eintrag über den Button oben.");
+        emptyStateMessage.getStyle()
+                .set("text-align", "center")
+                .set("padding", "var(--lumo-space-xl)")
+                .set("color", "var(--lumo-secondary-text-color)")
+                .set("font-size", "var(--lumo-font-size-m)")
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("border", "2px dashed var(--lumo-contrast-20pct)")
+                .set("margin", "var(--lumo-space-m)");
+        emptyStateMessage.setVisible(false);
+
+        gridContainer.add(grid, emptyStateMessage);
+        contentWrapper.add(gridContainer);
+        add(contentWrapper);
+    }
+
+    /**
+     * Erstellt ein Badge für den Status.
+     */
+    private Span createStatusBadge(SchiessnachweisEintrag eintrag) {
+        Span badge = new Span();
+        Icon icon;
+        String text = getStatusText(eintrag.getStatus());
+        String theme;
+
+        switch (eintrag.getStatus()) {
+            case OFFEN, UNSIGNIERT -> {
+                icon = VaadinIcon.EDIT.create();
+                theme = "badge contrast";
+            }
+            case SIGNIERT -> {
+                icon = VaadinIcon.CHECK_CIRCLE.create();
+                theme = "badge success";
+            }
+            case ABGELEHNT -> {
+                icon = VaadinIcon.CLOSE_CIRCLE.create();
+                theme = "badge error";
+            }
+            default -> {
+                icon = VaadinIcon.QUESTION_CIRCLE.create();
+                theme = "badge";
+            }
+        }
+
+        icon.getStyle().set("padding", "0");
+        icon.setSize("14px");
+
+        badge.add(icon, new Span(" " + text));
+        badge.getElement().getThemeList().addAll(java.util.Arrays.asList(theme.split(" ")));
+        badge.getStyle()
+                .set("display", "inline-flex")
+                .set("align-items", "center")
+                .set("gap", "4px");
+
+        return badge;
     }
 
     /**
@@ -120,10 +261,12 @@ public class MeineEintraegeView extends VerticalLayout {
      */
     private HorizontalLayout createActionButtons(SchiessnachweisEintrag eintrag) {
         HorizontalLayout layout = new HorizontalLayout();
+        layout.setSpacing(true);
 
         if (eintrag.kannGeloeschtWerden()) {
-            Button deleteButton = new Button("Löschen", e -> deleteEintrag(eintrag));
+            Button deleteButton = new Button("Löschen", new Icon(VaadinIcon.TRASH));
             deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+            deleteButton.addClickListener(e -> deleteEintrag(eintrag));
             layout.add(deleteButton);
         }
 
@@ -157,6 +300,11 @@ public class MeineEintraegeView extends VerticalLayout {
             List<SchiessnachweisEintrag> eintraege = schiessnachweisService
                     .findeEintraegeImZeitraum(currentUser, von, bis);
             grid.setItems(eintraege);
+
+            // Zeige/Verstecke Empty State Message
+            boolean isEmpty = eintraege.isEmpty();
+            grid.setVisible(!isEmpty);
+            emptyStateMessage.setVisible(isEmpty);
         }
     }
 

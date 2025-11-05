@@ -5,9 +5,15 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -68,8 +74,10 @@ public class NeuerEintragView extends VerticalLayout {
 
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
-        setSpacing(true);
-        setPadding(true);
+        setSpacing(false);
+        setPadding(false);
+        setSizeFull();
+        addClassName("view-container");
 
         createContent();
     }
@@ -78,47 +86,78 @@ public class NeuerEintragView extends VerticalLayout {
      * Erstellt den Inhalt der View.
      */
     private void createContent() {
-        add(new H2("Neuer Schießnachweis-Eintrag"));
+        // Content-Wrapper für zentrierte Inhalte
+        VerticalLayout contentWrapper = new VerticalLayout();
+        contentWrapper.setSpacing(false);
+        contentWrapper.setPadding(false);
+        contentWrapper.addClassName("content-wrapper");
+        contentWrapper.setMaxWidth("1200px"); // Formulare etwas schmaler
 
-        // Formular konfigurieren
+        // Header-Bereich mit modernem Styling - gleiche Breite wie FormCard
+        Div header = new Div();
+        header.addClassName("gradient-header");
+        header.setWidthFull();
+
+        H2 title = new H2("Neuer Schießnachweis-Eintrag");
+        title.getStyle().set("margin", "0");
+
+        Span subtitle = new Span("Dokumentieren Sie Ihre Schießaktivität");
+        subtitle.addClassName("subtitle");
+
+        header.add(title, subtitle);
+        contentWrapper.add(header);
+
+        // Formular in Card-Layout
+        Div formCard = new Div();
+        formCard.addClassName("form-container");
+        formCard.setWidthFull();
+
+        // Formular konfigurieren - nur wichtige Felder mit Icons
         datum.setValue(LocalDate.now());
         datum.setRequired(true);
+        datum.setPrefixComponent(VaadinIcon.CALENDAR.create());
 
-        // Schießstand: Mit Suchfunktion - jetzt zuerst
+        // Schießstand: Mit Icon
         schiesstand.setItems(disziplinService.findeAlleSchiesstaende());
         schiesstand.setItemLabelGenerator(Schiesstand::getName);
         schiesstand.setRequired(true);
         schiesstand.setPlaceholder("Schießstand auswählen");
         schiesstand.setClearButtonVisible(true);
+        schiesstand.setPrefixComponent(VaadinIcon.BUILDING.create());
 
-        // Verband: Nur Verbände, bei denen der Benutzer angemeldet ist
+        // Verband: Mit Icon
         List<Verband> benutzerVerbaende = getBenutzerverbaende();
         verband.setItems(benutzerVerbaende);
         verband.setItemLabelGenerator(Verband::getName);
         verband.setRequired(true);
         verband.setPlaceholder("Verband auswählen");
+        verband.setPrefixComponent(VaadinIcon.USERS.create());
         verband.addValueChangeListener(e -> onVerbandChanged());
 
-        // Disziplin: Zunächst deaktiviert, wird aktiviert wenn Verband ausgewählt
+        // Disziplin: OHNE Icon
         disziplin.setEnabled(false);
         disziplin.setRequired(true);
         disziplin.setPlaceholder("Bitte zuerst Verband auswählen");
         disziplin.setItemLabelGenerator(Disziplin::getName);
 
-        // Waffenart: Dropdown mit Enum
+        // Waffenart: OHNE Icon
         waffenart.setItems(Waffenart.values());
         waffenart.setItemLabelGenerator(Waffenart::getAnzeigeText);
         waffenart.setRequired(true);
         waffenart.setPlaceholder("Kurzwaffe oder Langwaffe");
 
+        // Kaliber: OHNE Icon
         kaliber.setRequired(true);
         kaliber.setPlaceholder("z.B. 9mm, .22 LR");
+        kaliber.setClearButtonVisible(true);
 
+        // Anzahl Schüsse: OHNE Icon
         anzahlSchuesse.setMin(1);
         anzahlSchuesse.setStepButtonsVisible(true);
 
+        // Bemerkung: OHNE Icon
         bemerkung.setMaxLength(500);
-        bemerkung.setHelperText("Optional");
+        bemerkung.setHelperText("Optional - max. 500 Zeichen");
 
         FormLayout formLayout = new FormLayout();
         formLayout.add(datum, schiesstand, verband, disziplin, waffenart, kaliber, anzahlSchuesse, bemerkung);
@@ -126,13 +165,44 @@ public class NeuerEintragView extends VerticalLayout {
                 new FormLayout.ResponsiveStep("0", 1),
                 new FormLayout.ResponsiveStep("500px", 2)
         );
+        formLayout.setColspan(bemerkung, 2);
 
-        Button speichern = new Button("Speichern", e -> speichereEintrag());
-        speichern.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        // Button-Bereich
+        Button speichern = new Button("Speichern", new Icon(VaadinIcon.CHECK));
+        speichern.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
+        speichern.addClickListener(e -> speichereEintrag());
 
-        Button abbrechen = new Button("Abbrechen", e -> formularZuruecksetzen());
+        Button abbrechen = new Button("Abbrechen", new Icon(VaadinIcon.CLOSE));
+        abbrechen.addClickListener(e -> formularZuruecksetzen());
 
-        add(formLayout, new com.vaadin.flow.component.orderedlayout.HorizontalLayout(speichern, abbrechen));
+        HorizontalLayout buttonLayout = new HorizontalLayout(speichern, abbrechen);
+        buttonLayout.setSpacing(true);
+        buttonLayout.getStyle().set("margin-top", "var(--lumo-space-m)");
+
+        // Info-Box für Hinweise - jetzt ganz unten
+        Div infoBox = new Div();
+        infoBox.getStyle()
+                .set("background-color", "var(--lumo-primary-color-10pct)")
+                .set("border-left", "4px solid var(--lumo-primary-color)")
+                .set("padding", "var(--lumo-space-m)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("margin-top", "var(--lumo-space-m)");
+
+        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
+        infoIcon.getStyle().set("color", "var(--lumo-primary-color)");
+
+        Span infoText = new Span("Alle mit * markierten Felder sind Pflichtfelder.");
+        infoText.getStyle().set("margin-left", "var(--lumo-space-s)");
+
+        HorizontalLayout infoLayout = new HorizontalLayout(infoIcon, infoText);
+        infoLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+        infoLayout.setSpacing(false);
+        infoBox.add(infoLayout);
+
+        formCard.add(formLayout, buttonLayout, infoBox);
+        contentWrapper.add(formCard);
+        add(contentWrapper);
     }
 
     /**

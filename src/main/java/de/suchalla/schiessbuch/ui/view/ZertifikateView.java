@@ -51,7 +51,7 @@ public class ZertifikateView extends VerticalLayout {
     private final SecurityService securityService;
     private final VereinsmitgliedschaftService mitgliedschaftService;
 
-    private final Grid<DigitalesZertifikat> grid;
+    private Grid<DigitalesZertifikat> grid;
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     private List<DigitalesZertifikat> allZertifikate = new ArrayList<>();
@@ -68,30 +68,83 @@ public class ZertifikateView extends VerticalLayout {
         this.securityService = securityService;
         this.mitgliedschaftService = mitgliedschaftService;
 
+        setSpacing(false);
+        setPadding(false);
         setSizeFull();
-        setPadding(true);
-        setSpacing(true);
+        addClassName("view-container");
 
-        // Header
+        createContent();
+        loadZertifikate();
+    }
+
+    private void createContent() {
+        // Content-Wrapper für zentrierte Inhalte
+        VerticalLayout contentWrapper = new VerticalLayout();
+        contentWrapper.setSpacing(false);
+        contentWrapper.setPadding(false);
+        contentWrapper.addClassName("content-wrapper");
+
+        // Header-Bereich
+        com.vaadin.flow.component.html.Div header = new com.vaadin.flow.component.html.Div();
+        header.addClassName("gradient-header");
+        header.setWidthFull();
+
         H2 title = new H2("PKI-Zertifikate");
+        title.getStyle().set("margin", "0");
+
+        header.add(title);
+        contentWrapper.add(header);
+
+        // Info-Box mit modernem Styling
+        com.vaadin.flow.component.html.Div infoBox = new com.vaadin.flow.component.html.Div();
+        infoBox.getStyle()
+                .set("background", "var(--lumo-primary-color-10pct)")
+                .set("border-left", "4px solid var(--lumo-primary-color)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-m)")
+                .set("margin-bottom", "var(--lumo-space-l)")
+                .set("box-shadow", "var(--lumo-box-shadow-xs)")
+                .set("display", "flex")
+                .set("align-items", "flex-start")
+                .set("gap", "var(--lumo-space-s)");
+
+        com.vaadin.flow.component.icon.Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
+        infoIcon.getStyle()
+                .set("color", "var(--lumo-primary-color)")
+                .set("flex-shrink", "0")
+                .set("margin-top", "2px");
+
         Paragraph description = new Paragraph(
                 "Hier können Sie Ihre digitalen Zertifikate einsehen, die für die Signierung von Schießnachweisen verwendet werden."
         );
+        description.getStyle()
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("margin", "0");
 
-        add(title, description);
+        infoBox.add(infoIcon, description);
+        contentWrapper.add(infoBox);
 
-        // Filter erstellen
-        add(createFilterBar());
+        // Filter-Bereich mit modernem Styling
+        com.vaadin.flow.component.html.Div filterBox = new com.vaadin.flow.component.html.Div();
+        filterBox.addClassName("filter-box");
+        filterBox.add(createFilterBar());
+        contentWrapper.add(filterBox);
+
+        // Grid-Container mit weißem Hintergrund
+        com.vaadin.flow.component.html.Div gridContainer = new com.vaadin.flow.component.html.Div();
+        gridContainer.addClassName("grid-container");
+        gridContainer.setWidthFull();
 
         // Grid für Zertifikate
         grid = new Grid<>(DigitalesZertifikat.class, false);
-        grid.setSizeFull();
+        grid.setHeight("600px");
+        grid.addClassName("rounded-grid");
         configureGrid();
 
-        add(grid);
-
-        // Daten laden
-        loadZertifikate();
+        gridContainer.add(grid);
+        contentWrapper.add(gridContainer);
+        add(contentWrapper);
     }
 
     private HorizontalLayout createFilterBar() {
@@ -323,9 +376,14 @@ public class ZertifikateView extends VerticalLayout {
                     allZertifikate.addAll(vereinsZertifikate);
                 }
             }
+
+            // Entferne Duplikate basierend auf Zertifikat-ID
+            allZertifikate = allZertifikate.stream()
+                    .distinct()
+                    .collect(Collectors.toList());
         }
 
-        log.info("Gesamt geladene Zertifikate: {}", allZertifikate.size());
+        log.info("Gesamt geladene Zertifikate (nach Duplikat-Entfernung): {}", allZertifikate.size());
         applyFilters();
     }
 

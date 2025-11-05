@@ -6,6 +6,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -38,6 +39,7 @@ public class VereineVerwaltungView extends VerticalLayout {
 
     private final VerbandService verbandService;
     private final Grid<Verein> grid = new Grid<>(Verein.class, false);
+    private Div emptyStateMessage;
 
     private final TextField nameField = new TextField("Name");
     private final TextField adresseField = new TextField("Adresse");
@@ -47,15 +49,61 @@ public class VereineVerwaltungView extends VerticalLayout {
     public VereineVerwaltungView(VerbandService verbandService) {
         this.verbandService = verbandService;
 
-        setSpacing(true);
-        setPadding(true);
+        setSpacing(false);
+        setPadding(false);
+        setSizeFull();
+        addClassName("view-container");
 
         createContent();
         updateGrid();
     }
 
     private void createContent() {
-        add(new H2("Vereinsverwaltung"));
+        // Content-Wrapper für zentrierte Inhalte
+        VerticalLayout contentWrapper = new VerticalLayout();
+        contentWrapper.setSpacing(false);
+        contentWrapper.setPadding(false);
+        contentWrapper.addClassName("content-wrapper");
+
+        // Header-Bereich
+        Div header = new Div();
+        header.addClassName("gradient-header");
+        header.setWidthFull();
+
+        com.vaadin.flow.component.html.H2 title = new com.vaadin.flow.component.html.H2("Vereinsverwaltung");
+        title.getStyle().set("margin", "0");
+
+        com.vaadin.flow.component.html.Span subtitle = new com.vaadin.flow.component.html.Span("Verwaltung aller Vereine und deren Mitglieder");
+        subtitle.addClassName("subtitle");
+
+        header.add(title, subtitle);
+        contentWrapper.add(header);
+
+        // Info-Box mit modernem Styling
+        Div infoBox = new Div();
+        infoBox.getStyle()
+                .set("background", "var(--lumo-primary-color-10pct)")
+                .set("border-left", "4px solid var(--lumo-primary-color)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-m)")
+                .set("margin-bottom", "var(--lumo-space-l)")
+                .set("box-shadow", "var(--lumo-box-shadow-xs)");
+
+        com.vaadin.flow.component.html.Paragraph beschreibung = new com.vaadin.flow.component.html.Paragraph(
+                "Erstellen und verwalten Sie Vereine im System. Jeder Verein muss einem Verband zugeordnet sein."
+        );
+        beschreibung.getStyle()
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("margin", "0");
+
+        infoBox.add(beschreibung);
+        contentWrapper.add(infoBox);
+
+        // Formular-Container
+        Div formContainer = new Div();
+        formContainer.addClassName("form-container");
+        formContainer.setWidthFull();
+        formContainer.getStyle().set("margin-bottom", "var(--lumo-space-l)");
 
         // Formular
         nameField.setRequired(true);
@@ -74,9 +122,17 @@ public class VereineVerwaltungView extends VerticalLayout {
         Button speichernButton = new Button("Verein erstellen", e -> speichereVerein());
         speichernButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        add(formLayout, speichernButton);
+        formContainer.add(formLayout, speichernButton);
+        contentWrapper.add(formContainer);
+
+        // Grid-Container mit weißem Hintergrund
+        Div gridContainer = new Div();
+        gridContainer.addClassName("grid-container");
+        gridContainer.setWidthFull();
 
         // Grid
+        grid.setHeight("600px");
+        grid.addClassName("rounded-grid");
         grid.addColumn(Verein::getId)
                 .setHeader("ID")
                 .setWidth("80px")
@@ -120,7 +176,23 @@ public class VereineVerwaltungView extends VerticalLayout {
                         "document.head.appendChild(style);"
         );
 
-        add(grid);
+        // Empty State Message erstellen
+        emptyStateMessage = new Div();
+        emptyStateMessage.setText("Noch keine Vereine vorhanden. Erstellen Sie einen neuen Verein über das Formular oben.");
+        emptyStateMessage.getStyle()
+                .set("text-align", "center")
+                .set("padding", "var(--lumo-space-xl)")
+                .set("color", "var(--lumo-secondary-text-color)")
+                .set("font-size", "var(--lumo-font-size-m)")
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("border", "2px dashed var(--lumo-contrast-20pct)")
+                .set("margin", "var(--lumo-space-m)");
+        emptyStateMessage.setVisible(false);
+
+        gridContainer.add(grid, emptyStateMessage);
+        contentWrapper.add(gridContainer);
+        add(contentWrapper);
     }
 
     private void speichereVerein() {
@@ -163,8 +235,14 @@ public class VereineVerwaltungView extends VerticalLayout {
     }
 
     private void updateGrid() {
-        grid.setItems(verbandService.findeAlleVereine());
+        List<Verein> vereine = verbandService.findeAlleVereine();
+        grid.setItems(vereine);
         grid.getDataProvider().refreshAll();
+
+        // Zeige/Verstecke Empty State Message
+        boolean isEmpty = vereine.isEmpty();
+        grid.setVisible(!isEmpty);
+        emptyStateMessage.setVisible(isEmpty);
     }
 
     private void navigiereZuVereinDetails(Verein verein) {

@@ -4,7 +4,9 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -44,6 +46,7 @@ public class EintraegeSignierenView extends VerticalLayout {
     private final Grid<SchiessnachweisEintrag> grid = new Grid<>(SchiessnachweisEintrag.class, false);
 
     private Benutzer currentUser;
+    private Div emptyStateMessage;
 
     public EintraegeSignierenView(SecurityService securityService,
                                   SchiessnachweisService schiessnachweisService,
@@ -57,8 +60,10 @@ public class EintraegeSignierenView extends VerticalLayout {
         this.currentUser = securityService.getAuthenticatedUser()
                 .orElseThrow(() -> new IllegalStateException("Benutzer nicht authentifiziert"));
 
-        setSpacing(true);
-        setPadding(true);
+        setSpacing(false);
+        setPadding(false);
+        setSizeFull();
+        addClassName("view-container");
 
         createContent();
         updateGrid();
@@ -68,24 +73,74 @@ public class EintraegeSignierenView extends VerticalLayout {
      * Erstellt den Inhalt der View.
      */
     private void createContent() {
-        add(new H2("Unsignierte EintrÃ¤ge - PKI-Signierung"));
+        // Content-Wrapper für zentrierte Inhalte
+        VerticalLayout contentWrapper = new VerticalLayout();
+        contentWrapper.setSpacing(false);
+        contentWrapper.setPadding(false);
+        contentWrapper.addClassName("content-wrapper");
 
-        // Grid
-        grid.addColumn(eintrag -> eintrag.getSchuetze().getVollstaendigerName()).setHeader("Schütze");
-        grid.addColumn(SchiessnachweisEintrag::getDatum).setHeader("Datum").setSortable(true);
-        grid.addColumn(eintrag -> eintrag.getDisziplin().getName()).setHeader("Disziplin");
-        grid.addColumn(SchiessnachweisEintrag::getKaliber).setHeader("Kaliber");
-        grid.addColumn(SchiessnachweisEintrag::getWaffenart).setHeader("Waffenart");
-        grid.addColumn(eintrag -> eintrag.getSchiesstand().getName()).setHeader("Schießstand");
+        // Header-Bereich
+        Div header = new Div();
+        header.addClassName("gradient-header");
+        header.setWidthFull();
+
+        // Text-Container
+        Div textContainer = new Div();
+
+        H2 title = new H2("Einträge signieren");
+        title.getStyle().set("margin", "0");
+
+        Span subtitle = new Span("PKI-Signierung unsignierter Schießnachweis-Einträge");
+        subtitle.addClassName("subtitle");
+
+        textContainer.add(title, subtitle);
+        header.add(textContainer);
+        contentWrapper.add(header);
+
+        // Grid-Container mit weißem Hintergrund
+        Div gridContainer = new Div();
+        gridContainer.addClassName("grid-container");
+        gridContainer.setWidthFull();
+
+        // Grid mit modernem Styling
+        grid.setHeight("600px");
+        grid.addClassName("rounded-grid");
+
+        grid.addColumn(eintrag -> eintrag.getSchuetze().getVollstaendigerName())
+                .setHeader("Schütze")
+                .setAutoWidth(true);
+        grid.addColumn(SchiessnachweisEintrag::getDatum)
+                .setHeader("Datum")
+                .setSortable(true)
+                .setAutoWidth(true);
+        grid.addColumn(eintrag -> eintrag.getDisziplin().getName())
+                .setHeader("Disziplin")
+                .setAutoWidth(true);
+        grid.addColumn(SchiessnachweisEintrag::getKaliber)
+                .setHeader("Kaliber")
+                .setAutoWidth(true);
+        grid.addColumn(SchiessnachweisEintrag::getWaffenart)
+                .setHeader("Waffenart")
+                .setAutoWidth(true);
+        grid.addColumn(eintrag -> eintrag.getSchiesstand().getName())
+                .setHeader("Schießstand")
+                .setAutoWidth(true);
         grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse)
                 .setHeader("Schüsse")
+                .setAutoWidth(true)
                 .setClassNameGenerator(item -> "align-right");
         grid.addColumn(SchiessnachweisEintrag::getErgebnis)
                 .setHeader("Ergebnis")
+                .setAutoWidth(true)
                 .setClassNameGenerator(item -> "align-right");
-        grid.addColumn(SchiessnachweisEintrag::getBemerkung).setHeader("Bemerkung");
+        grid.addColumn(SchiessnachweisEintrag::getBemerkung)
+                .setHeader("Bemerkung")
+                .setAutoWidth(true);
 
-        grid.addComponentColumn(this::createActionButtons).setHeader("Aktionen");
+        grid.addComponentColumn(this::createActionButtons)
+                .setHeader("Aktionen")
+                .setWidth("250px")
+                .setFlexGrow(0);
 
         // CSS für rechtsbündige Ausrichtung
         grid.getElement().executeJs(
@@ -94,7 +149,23 @@ public class EintraegeSignierenView extends VerticalLayout {
                 "document.head.appendChild(style);"
         );
 
-        add(grid);
+        // Empty State Message erstellen
+        emptyStateMessage = new Div();
+        emptyStateMessage.setText("Keine unsignierten Einträge vorhanden. Alle Einträge wurden bereits signiert oder es gibt aktuell keine neuen Einträge.");
+        emptyStateMessage.getStyle()
+                .set("text-align", "center")
+                .set("padding", "var(--lumo-space-xl)")
+                .set("color", "var(--lumo-secondary-text-color)")
+                .set("font-size", "var(--lumo-font-size-m)")
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("border", "2px dashed var(--lumo-contrast-20pct)")
+                .set("margin", "var(--lumo-space-m)");
+        emptyStateMessage.setVisible(false);
+
+        gridContainer.add(grid, emptyStateMessage);
+        contentWrapper.add(gridContainer);
+        add(contentWrapper);
     }
 
     /**
@@ -110,7 +181,10 @@ public class EintraegeSignierenView extends VerticalLayout {
         Button ablehnenButton = new Button("Ablehnen", e -> zeigeAblehnungsDialog(eintrag));
         ablehnenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
 
-        return new HorizontalLayout(signierenButton, ablehnenButton);
+        HorizontalLayout layout = new HorizontalLayout(signierenButton, ablehnenButton);
+        layout.setSpacing(true);
+        layout.getStyle().set("flex-wrap", "wrap");
+        return layout;
     }
 
     /**
@@ -198,6 +272,11 @@ public class EintraegeSignierenView extends VerticalLayout {
         List<SchiessnachweisEintrag> eintraege = schiessnachweisService.getUnsignierteEintraegeForVereine(vereineAlsAufseher);
 
         grid.setItems(eintraege);
+
+        // Zeige/Verstecke Empty State Message
+        boolean isEmpty = eintraege.isEmpty();
+        grid.setVisible(!isEmpty);
+        emptyStateMessage.setVisible(isEmpty);
 
         log.info("Grid aktualisiert: {} unsignierte EintrÃ¤ge gefunden fÃ¼r {} Vereine",
                 eintraege.size(), vereineAlsAufseher.size());

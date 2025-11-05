@@ -43,9 +43,11 @@ public class DashboardView extends VerticalLayout {
         setSpacing(false);
         setPadding(false);
         setWidthFull();
-        setMaxWidth("1400px");
-        getStyle().set("margin", "0 auto")
-                .set("padding", "var(--lumo-space-m)");
+        setHeightFull();
+        addClassName("view-container");
+        getStyle()
+                .set("overflow-y", "auto")
+                .set("overflow-x", "hidden");
 
         createContent();
     }
@@ -61,23 +63,31 @@ public class DashboardView extends VerticalLayout {
             return;
         }
 
+        // Content-Wrapper für zentrierte Inhalte
+        VerticalLayout contentWrapper = new VerticalLayout();
+        contentWrapper.setSpacing(false);
+        contentWrapper.setPadding(false);
+        contentWrapper.addClassName("content-wrapper");
+
         // Willkommens-Header
         Div header = createWelcomeHeader(currentUser);
         header.getStyle().set("margin-bottom", "var(--lumo-space-l)");
         header.setWidthFull();
-        add(header);
+        contentWrapper.add(header);
 
         // Statistik-Cards (volle Breite, responsive durch CSS grid)
         Div statsGrid = createStatsGrid(currentUser);
         statsGrid.getStyle().set("margin-bottom", "var(--lumo-space-m)");
         statsGrid.setWidthFull();
-        add(statsGrid);
+        contentWrapper.add(statsGrid);
 
         // Schnellzugriff: unter den Statistik-Karten, Buttons nebeneinander (wrap)
         Div quickActions = createQuickActions(currentUser);
         quickActions.getStyle().set("margin-top", "var(--lumo-space-m)");
         quickActions.setWidthFull();
-        add(quickActions);
+        contentWrapper.add(quickActions);
+
+        add(contentWrapper);
     }
 
     private void createGuestContent() {
@@ -97,35 +107,19 @@ public class DashboardView extends VerticalLayout {
 
     private Div createWelcomeHeader(Benutzer user) {
         Div header = new Div();
-        header.getStyle()
-                .set("background", "linear-gradient(135deg, var(--lumo-primary-color) 0%, var(--lumo-primary-color-50pct) 100%)")
-                .set("border-radius", "var(--lumo-border-radius-l)")
-                .set("padding", "var(--lumo-space-l)")
-                .set("color", "var(--lumo-primary-contrast-color)")
-                .set("box-shadow", "var(--lumo-box-shadow-m)");
+        header.addClassName("gradient-header");
+        header.setWidthFull();
 
         H2 greeting = new H2("Willkommen zurück, " + user.getVorname() + "!");
-        greeting.getStyle()
-                .set("margin", "0")
-                .set("color", "var(--lumo-primary-contrast-color)");
+        greeting.getStyle().set("margin", "0");
 
-        Span roleInfo = new Span(getRollenText(user.getRolle()));
-        roleInfo.getStyle()
-                .set("display", "block")
-                .set("margin-top", "var(--lumo-space-xs)")
-                .set("opacity", "0.9")
-                .set("font-size", "var(--lumo-font-size-m)");
-
-        header.add(greeting, roleInfo);
+        header.add(greeting);
         return header;
     }
 
     private Div createStatsGrid(Benutzer user) {
         Div grid = new Div();
-        grid.getStyle()
-                .set("display", "grid")
-                .set("gap", "var(--lumo-space-m)")
-                .set("grid-template-columns", "repeat(auto-fit, minmax(200px, 1fr))");
+        grid.addClassName("stats-grid");
 
         try {
             long unsignierteEintraege = schiessnachweisService.zaehleUnsignierteEintraege(user);
@@ -151,27 +145,8 @@ public class DashboardView extends VerticalLayout {
 
     private Div createStatCard(String label, String value, VaadinIcon icon, String color) {
         Div card = new Div();
-        card.getStyle()
-                .set("background", "var(--lumo-base-color)")
-                .set("border-radius", "var(--lumo-border-radius-l)")
-                .set("padding", "var(--lumo-space-l)")
-                .set("box-shadow", "var(--lumo-box-shadow-s)")
-                .set("border-left", "4px solid " + color)
-                .set("transition", "transform 0.2s, box-shadow 0.2s")
-                .set("cursor", "default")
-                .set("min-width", "0");
-
-        // Hover-Effekt
-        card.getElement().executeJs(
-                "this.addEventListener('mouseenter', () => {" +
-                        "  this.style.transform = 'translateY(-4px)';" +
-                        "  this.style.boxShadow = 'var(--lumo-box-shadow-m)';" +
-                        "});" +
-                        "this.addEventListener('mouseleave', () => {" +
-                        "  this.style.transform = 'translateY(0)';" +
-                        "  this.style.boxShadow = 'var(--lumo-box-shadow-s)';" +
-                        "});"
-        );
+        card.addClassName("stat-card");
+        card.getStyle().set("border-left", "4px solid " + color);
 
         Div header = new Div();
         header.getStyle()
@@ -193,46 +168,87 @@ public class DashboardView extends VerticalLayout {
         header.add(labelSpan, iconComponent);
 
         Span valueSpan = new Span(value);
+        // Passe Schriftgröße an, wenn Text lang ist
+        String fontSize = value.length() > 12 ? "var(--lumo-font-size-xxl)" : "var(--lumo-font-size-xxxl)";
         valueSpan.getStyle()
-                .set("font-size", "var(--lumo-font-size-xxxl)")
+                .set("font-size", fontSize)
                 .set("font-weight", "bold")
-                .set("color", "var(--lumo-primary-text-color)");
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("word-wrap", "break-word")
+                .set("overflow-wrap", "break-word")
+                .set("max-width", "100%")
+                .set("display", "block")
+                .set("line-height", "1.2");
 
         card.add(header, valueSpan);
         return card;
     }
 
     private Div createQuickActions(Benutzer user) {
-        Div container = new Div();
-        container.getStyle()
-                .set("background", "var(--lumo-base-color)")
+        // Äußerer Container mit farblichem Hintergrund für visuelle Gruppierung
+        Div outerContainer = new Div();
+        outerContainer.setWidthFull();
+        outerContainer.getStyle()
+                .set("background", "linear-gradient(135deg, var(--lumo-contrast-5pct) 0%, var(--lumo-primary-color-10pct) 100%)")
                 .set("border-radius", "var(--lumo-border-radius-l)")
                 .set("padding", "var(--lumo-space-l)")
-                .set("box-shadow", "var(--lumo-box-shadow-s)");
+                .set("box-shadow", "var(--lumo-box-shadow-m)")
+                .set("border", "1px solid var(--lumo-contrast-10pct)")
+                .set("box-sizing", "border-box")
+                .set("max-width", "100%")
+                .set("overflow", "hidden");
 
+        // Überschrift für den Schnellzugriff-Bereich
         H3 title = new H3("Schnellzugriff");
-        title.getStyle().set("margin-top", "0");
+        title.getStyle()
+                .set("margin-top", "0")
+                .set("margin-bottom", "var(--lumo-space-m)")
+                .set("color", "var(--lumo-primary-text-color)");
 
         // Actions als flexible Zeile: nebeneinander auf breiten Bildschirmen, wrap auf schmalen
         Div actionsGrid = new Div();
-        actionsGrid.getStyle()
-                .set("display", "flex")
-                .set("flex-direction", "row")
-                .set("flex-wrap", "wrap")
-                .set("gap", "var(--lumo-space-m)")
-                .set("margin-top", "var(--lumo-space-m)")
-                .set("align-items", "stretch");
+        actionsGrid.addClassName("quick-actions");
 
         // Buttons: flexible Karten, nebeneinander; min-width sorgt für Umbruch auf Mobile
         actionsGrid.add(
                 createActionButton("Neuer Eintrag", VaadinIcon.PLUS, "meine-eintraege"),
                 createActionButton("Meine Einträge", VaadinIcon.BOOK, "meine-eintraege"),
                 createActionButton("Benachrichtigungen", VaadinIcon.BELL, "benachrichtigungen"),
+                createActionButton("Zertifikat verifizieren", VaadinIcon.DIPLOMA, "zertifikat-verifizierung"),
                 createActionButton("Profil", VaadinIcon.USER, "profil")
         );
 
-        container.add(title, actionsGrid);
-        return container;
+        // Infobox unter den Aktionen
+        Div infoBox = new Div();
+        infoBox.getStyle()
+                .set("background", "var(--lumo-primary-color-10pct)")
+                .set("border-left", "4px solid var(--lumo-primary-color)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-m)")
+                .set("margin-top", "var(--lumo-space-m)")
+                .set("box-shadow", "var(--lumo-box-shadow-xs)");
+
+        Span infoIcon = new Span("ℹ️");
+        infoIcon.getStyle()
+                .set("font-size", "var(--lumo-font-size-xl)")
+                .set("margin-right", "var(--lumo-space-s)");
+
+        Span infoText = new Span("Nutzen Sie diese Aktionen für häufig verwendete Funktionen");
+        infoText.getStyle()
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("font-weight", "500");
+
+        Div infoContent = new Div();
+        infoContent.getStyle()
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("flex-wrap", "wrap");
+        infoContent.add(infoIcon, infoText);
+
+        infoBox.add(infoContent);
+
+        outerContainer.add(title, actionsGrid, infoBox);
+        return outerContainer;
     }
 
     private Div createActionButton(String label, VaadinIcon icon, String route) {

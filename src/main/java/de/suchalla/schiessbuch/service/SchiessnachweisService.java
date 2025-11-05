@@ -287,11 +287,21 @@ public class SchiessnachweisService {
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintrag> getUnsignierteEintraegeForVereine(List<de.suchalla.schiessbuch.model.entity.Verein> vereine) {
-        return vereine.stream()
+        if (vereine == null || vereine.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        
+        // Sammle alle Schießstände der Vereine
+        List<de.suchalla.schiessbuch.model.entity.Schiesstand> schiesstaende = vereine.stream()
                 .flatMap(verein -> verein.getSchiesstaende().stream())
-                .flatMap(schiesstand -> eintragRepository.findBySchiesstandAndStatus(
-                        schiesstand, EintragStatus.UNSIGNIERT).stream())
                 .distinct()
                 .collect(java.util.stream.Collectors.toList());
+        
+        if (schiesstaende.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        
+        // Verwende neue Repository-Methode die sowohl OFFEN als auch UNSIGNIERT berücksichtigt
+        return eintragRepository.findUnsignierteEintraegeForSchiesstaende(schiesstaende);
     }
 }
