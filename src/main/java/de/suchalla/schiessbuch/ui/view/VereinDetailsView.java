@@ -5,7 +5,10 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -109,22 +112,33 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
         header.addClassName("gradient-header");
         header.setWidthFull();
 
-        // Text-Container
-        Div textContainer = new Div();
-
         H2 title = new H2("Vereinsdetails bearbeiten");
         title.getStyle().set("margin", "0");
 
-        Span subtitle = new Span("Verwalten Sie die Details Ihres Vereins");
-        subtitle.addClassName("subtitle");
-
-        textContainer.add(title, subtitle);
-        header.add(textContainer);
+        header.add(title);
         contentWrapper.add(header);
 
-        // Form-Container mit weißem Hintergrund
+        // Info-Box
+        Div infoBox = new Div();
+        infoBox.addClassName("info-box");
+
+        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
+
+        Paragraph description = new Paragraph(
+                "Hier können Sie die Details Ihres Vereins bearbeiten und verwalten. Änderungen werden sofort gespeichert."
+        );
+
+        infoBox.add(infoIcon, description);
+        contentWrapper.add(infoBox);
+
+        // Form-Container mit grauem Hintergrund
         Div formContainer = new Div();
-        formContainer.addClassName("form-container");
+        formContainer.getStyle().set("background", "var(--lumo-contrast-5pct)");
+        formContainer.getStyle().set("padding", "var(--lumo-space-m)");
+        formContainer.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
+        formContainer.getStyle().set("margin-bottom", "var(--lumo-space-m)");
+        formContainer.getStyle().set("box-sizing", "border-box");
         formContainer.setWidthFull();
 
         // Formular
@@ -148,11 +162,13 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
         formLayout.setColspan(adresseField, 2);
         formLayout.setColspan(beschreibungField, 2);
 
-        // Buttons
+        // Buttons mit Icons
         Button speichernButton = new Button("Speichern", e -> speichereVereinsdaten());
+        speichernButton.setIcon(VaadinIcon.CHECK.create());
         speichernButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         Button abbrechenButton = new Button("Abbrechen", e -> ladeVereinsdaten());
+        abbrechenButton.setIcon(VaadinIcon.CLOSE.create());
 
         HorizontalLayout buttonLayout = new HorizontalLayout(speichernButton, abbrechenButton);
 

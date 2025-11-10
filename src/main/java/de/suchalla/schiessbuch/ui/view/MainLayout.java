@@ -201,7 +201,6 @@ public class MainLayout extends AppLayout {
                 adminNav.addItem(new SideNavItem("Verbände", VerbaendeVerwaltungView.class, VaadinIcon.GLOBE.create()));
                 adminNav.addItem(new SideNavItem("Vereine", VereineVerwaltungView.class, VaadinIcon.BUILDING.create()));
                 adminNav.addItem(new SideNavItem("Schießstände", SchiesstaendeVerwaltungView.class, VaadinIcon.CROSSHAIRS.create()));
-                adminNav.addItem(new SideNavItem("Disziplinen", DisziplinenVerwaltungView.class, VaadinIcon.RECORDS.create()));
                 adminNav.addItem(new SideNavItem("Mitglieder", MitgliederVerwaltungView.class, VaadinIcon.USERS.create()));
                 adminNav.addItem(new SideNavItem("Alle Zertifikate", ZertifikateView.class, VaadinIcon.DIPLOMA.create()));
 

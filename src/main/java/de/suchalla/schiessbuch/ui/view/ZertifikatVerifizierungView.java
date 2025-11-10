@@ -8,6 +8,7 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -51,6 +52,7 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
         setPadding(false);
         setSizeFull();
         addClassName("view-container");
+        getElement().getThemeList().add("zertifikat-verifizierung-view");
 
         // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = new VerticalLayout();
@@ -66,31 +68,24 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
         H2 title = new H2("Zertifikat verifizieren");
         title.getStyle().set("margin", "0");
 
-        Span subtitle = new Span("Prüfen Sie die Echtheit und Gültigkeit eines digitalen Zertifikats");
-        subtitle.addClassName("subtitle");
-
-        header.add(title, subtitle);
+        header.add(title);
         contentWrapper.add(header);
 
         // Info-Box mit modernem Styling
         Div infoBox = new Div();
-        infoBox.getStyle()
-                .set("background", "var(--lumo-primary-color-10pct)")
-                .set("border-left", "4px solid var(--lumo-primary-color)")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("padding", "var(--lumo-space-m)")
-                .set("margin-bottom", "var(--lumo-space-l)")
-                .set("box-shadow", "var(--lumo-box-shadow-xs)");
+        infoBox.addClassName("info-box");
+
+        // Icon hinzufügen
+        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.addClassName("info-icon");
+        infoBox.add(infoIcon);
 
         Paragraph beschreibung = new Paragraph(
                 "Geben Sie die Seriennummer eines Zertifikats und optional ein Datum ein, um zu prüfen, " +
                         "ob das Zertifikat zu diesem Zeitpunkt gültig war oder ist. Diese Funktion steht allen " +
                         "Personen zur Verfügung, um nachzuvollziehen, wer einen Schießnachweis bestätigt hat."
         );
-        beschreibung.getStyle()
-                .set("color", "var(--lumo-primary-text-color)")
-                .set("margin", "0");
-
+        beschreibung.addClassName("info-description");
         infoBox.add(beschreibung);
         contentWrapper.add(infoBox);
 
@@ -104,7 +99,6 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
         seriennummerField = new TextField("Zertifikat-Seriennummer");
         seriennummerField.setPlaceholder("z.B. 1a2b3c4d5e6f7890...");
         seriennummerField.setWidthFull();
-        seriennummerField.setPrefixComponent(VaadinIcon.BARCODE.create());
         seriennummerField.setHelperText("Die vollständige Seriennummer des Zertifikats");
 
         // Datumspicker für Prüfzeitpunkt

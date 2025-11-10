@@ -5,11 +5,17 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
@@ -18,6 +24,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.component.UI;
 import de.suchalla.schiessbuch.model.entity.Disziplin;
 import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.service.DisziplinService;
@@ -58,8 +65,10 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
         this.disziplinService = disziplinService;
         this.verbandService = verbandService;
 
-        setSpacing(true);
-        setPadding(true);
+        setSpacing(false);
+        setPadding(false);
+        setSizeFull();
+        addClassName("view-container");
 
         createContent();
     }
@@ -90,21 +99,62 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
     }
 
     private void createContent() {
-        if (ausgewaehlterVerband != null) {
-            add(new H2("Disziplinverwaltung - " + ausgewaehlterVerband.getName()));
-        } else {
-            add(new H2("Disziplinverwaltung"));
-        }
+        // Content-Wrapper für zentrierte Inhalte
+        VerticalLayout contentWrapper = new VerticalLayout();
+        contentWrapper.setSpacing(false);
+        contentWrapper.setPadding(false);
+        contentWrapper.addClassName("content-wrapper");
+
+        // Header-Bereich
+        Div header = new Div();
+        header.addClassName("gradient-header");
+        header.setWidthFull();
+
+        HorizontalLayout headerContent = new HorizontalLayout();
+        headerContent.setWidthFull();
+        headerContent.setAlignItems(FlexComponent.Alignment.CENTER);
+        headerContent.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
+
+        Button backButton = new Button("Zurück", VaadinIcon.ARROW_LEFT.create());
+        backButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        backButton.getStyle().set("color", "white");
+        backButton.addClickListener(e -> UI.getCurrent().navigate(VerbaendeVerwaltungView.class));
+
+        H2 title = new H2("Disziplinverwaltung");
+        title.getStyle().set("margin", "0");
+        title.getStyle().set("margin-left", "var(--lumo-space-m)");
+
+        headerContent.add(backButton, title);
+        header.add(headerContent);
+        contentWrapper.add(header);
+
+        // Info-Box
+        Div infoBox = new Div();
+        infoBox.addClassName("info-box");
+
+        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
+
+        Paragraph description = new Paragraph(
+                "Verwalten Sie hier die Disziplinen für die ausgewählten Verbände. Sie können Disziplinen manuell hinzufügen oder per CSV-Import importieren."
+        );
+
+        infoBox.add(infoIcon, description);
+        contentWrapper.add(infoBox);
 
         // Formular-Bereich
         formularBereich = new VerticalLayout();
-        formularBereich.setSpacing(true);
+        formularBereich.setSpacing(false);
         formularBereich.setPadding(false);
-        add(formularBereich);
+        contentWrapper.add(formularBereich);
+
+        add(contentWrapper);
     }
 
     private void updateFormularBereich() {
         formularBereich.removeAll();
+        formularBereich.setSpacing(false);
+        formularBereich.setPadding(false);
 
         if (ausgewaehlterVerband == null) {
             formularBereich.setVisible(false);
@@ -113,25 +163,49 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
 
         formularBereich.setVisible(true);
 
-        // Überschrift mit ausgewähltem Verband
-        formularBereich.add(new H3("Disziplinen für: " + ausgewaehlterVerband.getName()));
+        // ===== MANUELLE EINGABE CONTAINER =====
+        Div manuelleEingabeContainer = new Div();
+        manuelleEingabeContainer.getStyle().set("background", "white");
+        manuelleEingabeContainer.getStyle().set("padding", "var(--lumo-space-m)");
+        manuelleEingabeContainer.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
+        manuelleEingabeContainer.getStyle().set("margin-bottom", "var(--lumo-space-m)");
+        manuelleEingabeContainer.getStyle().set("box-sizing", "border-box");
+        manuelleEingabeContainer.setWidthFull();
+
+        H3 manuellerTitel = new H3("Disziplin manuell hinzufügen");
+        manuellerTitel.getStyle().set("margin-top", "0");
 
         // Manuelle Eingabe
         nameField.setRequired(true);
         nameField.clear();
+        nameField.setWidthFull();
         beschreibungField.setMaxLength(1000);
         beschreibungField.clear();
+        beschreibungField.setWidthFull();
+        beschreibungField.setHeight("120px");
 
         FormLayout formLayout = new FormLayout(nameField, beschreibungField);
         formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
+        formLayout.setColspan(beschreibungField, 1);
 
         Button speichernButton = new Button("Disziplin erstellen", e -> speichereDisziplin());
+        speichernButton.setIcon(VaadinIcon.PLUS.create());
         speichernButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        formularBereich.add(formLayout, speichernButton);
+        manuelleEingabeContainer.add(manuellerTitel, formLayout, speichernButton);
+        formularBereich.add(manuelleEingabeContainer);
 
-        // CSV-Import
-        formularBereich.add(new H3("CSV-Import"));
+        // ===== CSV-IMPORT CONTAINER =====
+        Div csvImportContainer = new Div();
+        csvImportContainer.getStyle().set("background", "white");
+        csvImportContainer.getStyle().set("padding", "var(--lumo-space-m)");
+        csvImportContainer.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
+        csvImportContainer.getStyle().set("margin-bottom", "var(--lumo-space-m)");
+        csvImportContainer.getStyle().set("box-sizing", "border-box");
+        csvImportContainer.setWidthFull();
+
+        H3 csvTitel = new H3("Disziplinen per CSV importieren");
+        csvTitel.getStyle().set("margin-top", "0");
 
         MemoryBuffer buffer = new MemoryBuffer();
         Upload upload = new Upload(buffer);
@@ -139,7 +213,7 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
         upload.setMaxFiles(1);
         upload.setMaxFileSize(5 * 1024 * 1024); // 5 MB
         upload.setDropLabel(new com.vaadin.flow.component.html.Span("CSV-Datei hier ablegen"));
-        upload.setUploadButton(new Button("CSV hochladen"));
+        upload.setUploadButton(new Button("CSV hochladen", VaadinIcon.UPLOAD.create()));
 
         upload.addSucceededListener(event -> {
             try {
@@ -150,39 +224,47 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
             }
         });
 
-        formularBereich.add(upload);
-
         // Hinweis für CSV-Format
         com.vaadin.flow.component.html.Div hinweis = new com.vaadin.flow.component.html.Div();
         hinweis.setText("CSV-Format: Name;Beschreibung (eine Disziplin pro Zeile, erste Zeile wird als Header übersprungen)");
-        hinweis.getStyle().set("font-size", "0.875rem").set("color", "var(--lumo-secondary-text-color)");
-        formularBereich.add(hinweis);
+        hinweis.getStyle().set("font-size", "0.875rem").set("color", "var(--lumo-secondary-text-color)").set("margin-top", "var(--lumo-space-s)");
+
+        csvImportContainer.add(csvTitel, upload, hinweis);
+        formularBereich.add(csvImportContainer);
+
+        // ===== GRID CONTAINER =====
+        Div gridContainer = new Div();
+        gridContainer.addClassName("grid-container");
+        gridContainer.setWidthFull();
 
         // Grid
         grid.removeAllColumns();
+        grid.addClassName("rounded-grid");
+
         grid.addColumn(Disziplin::getId)
                 .setHeader("ID")
-                .setWidth("80px")
+                .setWidth("60px")
                 .setClassNameGenerator(item -> "align-right");
         grid.addColumn(Disziplin::getName).setHeader("Name").setAutoWidth(true);
         grid.addColumn(Disziplin::getBeschreibung).setHeader("Beschreibung").setAutoWidth(true);
 
         // Aktionen-Spalte mit Löschen-Button
         grid.addComponentColumn(disziplin -> {
-            Button loeschenButton = new Button("Löschen");
+            Button loeschenButton = new Button("Löschen", VaadinIcon.TRASH.create());
             loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
             loeschenButton.addClickListener(e -> zeigeLoeschDialog(disziplin));
             return loeschenButton;
-        }).setHeader("Aktionen").setWidth("120px").setFlexGrow(0);
+        }).setHeader("Aktionen").setWidth("150px").setFlexGrow(0);
 
         // CSS für rechtsbündige Ausrichtung
         grid.getElement().executeJs(
                 "const style = document.createElement('style');" +
-                        "style.textContent = '.align-right { text-align: right; }';" +
-                        "document.head.appendChild(style);"
+                "style.textContent = '.align-right { text-align: right; }';" +
+                "document.head.appendChild(style);"
         );
 
-        formularBereich.add(grid);
+        gridContainer.add(grid);
+        formularBereich.add(gridContainer);
         updateGrid();
     }
 

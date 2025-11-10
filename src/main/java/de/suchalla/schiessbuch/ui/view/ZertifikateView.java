@@ -4,9 +4,11 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -58,6 +60,7 @@ public class ZertifikateView extends VerticalLayout {
     private TextField searchField;
     private ComboBox<String> typFilter;
     private ComboBox<String> statusFilter;
+    private ComboBox<String> vereinFilter;
 
     public ZertifikateView(
             DigitalesZertifikatRepository zertifikatRepository,
@@ -85,7 +88,7 @@ public class ZertifikateView extends VerticalLayout {
         contentWrapper.addClassName("content-wrapper");
 
         // Header-Bereich
-        com.vaadin.flow.component.html.Div header = new com.vaadin.flow.component.html.Div();
+        Div header = new Div();
         header.addClassName("gradient-header");
         header.setWidthFull();
 
@@ -95,44 +98,33 @@ public class ZertifikateView extends VerticalLayout {
         header.add(title);
         contentWrapper.add(header);
 
-        // Info-Box mit modernem Styling
-        com.vaadin.flow.component.html.Div infoBox = new com.vaadin.flow.component.html.Div();
-        infoBox.getStyle()
-                .set("background", "var(--lumo-primary-color-10pct)")
-                .set("border-left", "4px solid var(--lumo-primary-color)")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("padding", "var(--lumo-space-m)")
-                .set("margin-bottom", "var(--lumo-space-l)")
-                .set("box-shadow", "var(--lumo-box-shadow-xs)")
-                .set("display", "flex")
-                .set("align-items", "flex-start")
-                .set("gap", "var(--lumo-space-s)");
+        // Info-Box
+        Div infoBox = new Div();
+        infoBox.addClassName("info-box");
 
-        com.vaadin.flow.component.icon.Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
         infoIcon.setSize("20px");
-        infoIcon.getStyle()
-                .set("color", "var(--lumo-primary-color)")
-                .set("flex-shrink", "0")
-                .set("margin-top", "2px");
 
         Paragraph description = new Paragraph(
                 "Hier können Sie Ihre digitalen Zertifikate einsehen, die für die Signierung von Schießnachweisen verwendet werden."
         );
-        description.getStyle()
-                .set("color", "var(--lumo-primary-text-color)")
-                .set("margin", "0");
 
         infoBox.add(infoIcon, description);
         contentWrapper.add(infoBox);
 
-        // Filter-Bereich mit modernem Styling
-        com.vaadin.flow.component.html.Div filterBox = new com.vaadin.flow.component.html.Div();
-        filterBox.addClassName("filter-box");
-        filterBox.add(createFilterBar());
-        contentWrapper.add(filterBox);
+        // Filter-Container mit grauem Hintergrund
+        Div filterContainer = new Div();
+        filterContainer.setWidthFull();
+        filterContainer.getStyle().set("background", "var(--lumo-contrast-5pct)");
+        filterContainer.getStyle().set("padding", "var(--lumo-space-m)");
+        filterContainer.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
+        filterContainer.getStyle().set("margin-bottom", "var(--lumo-space-m)");
+        filterContainer.getStyle().set("box-sizing", "border-box");
+        filterContainer.add(createFilterBar());
+        contentWrapper.add(filterContainer);
 
         // Grid-Container mit weißem Hintergrund
-        com.vaadin.flow.component.html.Div gridContainer = new com.vaadin.flow.component.html.Div();
+        Div gridContainer = new Div();
         gridContainer.addClassName("grid-container");
         gridContainer.setWidthFull();
 
@@ -148,9 +140,14 @@ public class ZertifikateView extends VerticalLayout {
     }
 
     private HorizontalLayout createFilterBar() {
-        HorizontalLayout filterBar = new HorizontalLayout();
-        filterBar.setWidthFull();
-        filterBar.setSpacing(true);
+        HorizontalLayout filterLayout = new HorizontalLayout();
+        filterLayout.setWidthFull();
+        filterLayout.setSpacing(true);
+        filterLayout.addClassName("filter-bar");
+        filterLayout.setAlignItems(Alignment.END);
+        // Ensure the filter layout is responsive
+        filterLayout.getStyle().set("flex-wrap", "wrap");
+        filterLayout.setJustifyContentMode(JustifyContentMode.START);
 
         // Suchfeld
         searchField = new TextField();
@@ -159,6 +156,7 @@ public class ZertifikateView extends VerticalLayout {
         searchField.setValueChangeMode(ValueChangeMode.LAZY);
         searchField.addValueChangeListener(e -> applyFilters());
         searchField.setWidth("300px");
+        searchField.getStyle().set("flex-shrink", "0");
 
         // Typ-Filter
         typFilter = new ComboBox<>("Typ");
@@ -166,6 +164,7 @@ public class ZertifikateView extends VerticalLayout {
         typFilter.setValue("Alle");
         typFilter.addValueChangeListener(e -> applyFilters());
         typFilter.setWidth("150px");
+        typFilter.getStyle().set("flex-shrink", "0");
 
         // Status-Filter
         statusFilter = new ComboBox<>("Status");
@@ -173,16 +172,23 @@ public class ZertifikateView extends VerticalLayout {
         statusFilter.setValue("Alle");
         statusFilter.addValueChangeListener(e -> applyFilters());
         statusFilter.setWidth("150px");
+        statusFilter.getStyle().set("flex-shrink", "0");
+
+        // Vereins-Filter
+        vereinFilter = new ComboBox<>("Verein");
+        vereinFilter.setWidth("200px");
+        vereinFilter.addValueChangeListener(e -> applyFilters());
+        vereinFilter.getStyle().set("flex-shrink", "0");
 
         // Reset-Button
         Button resetButton = new Button("Filter zurücksetzen", VaadinIcon.REFRESH.create());
         resetButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         resetButton.addClickListener(e -> resetFilters());
+        resetButton.getStyle().set("flex-shrink", "0");
 
-        filterBar.add(searchField, typFilter, statusFilter, resetButton);
-        filterBar.setAlignItems(Alignment.END);
+        filterLayout.add(searchField, typFilter, statusFilter, vereinFilter, resetButton);
 
-        return filterBar;
+        return filterLayout;
     }
 
     private void applyFilters() {
@@ -190,83 +196,75 @@ public class ZertifikateView extends VerticalLayout {
                 .filter(this::matchesSearchFilter)
                 .filter(this::matchesTypFilter)
                 .filter(this::matchesStatusFilter)
-                .collect(Collectors.toList());
+                .filter(this::matchesVereinFilter)
+                .toList();
 
         grid.setItems(filtered);
     }
 
     private boolean matchesSearchFilter(DigitalesZertifikat zert) {
-        if (searchField.isEmpty()) {
+        String searchTerm = searchField.getValue();
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
             return true;
         }
 
-        String searchTerm = searchField.getValue().toLowerCase();
-
-        // Durchsuche Seriennummer
-        if (zert.getSeriennummer().toLowerCase().contains(searchTerm)) {
-            return true;
+        searchTerm = searchTerm.toLowerCase();
+        String seriennummer = zert.getSeriennummer().toLowerCase();
+        String inhaber = "";
+        if (zert.getBenutzer() != null) {
+            inhaber = zert.getBenutzer().getVollstaendigerName().toLowerCase();
+        } else if (zert.getVerein() != null) {
+            inhaber = zert.getVerein().getName().toLowerCase();
         }
 
-        // Durchsuche Inhaber
-        if (zert.getBenutzer() != null &&
-            zert.getBenutzer().getVollstaendigerName().toLowerCase().contains(searchTerm)) {
-            return true;
-        }
-
-        if (zert.getVerein() != null &&
-            zert.getVerein().getName().toLowerCase().contains(searchTerm)) {
-            return true;
-        }
-
-        // Durchsuche Subject DN
-        if (zert.getSubjectDN().toLowerCase().contains(searchTerm)) {
-            return true;
-        }
-
-        return false;
+        return seriennummer.contains(searchTerm) || inhaber.contains(searchTerm);
     }
 
     private boolean matchesTypFilter(DigitalesZertifikat zert) {
-        if (typFilter.isEmpty() || "Alle".equals(typFilter.getValue())) {
+        String selectedTyp = typFilter.getValue();
+        if (selectedTyp == null || "Alle".equals(selectedTyp)) {
             return true;
         }
 
-        String selectedTyp = typFilter.getValue();
-        String zertTyp = zert.getZertifikatsTyp();
-
-        switch (selectedTyp) {
-            case "Root CA":
-                return "ROOT".equals(zertTyp);
-            case "Verein":
-                return "VEREIN".equals(zertTyp);
-            case "Aufseher":
-                return "AUFSEHER".equals(zertTyp);
-            default:
-                return true;
-        }
+        return switch (selectedTyp) {
+            case "Root CA" -> "ROOT".equals(zert.getZertifikatsTyp());
+            case "Verein" -> "VEREIN".equals(zert.getZertifikatsTyp());
+            case "Aufseher" -> "AUFSEHER".equals(zert.getZertifikatsTyp());
+            default -> true;
+        };
     }
 
     private boolean matchesStatusFilter(DigitalesZertifikat zert) {
-        if (statusFilter.isEmpty() || "Alle".equals(statusFilter.getValue())) {
+        String selectedStatus = statusFilter.getValue();
+        if (selectedStatus == null || "Alle".equals(selectedStatus)) {
             return true;
         }
 
-        String selectedStatus = statusFilter.getValue();
+        return switch (selectedStatus) {
+            case "Gültig" -> zert.istGueltig() && !zert.getWiderrufen();
+            case "Widerrufen" -> zert.getWiderrufen();
+            default -> true;
+        };
+    }
 
-        switch (selectedStatus) {
-            case "Gültig":
-                return zert.istGueltig() && !zert.getWiderrufen();
-            case "Widerrufen":
-                return zert.getWiderrufen();
-            default:
-                return true;
+    private boolean matchesVereinFilter(DigitalesZertifikat zert) {
+        String selectedVerein = vereinFilter.getValue();
+        if (selectedVerein == null || "Alle".equals(selectedVerein)) {
+            return true;
         }
+
+        if (zert.getVerein() != null) {
+            return zert.getVerein().getName().equals(selectedVerein);
+        }
+
+        return false;
     }
 
     private void resetFilters() {
         searchField.clear();
         typFilter.setValue("Alle");
         statusFilter.setValue("Alle");
+        vereinFilter.setValue("Alle");
         applyFilters();
     }
 
@@ -293,15 +291,14 @@ public class ZertifikateView extends VerticalLayout {
             }
         }).setHeader("Inhaber").setSortable(true).setAutoWidth(true);
 
-        grid.addColumn(zert -> zert.getGueltigAb().format(dateFormatter))
-                .setHeader("Gültig ab")
-                .setSortable(true)
-                .setAutoWidth(true);
-
-        grid.addColumn(zert -> zert.getGueltigBis() != null ? zert.getGueltigBis().format(dateFormatter) : "Unbegrenzt")
-                .setHeader("Gültig bis")
-                .setSortable(true)
-                .setAutoWidth(true);
+        // Neue Spalte: Verein
+        grid.addColumn(zert -> {
+            if (zert.getVerein() != null) {
+                return zert.getVerein().getName();
+            } else {
+                return "-";
+            }
+        }).setHeader("Verein").setSortable(true).setAutoWidth(true);
 
         grid.addComponentColumn(this::createStatusBadge)
                 .setHeader("Status")
@@ -316,15 +313,33 @@ public class ZertifikateView extends VerticalLayout {
 
     private Span createStatusBadge(DigitalesZertifikat zertifikat) {
         Span badge = new Span();
-        if (zertifikat.istGueltig()) {
-            badge.setText("Gültig");
-            badge.getElement().getThemeList().add("badge success");
-        } else if (zertifikat.getWiderrufen()) {
+        if (zertifikat.getWiderrufen()) {
             badge.setText("Widerrufen");
-            badge.getElement().getThemeList().add("badge error");
+            badge.getStyle().set("background-color", "var(--lumo-error-color)");
+            badge.getStyle().set("color", "white");
+            badge.getStyle().set("padding", "var(--lumo-space-xs) var(--lumo-space-s)");
+            badge.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
+            badge.getStyle().set("font-weight", "600");
+            badge.getStyle().set("font-size", "var(--lumo-font-size-s)");
+            badge.getStyle().set("display", "inline-block");
+        } else if (zertifikat.istGueltig()) {
+            badge.setText("Gültig");
+            badge.getStyle().set("background-color", "var(--lumo-success-color)");
+            badge.getStyle().set("color", "white");
+            badge.getStyle().set("padding", "var(--lumo-space-xs) var(--lumo-space-s)");
+            badge.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
+            badge.getStyle().set("font-weight", "600");
+            badge.getStyle().set("font-size", "var(--lumo-font-size-s)");
+            badge.getStyle().set("display", "inline-block");
         } else {
             badge.setText("Abgelaufen");
-            badge.getElement().getThemeList().add("badge");
+            badge.getStyle().set("background-color", "var(--lumo-contrast-50pct)");
+            badge.getStyle().set("color", "white");
+            badge.getStyle().set("padding", "var(--lumo-space-xs) var(--lumo-space-s)");
+            badge.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
+            badge.getStyle().set("font-weight", "600");
+            badge.getStyle().set("font-size", "var(--lumo-font-size-s)");
+            badge.getStyle().set("display", "inline-block");
         }
         return badge;
     }
@@ -384,7 +399,27 @@ public class ZertifikateView extends VerticalLayout {
         }
 
         log.info("Gesamt geladene Zertifikate (nach Duplikat-Entfernung): {}", allZertifikate.size());
+
+        // Vereins-Filter initialisieren
+        updateVereinFilter();
+
         applyFilters();
+    }
+
+    private void updateVereinFilter() {
+        List<String> vereinsNamen = allZertifikate.stream()
+                .filter(zert -> zert.getVerein() != null)
+                .map(zert -> zert.getVerein().getName())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+
+        List<String> items = new ArrayList<>();
+        items.add("Alle");
+        items.addAll(vereinsNamen);
+
+        vereinFilter.setItems(items);
+        vereinFilter.setValue("Alle");
     }
 
     private void showDetails(DigitalesZertifikat zertifikat) {
@@ -405,9 +440,9 @@ public class ZertifikateView extends VerticalLayout {
 
         if (zertifikat.getWiderrufen()) {
             detailsLayout.add(createDetailField("Widerrufen am",
-                zertifikat.getWiderrufenAm() != null ? zertifikat.getWiderrufenAm().format(dateFormatter) : ""));
+                    zertifikat.getWiderrufenAm() != null ? zertifikat.getWiderrufenAm().format(dateFormatter) : ""));
             detailsLayout.add(createDetailField("Widerrufsgrund",
-                zertifikat.getWiderrufsGrund() != null ? zertifikat.getWiderrufsGrund() : ""));
+                    zertifikat.getWiderrufsGrund() != null ? zertifikat.getWiderrufsGrund() : ""));
         }
 
         // Zertifikat im PEM-Format anzeigen
