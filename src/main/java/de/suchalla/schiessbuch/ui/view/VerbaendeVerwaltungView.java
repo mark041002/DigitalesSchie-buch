@@ -23,11 +23,13 @@ import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.service.VerbandService;
 import jakarta.annotation.security.RolesAllowed;
 
+import java.util.List;
+
 /**
  * View für Verbandsverwaltung (nur für Admins).
  *
  * @author Markus Suchalla
- * @version 1.0.0
+ * @version 1.0.1
  */
 @Route(value = "admin/verbaende", layout = MainLayout.class)
 @PageTitle("Verbände | Digitales Schießbuch")
@@ -36,6 +38,7 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
 
     private final VerbandService verbandService;
     private final Grid<Verband> grid = new Grid<>(Verband.class, false);
+    private Div emptyStateMessage;
 
     private final TextField nameField = new TextField("Name");
     private final TextArea beschreibungField = new TextArea("Beschreibung");
@@ -62,8 +65,10 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         // Header-Bereich
         Div header = new Div();
         header.addClassName("gradient-header");
+        header.setWidthFull();
 
         H2 title = new H2("Verbandsverwaltung");
+        title.getStyle().set("margin", "0");
 
         header.add(title);
         contentWrapper.add(header);
@@ -71,12 +76,17 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         // Info-Box mit modernem Styling
         Div infoBox = new Div();
         infoBox.addClassName("info-box");
+        infoBox.setWidthFull();
 
         Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
 
         Paragraph beschreibung = new Paragraph(
                 "Erstellen und verwalten Sie Verbände im System. Jeder Verband kann mehrere Vereine enthalten."
         );
+        beschreibung.getStyle()
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("margin", "0");
 
         infoBox.add(infoIcon, beschreibung);
         contentWrapper.add(infoBox);
@@ -84,10 +94,8 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         // Formular-Container
         Div formContainer = new Div();
         formContainer.addClassName("form-container");
-
-        // Überschrift für Formular
-        H2 formTitle = new H2("Neuen Verband erstellen");
-        formTitle.getStyle().set("margin-top", "0");
+        formContainer.setWidthFull();
+        formContainer.getStyle().set("margin-bottom", "var(--lumo-space-l)");
 
         // Formular
         nameField.setRequired(true);
@@ -102,61 +110,70 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         Button speichernButton = new Button("Verband erstellen", e -> speichereVerband());
         speichernButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        formContainer.add(formTitle, formLayout, speichernButton);
+        formContainer.add(formLayout, speichernButton);
         contentWrapper.add(formContainer);
 
         // Grid-Container mit weißem Hintergrund
         Div gridContainer = new Div();
         gridContainer.addClassName("grid-container");
+        gridContainer.setWidthFull();
+        gridContainer.getStyle()
+                .set("flex", "1 1 auto")
+                .set("display", "flex")
+                .set("flex-direction", "column")
+                .set("min-height", "0")
+                .set("overflow-x", "auto")
+                .set("overflow-y", "auto");
 
-        // Grid - responsiv konfiguriert
-        grid.setHeight("600px");
+        // Empty State Message
+        emptyStateMessage = new Div();
+        emptyStateMessage.addClassName("empty-state");
+        emptyStateMessage.setWidthFull();
+        emptyStateMessage.getStyle()
+                .set("text-align", "center")
+                .set("padding", "var(--lumo-space-xl)")
+                .set("color", "var(--lumo-secondary-text-color)");
+
+        Icon emptyIcon = VaadinIcon.INSTITUTION.create();
+        emptyIcon.setSize("48px");
+        emptyIcon.getStyle().set("margin-bottom", "var(--lumo-space-m)");
+
+        Paragraph emptyText = new Paragraph("Noch keine Verbände vorhanden.");
+        emptyText.getStyle().set("margin", "0");
+
+        emptyStateMessage.add(emptyIcon, emptyText);
+        emptyStateMessage.setVisible(false);
+
+        // Grid
+        grid.setHeight("100%");
+        grid.setWidthFull();
+        grid.getStyle()
+                .set("min-height", "400px");
         grid.addClassName("rounded-grid");
-        grid.setColumnReorderingAllowed(true);
 
         grid.addColumn(Verband::getId)
                 .setHeader("ID")
-                .setWidth("50px")
-                .setResizable(true)
+                .setWidth("80px")
+                .setAutoWidth(true)
+                .setFlexGrow(0)
                 .setClassNameGenerator(item -> "align-right");
+
         grid.addColumn(Verband::getName)
                 .setHeader("Name")
-                .setResizable(true)
+                .setAutoWidth(true)
                 .setFlexGrow(1);
+
         grid.addColumn(Verband::getBeschreibung)
                 .setHeader("Beschreibung")
-                .setResizable(true)
+                .setAutoWidth(true)
                 .setFlexGrow(1);
 
         // Aktionen-Spalte mit Details und Löschen Buttons
-        grid.addComponentColumn(verband -> {
-            Button detailsButton = new Button("Details", VaadinIcon.SEARCH.create());
-            detailsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
-            detailsButton.addClickListener(e -> {
-                // Navigiere zur DisziplinenVerwaltung mit Verband-ID
-                UI.getCurrent().navigate(DisziplinenVerwaltungView.class,
-                    new com.vaadin.flow.router.QueryParameters(
-                        java.util.Map.of("verbandId", java.util.List.of(verband.getId().toString()))
-                    )
-                );
-            });
-
-            Button loeschenButton = new Button("Löschen", VaadinIcon.TRASH.create());
-            loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-            loeschenButton.addClickListener(e -> zeigeLoeschDialog(verband));
-
-            HorizontalLayout actions = new HorizontalLayout(detailsButton, loeschenButton);
-            actions.setSpacing(false);
-            actions.setPadding(false);
-            actions.setMargin(false);
-            actions.getStyle().set("gap", "8px");
-            actions.setWidthFull();
-            return actions;
-        })
+        grid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen")
                 .setWidth("200px")
-                .setFlexGrow(0)
-                .setResizable(false);
+                .setAutoWidth(true)
+                .setFlexGrow(0);
 
         // CSS für rechtsbündige Ausrichtung
         grid.getElement().executeJs(
@@ -165,9 +182,33 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
                         "document.head.appendChild(style);"
         );
 
-        gridContainer.add(grid);
+        gridContainer.add(emptyStateMessage, grid);
         contentWrapper.add(gridContainer);
         add(contentWrapper);
+    }
+
+    private HorizontalLayout createActionButtons(Verband verband) {
+        Button detailsButton = new Button("Details", VaadinIcon.SEARCH.create());
+        detailsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+        detailsButton.addClickListener(e -> {
+            // Navigiere zur DisziplinenVerwaltung mit Verband-ID
+            UI.getCurrent().navigate(DisziplinenVerwaltungView.class,
+                    new com.vaadin.flow.router.QueryParameters(
+                            java.util.Map.of("verbandId", java.util.List.of(verband.getId().toString()))
+                    )
+            );
+        });
+
+        Button loeschenButton = new Button("Löschen", VaadinIcon.TRASH.create());
+        loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+        loeschenButton.addClickListener(e -> zeigeLoeschDialog(verband));
+
+        HorizontalLayout actions = new HorizontalLayout(detailsButton, loeschenButton);
+        actions.setSpacing(false);
+        actions.setPadding(false);
+        actions.setMargin(false);
+        actions.getStyle().set("gap", "8px");
+        return actions;
     }
 
     private void speichereVerband() {
@@ -194,7 +235,6 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         }
     }
 
-
     private void zeigeLoeschDialog(Verband verband) {
         ConfirmDialog dialog = new ConfirmDialog();
         dialog.setHeader("Verband löschen");
@@ -216,9 +256,14 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         }
     }
 
-
     private void updateGrid() {
-        grid.setItems(verbandService.findeAlleVerbaende());
+        List<Verband> verbaende = verbandService.findeAlleVerbaende();
+        grid.setItems(verbaende);
         grid.getDataProvider().refreshAll();
+
+        // Zeige/Verstecke Empty State Message
+        boolean isEmpty = verbaende.isEmpty();
+        grid.setVisible(!isEmpty);
+        emptyStateMessage.setVisible(isEmpty);
     }
 }

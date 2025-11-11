@@ -173,6 +173,10 @@ public class DigitalesZertifikat {
         this.widerrufsGrund = grund;
     }
 
+    public Long getId() {
+        return id;
+    }
+
     @Override
     public String toString() {
         return "DigitalesZertifikat{" +

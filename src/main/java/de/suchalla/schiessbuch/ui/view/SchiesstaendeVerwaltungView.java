@@ -7,8 +7,11 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -36,7 +39,7 @@ import java.util.Map;
  * View für Schießstandverwaltung (nur für Admins).
  *
  * @author Markus Suchalla
- * @version 1.0.1
+ * @version 1.0.2
  */
 @Route(value = "admin/schiesstaende", layout = MainLayout.class)
 @PageTitle("Schießstände | Digitales Schießbuch")
@@ -47,6 +50,7 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
     private final DisziplinService disziplinService;
     private final VerbandService verbandService;
     private final Grid<Schiesstand> grid = new Grid<>(Schiesstand.class, false);
+    private Div emptyStateMessage;
 
     private final TextField nameField = new TextField("Name");
     private final TextField adresseField = new TextField("Adresse");
@@ -59,16 +63,58 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
         this.disziplinService = disziplinService;
         this.verbandService = verbandService;
 
-        setSpacing(true);
-        setPadding(true);
+        setSpacing(false);
+        setPadding(false);
+        setSizeFull();
+        addClassName("view-container");
 
         createContent();
         updateGrid();
     }
 
     private void createContent() {
-        add(new H2("Schießstandverwaltung"));
+        // Content-Wrapper für zentrierte Inhalte
+        VerticalLayout contentWrapper = new VerticalLayout();
+        contentWrapper.setSpacing(false);
+        contentWrapper.setPadding(false);
+        contentWrapper.addClassName("content-wrapper");
 
+        // Header-Bereich
+        Div header = new Div();
+        header.addClassName("gradient-header");
+        header.setWidthFull();
+
+        H2 title = new H2("Schießstandverwaltung");
+        title.getStyle().set("margin", "0");
+
+        header.add(title);
+        contentWrapper.add(header);
+
+        // Info-Box mit modernem Styling
+        Div infoBox = new Div();
+        infoBox.addClassName("info-box");
+        infoBox.setWidthFull();
+
+        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
+
+        Paragraph beschreibung = new Paragraph(
+                "Erstellen und verwalten Sie Schießstände im System. Schießstände können gewerblich oder vereinsgebunden sein."
+        );
+        beschreibung.getStyle()
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("margin", "0");
+
+        infoBox.add(infoIcon, beschreibung);
+        contentWrapper.add(infoBox);
+
+        // Formular-Container
+        Div formContainer = new Div();
+        formContainer.addClassName("form-container");
+        formContainer.setWidthFull();
+        formContainer.getStyle().set("margin-bottom", "var(--lumo-space-l)");
+
+        // Formular
         nameField.setRequired(true);
 
         // Nur die beiden Typen erlauben
@@ -122,45 +168,99 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
         Button speichernButton = new Button("Schießstand erstellen", e -> speichereSchiesstand());
         speichernButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        add(formLayout, speichernButton);
+        formContainer.add(formLayout, speichernButton);
+        contentWrapper.add(formContainer);
+
+        // Grid-Container mit weißem Hintergrund
+        Div gridContainer = new Div();
+        gridContainer.addClassName("grid-container");
+        gridContainer.setWidthFull();
+        gridContainer.getStyle()
+                .set("flex", "1 1 auto")
+                .set("display", "flex")
+                .set("flex-direction", "column")
+                .set("min-height", "0")
+                .set("overflow-x", "auto")
+                .set("overflow-y", "auto");
+
+        // Empty State Message
+        emptyStateMessage = new Div();
+        emptyStateMessage.addClassName("empty-state");
+        emptyStateMessage.setWidthFull();
+        emptyStateMessage.getStyle()
+                .set("text-align", "center")
+                .set("padding", "var(--lumo-space-xl)")
+                .set("color", "var(--lumo-secondary-text-color)");
+
+        Icon emptyIcon = VaadinIcon.BUILDING.create();
+        emptyIcon.setSize("48px");
+        emptyIcon.getStyle().set("margin-bottom", "var(--lumo-space-m)");
+
+        Paragraph emptyText = new Paragraph("Noch keine Schießstände vorhanden.");
+        emptyText.getStyle().set("margin", "0");
+
+        emptyStateMessage.add(emptyIcon, emptyText);
+        emptyStateMessage.setVisible(false);
 
         // Grid
+        grid.setHeight("100%");
+        grid.setWidthFull();
+        grid.getStyle()
+                .set("min-height", "400px");
+        grid.addClassName("rounded-grid");
+        grid.setColumnReorderingAllowed(true);
+
         grid.addColumn(Schiesstand::getId)
                 .setHeader("ID")
                 .setWidth("80px")
+                .setAutoWidth(true)
+                .setFlexGrow(0)
+                .setResizable(true)
                 .setClassNameGenerator(item -> "align-right");
-        grid.addColumn(Schiesstand::getName).setHeader("Name");
-        grid.addColumn(schiesstand -> getTypText(schiesstand.getTyp())).setHeader("Typ");
+
+        grid.addColumn(Schiesstand::getName)
+                .setHeader("Name")
+                .setAutoWidth(true)
+                .setFlexGrow(1)
+                .setResizable(true);
+
+        grid.addColumn(schiesstand -> getTypText(schiesstand.getTyp()))
+                .setHeader("Typ")
+                .setAutoWidth(true)
+                .setFlexGrow(1)
+                .setResizable(true);
+
         grid.addColumn(schiesstand -> schiesstand.getVerein() != null ?
-                schiesstand.getVerein().getName() : "-").setHeader("Verein");
+                        schiesstand.getVerein().getName() : "-")
+                .setHeader("Verein")
+                .setAutoWidth(true)
+                .setFlexGrow(1)
+                .setResizable(true);
+
         grid.addColumn(schiesstand -> {
-            if (schiesstand.getAufseher() != null) {
-                return schiesstand.getAufseher().getVollstaendigerName();
-            }
-            return "-";
-        }).setHeader("Vereinschef / Aufseher");
-        grid.addColumn(Schiesstand::getAdresse).setHeader("Adresse");
+                    if (schiesstand.getAufseher() != null) {
+                        return schiesstand.getAufseher().getVollstaendigerName();
+                    }
+                    return "-";
+                })
+                .setHeader("Vereinschef / Aufseher")
+                .setAutoWidth(true)
+                .setFlexGrow(1)
+                .setResizable(true);
+
+        grid.addColumn(Schiesstand::getAdresse)
+                .setHeader("Adresse")
+                .setAutoWidth(true)
+                .setFlexGrow(1)
+                .setResizable(true);
 
         // Aktionen-Spalte mit Details, Zuweisen und Löschen Buttons
-        grid.addComponentColumn(schiesstand -> {
-            Button detailsButton = new Button("Details");
-            detailsButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
-            detailsButton.addClickListener(e -> navigiereZuEintraegen(schiesstand));
-
-            Button aufseherButton = new Button(schiesstand.getTyp() == SchiesstandTyp.GEWERBLICH ?
-                    "Aufseher" : "Vereinschef");
-            aufseherButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
-            aufseherButton.addClickListener(e -> zeigeAufseherDialog(schiesstand));
-
-            Button loeschenButton = new Button("Löschen");
-            loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-            loeschenButton.addClickListener(e -> zeigeLoeschDialog(schiesstand));
-
-            HorizontalLayout actions = new HorizontalLayout(detailsButton, aufseherButton, loeschenButton);
-            actions.setSpacing(true);
-            actions.setPadding(false);
-            return actions;
-        }).setHeader("Aktionen").setWidth("300px").setFlexGrow(0);
+        grid.addComponentColumn(this::createActionButtons)
+                .setHeader("Aktionen")
+                .setWidth("300px")
+                .setAutoWidth(true)
+                .setFlexGrow(0)
+                .setResizable(false);
 
         // CSS für rechtsbündige Ausrichtung
         grid.getElement().executeJs(
@@ -169,7 +269,31 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
                         "document.head.appendChild(style);"
         );
 
-        add(grid);
+        gridContainer.add(emptyStateMessage, grid);
+        contentWrapper.add(gridContainer);
+        add(contentWrapper);
+    }
+
+    private HorizontalLayout createActionButtons(Schiesstand schiesstand) {
+        Button detailsButton = new Button("Details", VaadinIcon.SEARCH.create());
+        detailsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+        detailsButton.addClickListener(e -> navigiereZuEintraegen(schiesstand));
+
+        Button aufseherButton = new Button(schiesstand.getTyp() == SchiesstandTyp.GEWERBLICH ?
+                "Aufseher" : "Vereinschef");
+        aufseherButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
+        aufseherButton.addClickListener(e -> zeigeAufseherDialog(schiesstand));
+
+        Button loeschenButton = new Button("Löschen", VaadinIcon.TRASH.create());
+        loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+        loeschenButton.addClickListener(e -> zeigeLoeschDialog(schiesstand));
+
+        HorizontalLayout actions = new HorizontalLayout(detailsButton, aufseherButton, loeschenButton);
+        actions.setSpacing(false);
+        actions.setPadding(false);
+        actions.setMargin(false);
+        actions.getStyle().set("gap", "8px");
+        return actions;
     }
 
     private void speichereSchiesstand() {
@@ -279,8 +403,14 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
     }
 
     private void updateGrid() {
-        grid.setItems(disziplinService.findeAlleSchiesstaende());
+        List<Schiesstand> schiesstaende = disziplinService.findeAlleSchiesstaende();
+        grid.setItems(schiesstaende);
         grid.getDataProvider().refreshAll();
+
+        // Zeige/Verstecke Empty State Message
+        boolean isEmpty = schiesstaende.isEmpty();
+        grid.setVisible(!isEmpty);
+        emptyStateMessage.setVisible(isEmpty);
     }
 
     private void navigiereZuEintraegen(Schiesstand schiesstand) {
