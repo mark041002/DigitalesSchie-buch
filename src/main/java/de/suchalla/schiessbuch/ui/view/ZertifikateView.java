@@ -2,31 +2,31 @@ package de.suchalla.schiessbuch.ui.view;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
-import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
+import de.suchalla.schiessbuch.repository.BenutzerRepository;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
-import de.suchalla.schiessbuch.service.BenutzerService;
 import jakarta.annotation.security.RolesAllowed;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -37,39 +37,26 @@ import java.util.List;
  */
 @Route(value = "admin/zertifikate", layout = MainLayout.class)
 @PageTitle("Zertifikate | Digitales Schießbuch")
-@RolesAllowed("ADMIN")
+@RolesAllowed({"ADMIN", "AUFSEHER", "SCHIESSSTAND_AUFSEHER", "VEREINS_CHEF"})
 public class ZertifikateView extends VerticalLayout {
     private final DigitalesZertifikatRepository zertifikatRepository;
-    private final BenutzerService benutzerService;
+    private final BenutzerRepository benutzerRepository;
     private final Grid<DigitalesZertifikat> grid = new Grid<>(DigitalesZertifikat.class, false);
     private Div emptyStateMessage;
-    private final ComboBox<Benutzer> benutzerComboBox = new ComboBox<>("Benutzer");
-    private final ComboBox<String> typComboBox = new ComboBox<>("Zertifikatstyp");
-    private final TextField seriennummerField = new TextField("Seriennummer");
-    private final DatePicker gueltigAbPicker = new DatePicker("Gültig ab");
-    private final DatePicker gueltigBisPicker = new DatePicker("Gültig bis");
 
-    public ZertifikateView(DigitalesZertifikatRepository zertifikatRepository, BenutzerService benutzerService) {
+    public ZertifikateView(DigitalesZertifikatRepository zertifikatRepository,
+                          BenutzerRepository benutzerRepository) {
         this.zertifikatRepository = zertifikatRepository;
-        this.benutzerService = benutzerService;
+        this.benutzerRepository = benutzerRepository;
         setSpacing(false);
         setPadding(false);
         setSizeFull();
         addClassName("view-container");
-        typComboBox.setItems("ROOT", "VEREIN", "AUFSEHER");
-        typComboBox.setRequired(true);
-        typComboBox.setPlaceholder("Typ auswählen...");
         createContent();
         updateGrid();
     }
 
     private void createContent() {
-        // Content-Wrapper für zentrierte Inhalte
-        VerticalLayout contentWrapper = new VerticalLayout();
-        contentWrapper.setSpacing(false);
-        contentWrapper.setPadding(false);
-        contentWrapper.addClassName("content-wrapper");
-
         // Header-Bereich
         Div header = new Div();
         header.addClassName("gradient-header");
@@ -79,7 +66,7 @@ public class ZertifikateView extends VerticalLayout {
         title.getStyle().set("margin", "0");
 
         header.add(title);
-        contentWrapper.add(header);
+        add(header);
 
         // Info-Box mit modernem Styling
         Div infoBox = new Div();
@@ -90,48 +77,14 @@ public class ZertifikateView extends VerticalLayout {
         infoIcon.setSize("20px");
 
         Paragraph beschreibung = new Paragraph(
-                "Erstellen und verwalten Sie Zertifikate für Benutzer. Zertifikate können verschiedene Typen haben und ein Ablaufdatum besitzen."
+                "Verwalten Sie Zertifikate für Benutzer und Vereine."
         );
         beschreibung.getStyle()
                 .set("color", "var(--lumo-primary-text-color)")
                 .set("margin", "0");
 
         infoBox.add(infoIcon, beschreibung);
-        contentWrapper.add(infoBox);
-
-        // Formular-Container
-        Div formContainer = new Div();
-        formContainer.addClassName("form-container");
-        formContainer.setWidthFull();
-        formContainer.getStyle().set("margin-bottom", "var(--lumo-space-l)");
-
-        // Formular
-        benutzerComboBox.setRequired(true);
-        benutzerComboBox.setItems(benutzerService.findAlleBenutzer());
-        benutzerComboBox.setItemLabelGenerator(Benutzer::getVollstaendigerName);
-        benutzerComboBox.setPlaceholder("Benutzer auswählen...");
-
-        typComboBox.setRequired(true);
-        typComboBox.setItems("ROOT", "VEREIN", "AUFSEHER");
-        typComboBox.setPlaceholder("Typ auswählen...");
-
-        seriennummerField.setRequired(true);
-        gueltigAbPicker.setRequired(true);
-
-        FormLayout formLayout = new FormLayout(
-                benutzerComboBox, typComboBox, seriennummerField,
-                gueltigAbPicker, gueltigBisPicker
-        );
-        formLayout.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("500px", 2)
-        );
-
-        Button speichernButton = new Button("Zertifikat erstellen", e -> speichereZertifikat());
-        speichernButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-        formContainer.add(formLayout, speichernButton);
-        contentWrapper.add(formContainer);
+        add(infoBox);
 
         // Grid-Container mit weißem Hintergrund
         Div gridContainer = new Div();
@@ -165,12 +118,10 @@ public class ZertifikateView extends VerticalLayout {
         emptyStateMessage.setVisible(false);
 
         // Grid
-        grid.setHeight("100%");
         grid.setWidthFull();
-        grid.getStyle()
-                .set("min-height", "400px");
         grid.addClassName("rounded-grid");
         grid.setColumnReorderingAllowed(true);
+        // Höhe wird dynamisch in updateGrid() gesetzt
 
         grid.addColumn(DigitalesZertifikat::getId)
                 .setHeader("ID")
@@ -179,13 +130,34 @@ public class ZertifikateView extends VerticalLayout {
                 .setFlexGrow(0)
                 .setClassNameGenerator(item -> "align-right");
 
-        grid.addColumn(zertifikat -> zertifikat.getBenutzer() != null ? zertifikat.getBenutzer().getVollstaendigerName() : "-")
-                .setHeader("Benutzer")
+        grid.addColumn(zertifikat -> {
+            if (zertifikat.getBenutzer() != null) {
+                return zertifikat.getBenutzer().getVollstaendigerName();
+            } else if (zertifikat.getVerein() != null) {
+                return zertifikat.getVerein().getName();
+            } else if (zertifikat.getSchiesstand() != null) {
+                return zertifikat.getSchiesstand().getName();
+            }
+            return "-";
+        })
+                .setHeader("Benutzer/Verein/Schießstand")
                 .setAutoWidth(true)
                 .setFlexGrow(1);
 
         grid.addColumn(DigitalesZertifikat::getZertifikatsTyp)
                 .setHeader("Typ")
+                .setAutoWidth(true)
+                .setFlexGrow(1);
+
+        grid.addColumn(zertifikat -> {
+            if (zertifikat.getVerein() != null) {
+                return zertifikat.getVerein().getName();
+            } else if (zertifikat.getSchiesstand() != null) {
+                return zertifikat.getSchiesstand().getName();
+            }
+            return "-";
+        })
+                .setHeader("Verein/Schießstand")
                 .setAutoWidth(true)
                 .setFlexGrow(1);
 
@@ -195,16 +167,11 @@ public class ZertifikateView extends VerticalLayout {
                 .setFlexGrow(1);
 
         grid.addColumn(zertifikat -> formatDatum(zertifikat.getGueltigAb()))
-                .setHeader("Gültig ab")
+                .setHeader("Gültig seit")
                 .setAutoWidth(true)
                 .setFlexGrow(0);
 
-        grid.addColumn(zertifikat -> formatDatum(zertifikat.getGueltigBis()))
-                .setHeader("Gültig bis")
-                .setAutoWidth(true)
-                .setFlexGrow(0);
-
-        grid.addColumn(zertifikat -> zertifikat.getWiderrufen() ? "Widerrufen" : "Gültig")
+        grid.addComponentColumn(this::createStatusBadge)
                 .setHeader("Status")
                 .setAutoWidth(true)
                 .setFlexGrow(0);
@@ -233,8 +200,7 @@ public class ZertifikateView extends VerticalLayout {
         );
 
         gridContainer.add(emptyStateMessage, grid);
-        contentWrapper.add(gridContainer);
-        add(contentWrapper);
+        add(gridContainer);
     }
 
     private HorizontalLayout createActionButtons(DigitalesZertifikat zertifikat) {
@@ -254,40 +220,34 @@ public class ZertifikateView extends VerticalLayout {
         return actions;
     }
 
-    private void speichereZertifikat() {
-        if (benutzerComboBox.isEmpty() || typComboBox.isEmpty() || seriennummerField.isEmpty() || gueltigAbPicker.isEmpty()) {
-            Notification.show("Bitte füllen Sie alle Pflichtfelder aus")
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-            return;
+    private Span createStatusBadge(DigitalesZertifikat zertifikat) {
+        Span badge = new Span();
+
+        if (zertifikat.getWiderrufen()) {
+            badge.setText("Widerrufen");
+            badge.getElement().getThemeList().add("badge error");
+            badge.getStyle()
+                    .set("background-color", "#fee")
+                    .set("color", "#c00")
+                    .set("padding", "4px 8px")
+                    .set("border-radius", "4px")
+                    .set("font-weight", "500")
+                    .set("font-size", "0.875rem");
+        } else {
+            badge.setText("Gültig");
+            badge.getElement().getThemeList().add("badge success");
+            badge.getStyle()
+                    .set("background-color", "#efe")
+                    .set("color", "#0a0")
+                    .set("padding", "4px 8px")
+                    .set("border-radius", "4px")
+                    .set("font-weight", "500")
+                    .set("font-size", "0.875rem");
         }
-        if (zertifikatRepository.findBySeriennummer(seriennummerField.getValue()).isPresent()) {
-            Notification.show("Seriennummer ist bereits vergeben!")
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-            return;
-        }
-        try {
-            DigitalesZertifikat zertifikat = DigitalesZertifikat.builder()
-                    .benutzer(benutzerComboBox.getValue())
-                    .zertifikatsTyp(typComboBox.getValue())
-                    .seriennummer(seriennummerField.getValue())
-                    .gueltigAb(gueltigAbPicker.getValue().atStartOfDay())
-                    .gueltigBis(gueltigBisPicker.isEmpty() ? null : gueltigBisPicker.getValue().atStartOfDay())
-                    .widerrufen(false)
-                    .build();
-            zertifikatRepository.save(zertifikat);
-            Notification.show("Zertifikat erfolgreich erstellt")
-                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            benutzerComboBox.clear();
-            typComboBox.clear();
-            seriennummerField.clear();
-            gueltigAbPicker.clear();
-            gueltigBisPicker.clear();
-            updateGrid();
-        } catch (Exception e) {
-            Notification.show("Fehler: " + e.getMessage())
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-        }
+
+        return badge;
     }
+
 
     private void zeigeLoeschDialog(DigitalesZertifikat zertifikat) {
         ConfirmDialog dialog = new ConfirmDialog();
@@ -314,8 +274,20 @@ public class ZertifikateView extends VerticalLayout {
 
         // Detail-Zeilen
         layout.add(createDetailRow("ID:", String.valueOf(zertifikat.getId())));
-        layout.add(createDetailRow("Benutzer:", zertifikat.getBenutzer() != null ? zertifikat.getBenutzer().getVollstaendigerName() : "-"));
-        layout.add(createDetailRow("E-Mail:", zertifikat.getBenutzer() != null ? zertifikat.getBenutzer().getEmail() : "-"));
+
+        if (zertifikat.getBenutzer() != null) {
+            layout.add(createDetailRow("Benutzer:", zertifikat.getBenutzer().getVollstaendigerName()));
+            layout.add(createDetailRow("E-Mail:", zertifikat.getBenutzer().getEmail()));
+        }
+
+        if (zertifikat.getVerein() != null) {
+            layout.add(createDetailRow("Verein:", zertifikat.getVerein().getName()));
+        }
+
+        if (zertifikat.getSchiesstand() != null) {
+            layout.add(createDetailRow("Schießstand:", zertifikat.getSchiesstand().getName()));
+        }
+
         layout.add(createDetailRow("Typ:", zertifikat.getZertifikatsTyp()));
         layout.add(createDetailRow("Seriennummer:", zertifikat.getSeriennummer()));
         layout.add(createDetailRow("Gültig ab:", formatDatum(zertifikat.getGueltigAb())));
@@ -368,14 +340,96 @@ public class ZertifikateView extends VerticalLayout {
     }
 
     private void updateGrid() {
-        List<DigitalesZertifikat> zertifikate = zertifikatRepository.findAllWithDetails();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth != null ? auth.getName() : null;
+
+        if (username == null) {
+            grid.setItems(List.of());
+            grid.setVisible(false);
+            emptyStateMessage.setVisible(true);
+            return;
+        }
+
+        Benutzer aktuellerBenutzer = benutzerRepository.findByEmail(username).orElse(null);
+        if (aktuellerBenutzer == null) {
+            grid.setItems(List.of());
+            grid.setVisible(false);
+            emptyStateMessage.setVisible(true);
+            return;
+        }
+
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        boolean isVereinschef = auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_VEREINS_CHEF".equals(a.getAuthority()));
+        boolean isAufseher = auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_AUFSEHER".equals(a.getAuthority()));
+        boolean isSchiesstandAufseher = auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_SCHIESSSTAND_AUFSEHER".equals(a.getAuthority()));
+
+        List<DigitalesZertifikat> zertifikate = new ArrayList<>();
+
+        if (isAdmin) {
+            zertifikate = zertifikatRepository.findAllWithDetails();
+        } else if (isVereinschef) {
+            List<Long> vereinsIds = aktuellerBenutzer.getVereinsmitgliedschaften().stream()
+                    .filter(vm -> Boolean.TRUE.equals(vm.getIstVereinschef()))
+                    .map(vm -> vm.getVerein().getId())
+                    .toList();
+            if (!vereinsIds.isEmpty()) {
+                List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetails();
+                for (DigitalesZertifikat z : alleZertifikate) {
+                    if (z.getVerein() != null && vereinsIds.contains(z.getVerein().getId())
+                        && "VEREIN".equals(z.getZertifikatsTyp())) {
+                        zertifikate.add(z);
+                    } else if (z.getBenutzer() != null && "AUFSEHER".equals(z.getZertifikatsTyp())) {
+                        boolean istImVerein = z.getBenutzer().getVereinsmitgliedschaften().stream()
+                                .anyMatch(vm -> vereinsIds.contains(vm.getVerein().getId()));
+                        if (istImVerein) {
+                            zertifikate.add(z);
+                        }
+                    }
+                }
+            }
+        } else if (isAufseher) {
+            List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetails();
+            for (DigitalesZertifikat z : alleZertifikate) {
+                if (z.getBenutzer() != null
+                    && z.getBenutzer().getId().equals(aktuellerBenutzer.getId())
+                    && "AUFSEHER".equals(z.getZertifikatsTyp())) {
+                    zertifikate.add(z);
+                }
+            }
+        } else if (isSchiesstandAufseher) {
+            List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetails();
+            for (DigitalesZertifikat z : alleZertifikate) {
+                if (z.getBenutzer() != null
+                    && z.getBenutzer().getId().equals(aktuellerBenutzer.getId())
+                    && "SCHIESSTANDAUFSEHER".equals(z.getZertifikatsTyp())) {
+                    zertifikate.add(z);
+                }
+            }
+        }
+
         grid.setItems(zertifikate);
         grid.getDataProvider().refreshAll();
 
-        // Zeige/Verstecke Empty State Message
         boolean isEmpty = zertifikate.isEmpty();
         grid.setVisible(!isEmpty);
         emptyStateMessage.setVisible(isEmpty);
+
+        if (!isEmpty) {
+            int anzahlEintraege = zertifikate.size();
+            int zeilenHoehe = 53;
+            int headerHoehe = 56;
+            int minHoehe = 200;
+            int maxHoehe = 800;
+            int berechneteHoehe = headerHoehe + (anzahlEintraege * zeilenHoehe);
+            int tatsaechlicheHoehe = Math.max(minHoehe, Math.min(maxHoehe, berechneteHoehe));
+
+            grid.setHeight(tatsaechlicheHoehe + "px");
+            grid.getStyle().remove("min-height");
+        }
     }
 
     private String formatDatum(java.time.LocalDateTime datum) {

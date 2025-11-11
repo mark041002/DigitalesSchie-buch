@@ -85,13 +85,13 @@ public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmi
 
     /**
      * Findet alle Mitgliedschaften eines Benutzers mit eager loading.
+     * Die Verbände werden bereits via @ManyToMany(fetch = FetchType.EAGER) in Verein geladen.
      *
      * @param benutzer Der Benutzer
      * @return Liste der Mitgliedschaften
      */
     @Query("SELECT DISTINCT m FROM Vereinsmitgliedschaft m " +
            "LEFT JOIN FETCH m.verein v " +
-           "LEFT JOIN FETCH v.verband " +
            "WHERE m.benutzer = :benutzer")
     List<Vereinsmitgliedschaft> findByBenutzerWithDetails(@Param("benutzer") Benutzer benutzer);
 
@@ -122,4 +122,5 @@ public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmi
            "WHERE m.verein = :verein")
     List<Vereinsmitgliedschaft> findByVereinWithDetails(@Param("verein") Verein verein);
 }
+
 

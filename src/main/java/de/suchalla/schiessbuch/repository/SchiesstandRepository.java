@@ -43,10 +43,10 @@ public interface SchiesstandRepository extends JpaRepository<Schiesstand, Long> 
     List<Schiesstand> findByNameContainingIgnoreCase(String name);
 
     /**
-     * Findet alle Schießstände mit eager loading des Vereins.
+     * Findet alle Schießstände mit eager loading des Vereins und des Aufseher.
      *
-     * @return Liste aller Schießstände mit Verein
+     * @return Liste aller Schießstände mit Verein und Aufseher
      */
-    @Query("SELECT s FROM Schiesstand s LEFT JOIN FETCH s.verein")
+    @Query("SELECT DISTINCT s FROM Schiesstand s LEFT JOIN FETCH s.verein LEFT JOIN FETCH s.aufseher")
     List<Schiesstand> findAllWithVerein();
 }

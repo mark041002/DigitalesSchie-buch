@@ -1,4 +1,4 @@
-package de.suchalla.schiessbuch.ui.view;
+package de.suchalla.schiessbuch.ui.view.administrativ;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -21,6 +21,7 @@ import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
 import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.service.VerbandService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
+import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,7 +36,7 @@ import java.util.Map;
  */
 @Route(value = "vereins/mitglieder", layout = MainLayout.class)
 @PageTitle("Mitglieder | Digitales Schießbuch")
-@RolesAllowed({"VEREINS_CHEF", "AUFSEHER", "ADMIN"})
+@RolesAllowed({"VEREINS_CHEF", "AUFSEHER", "SCHIESSSTAND_AUFSEHER", "ADMIN"})
 @Slf4j
 public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlParameter<String> {
 

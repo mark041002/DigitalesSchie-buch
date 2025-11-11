@@ -300,7 +300,7 @@ public class VereinsmitgliedschaftService {
     public List<de.suchalla.schiessbuch.model.entity.Verband> findeVerbaendeVonBenutzer(Benutzer benutzer) {
         return mitgliedschaftRepository.findByBenutzer(benutzer).stream()
                 .filter(m -> m.getStatus() == MitgliedschaftStatus.AKTIV && m.getAktiv())
-                .map(m -> m.getVerein().getVerband())
+                .flatMap(m -> m.getVerein().getVerbaende().stream())
                 .distinct()
                 .collect(java.util.stream.Collectors.toList());
     }

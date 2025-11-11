@@ -43,10 +43,14 @@ public class Verein {
     @Column(length = 1000)
     private String beschreibung;
 
-    @NotNull(message = "Verband darf nicht leer sein")
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "verband_id", nullable = false)
-    private Verband verband;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "verein_verband",
+            joinColumns = @JoinColumn(name = "verein_id"),
+            inverseJoinColumns = @JoinColumn(name = "verband_id")
+    )
+    @Builder.Default
+    private Set<Verband> verbaende = new HashSet<>();
 
     @Column(name = "erstellt_am", nullable = false, updatable = false)
     private LocalDateTime erstelltAm;

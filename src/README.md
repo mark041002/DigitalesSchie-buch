@@ -1,2 +1,0 @@
-beitrittsanfragen wegmachen,
-views reparieren

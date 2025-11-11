@@ -78,7 +78,19 @@ public class DataInitializer implements CommandLineRunner {
                     .aktiv(true)
                     .build();
             benutzerRepository.save(aufseher);
+
             log.info("Test-Aufseher erstellt: aufseher@test.de / test123");
+
+            Benutzer schiesstandAufseher = Benutzer.builder()
+                    .email("standaufseher@test.de")
+                    .passwort(passwordEncoder.encode("test123"))
+                    .vorname("Peter")
+                    .nachname("Standaufseher")
+                    .rolle(BenutzerRolle.SCHIESSSTAND_AUFSEHER)
+                    .aktiv(true)
+                    .build();
+            benutzerRepository.save(schiesstandAufseher);
+            log.info("Test-Schießstandaufseher erstellt: standaufseher@test.de / test123");
 
             Benutzer vereinschef = Benutzer.builder()
                     .email("vereinschef@test.de")
@@ -122,7 +134,7 @@ public class DataInitializer implements CommandLineRunner {
             // Verein erstellen
             Verein verein = Verein.builder()
                     .name("SV Teststadt")
-                    .verband(dsb)
+                    .verbaende(java.util.Collections.singleton(dsb))
                     .vereinsNummer("DSB-12345")
                     .adresse("Musterstraße 1, 12345 Teststadt")
                     .build();
@@ -135,6 +147,7 @@ public class DataInitializer implements CommandLineRunner {
                     .name("DSB Bundesleistungszentrum")
                     .typ(SchiesstandTyp.GEWERBLICH)
                     .adresse("Olympiastraße 10, 80809 München")
+                    .aufseher(schiesstandAufseher)
                     .build();
             schiesstandRepository.save(verbandsSchiesstand);
             log.info("Verbands-Schießstand erstellt: {}", verbandsSchiesstand.getName());
@@ -145,6 +158,7 @@ public class DataInitializer implements CommandLineRunner {
                     .typ(SchiesstandTyp.VEREINSGEBUNDEN)
                     .verein(verein)
                     .adresse("Am Schießstand 10, 12345 Teststadt")
+                    .aufseher(vereinschef)
                     .build();
             schiesstandRepository.save(schiesstand);
             log.info("Schießstand erstellt: {}", schiesstand.getName());
@@ -153,7 +167,6 @@ public class DataInitializer implements CommandLineRunner {
             Schiesstand gewerblich = Schiesstand.builder()
                     .name("Schießsportzentrum Musterstadt")
                     .typ(SchiesstandTyp.GEWERBLICH)
-                    .verein(verein)
                     .adresse("Industriestraße 50, 54321 Musterstadt")
                     .build();
             schiesstandRepository.save(gewerblich);
@@ -185,6 +198,19 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
             mitgliedschaftRepository.save(mitgliedschaftAufseher);
             log.info("Aufseher-Mitgliedschaft erstellt für: {}", aufseher.getVollstaendigerName());
+
+            // Schießstandaufseher-Mitgliedschaft (nicht als Vereinsaufseher, nur als Schießstandaufseher!)
+            Vereinsmitgliedschaft mitgliedschaftSchiesstandAufseher = Vereinsmitgliedschaft.builder()
+                    .benutzer(schiesstandAufseher)
+                    .verein(verein)
+                    .status(MitgliedschaftStatus.AKTIV)
+                    .beitrittDatum(LocalDate.now().minusYears(2))
+                    .istVereinschef(false)
+                    .istAufseher(false)
+                    .aktiv(true)
+                    .build();
+            mitgliedschaftRepository.save(mitgliedschaftSchiesstandAufseher);
+            log.info("Schießstandaufseher-Mitgliedschaft erstellt für: {}", schiesstandAufseher.getVollstaendigerName());
 
             // Schützen-Mitgliedschaft
             Vereinsmitgliedschaft mitgliedschaftSchuetze = Vereinsmitgliedschaft.builder()
@@ -226,13 +252,22 @@ public class DataInitializer implements CommandLineRunner {
                 log.error("Fehler beim Erstellen des Vereinschef-Zertifikats", e);
             }
 
+            // Schießstandaufseher-Zertifikat erstellen (für Verbands-Schießstand)
+            try {
+                DigitalesZertifikat schiesstandAufseherZertifikat = pkiService.createSchiesstandaufseheCertificate(schiesstandAufseher, verbandsSchiesstand);
+                log.info("Schießstandaufseher-Zertifikat erstellt für: {} (SN: {})", schiesstandAufseher.getVollstaendigerName(), schiesstandAufseherZertifikat.getSeriennummer());
+            } catch (Exception e) {
+                log.error("Fehler beim Erstellen des Schießstandaufseher-Zertifikats", e);
+            }
+
             log.info("Datenbank-Initialisierung abgeschlossen!");
             log.info("===============================================");
             log.info("Login-Daten:");
-            log.info("  Admin:    admin@schiessbuch.de / admin123");
-            log.info("  Schütze:  schuetze@test.de / test123");
-            log.info("  Aufseher: aufseher@test.de / test123");
-            log.info("  Vereinschef: vereinschef@test.de / test123");
+            log.info("  Admin:               admin@schiessbuch.de / admin123");
+            log.info("  Schütze:             schuetze@test.de / test123");
+            log.info("  Aufseher:            aufseher@test.de / test123");
+            log.info("  Schießstandaufseher: standaufseher@test.de / test123");
+            log.info("  Vereinschef:         vereinschef@test.de / test123");
             log.info("===============================================");
             log.info("PKI-Zertifikate wurden erstellt");
             log.info("===============================================");

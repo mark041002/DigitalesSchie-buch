@@ -11,6 +11,10 @@ import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.security.SecurityService;
+import de.suchalla.schiessbuch.ui.view.administrativ.*;
+import de.suchalla.schiessbuch.ui.view.oeffentlich.*;
+import de.suchalla.schiessbuch.ui.view.organisatorisch.*;
+import de.suchalla.schiessbuch.ui.view.persoenlich.*;
 import jakarta.annotation.security.PermitAll;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.details.Details;
@@ -161,18 +165,22 @@ public class MainLayout extends AppLayout {
             Details persoenlichDetails = createModernDetailsSection("Persönlich", persoenlichNav, VaadinIcon.USER, true, true);
             navSections.add(persoenlichDetails);
 
-            // Vereinsfunktionen
-            boolean istAufseherOderChef = currentUser.getVereinsmitgliedschaften().stream()
+            // Vereinsfunktionen (nur für AUFSEHER und VEREINS_CHEF, nicht für SCHIESSSTAND_AUFSEHER)
+            boolean istAufseherOderChef = (currentUser.getRolle() != de.suchalla.schiessbuch.model.enums.BenutzerRolle.SCHIESSSTAND_AUFSEHER) &&
+                    currentUser.getVereinsmitgliedschaften().stream()
                     .anyMatch(m -> Boolean.TRUE.equals(m.getIstAufseher()) ||
                                    Boolean.TRUE.equals(m.getIstVereinschef()));
 
             if (istAufseherOderChef) {
                 SideNav vereinNav = new SideNav();
 
+
+                // Eintragsverwaltung für Aufseher, Vereinschefs und Admins
+                vereinNav.addItem(createDebouncedSideNavItem("Eintragsverwaltung", EintraegeVerwaltungView.class,
+                        VaadinIcon.RECORDS.create()));
+
                 if (currentUser.getVereinsmitgliedschaften().stream()
                         .anyMatch(m -> Boolean.TRUE.equals(m.getIstAufseher()))) {
-                    vereinNav.addItem(new SideNavItem("Einträge signieren", EintraegeSignierenView.class,
-                            VaadinIcon.EDIT.create()));
                     vereinNav.addItem(new SideNavItem("Meine Zertifikate", ZertifikateView.class,
                             VaadinIcon.DIPLOMA.create()));
                 }
@@ -181,10 +189,6 @@ public class MainLayout extends AppLayout {
                         .anyMatch(m -> Boolean.TRUE.equals(m.getIstVereinschef()))) {
                     vereinNav.addItem(new SideNavItem("Vereinsdetails", VereinDetailsView.class,
                             VaadinIcon.COG.create()));
-                    vereinNav.addItem(new SideNavItem("Beitrittsanfragen", BeitrittsanfragenView.class,
-                            VaadinIcon.ENVELOPE.create()));
-                    vereinNav.addItem(createDebouncedSideNavItem("Eintragsverwaltung", EintraegeVerwaltungView.class,
-                            VaadinIcon.RECORDS.create()));
                     vereinNav.addItem(new SideNavItem("Mitgliedsverwaltung", MitgliedschaftenVerwaltenView.class,
                             VaadinIcon.USERS.create()));
                     vereinNav.addItem(new SideNavItem("Vereins-Zertifikate", ZertifikateView.class,
@@ -206,6 +210,25 @@ public class MainLayout extends AppLayout {
 
                 Details adminDetails = createModernDetailsSection("Administration", adminNav, VaadinIcon.COG, true, false);
                 navSections.add(adminDetails);
+            }
+
+            // Schießstandaufseher-Funktionen
+            if (currentUser.getRolle() == de.suchalla.schiessbuch.model.enums.BenutzerRolle.SCHIESSSTAND_AUFSEHER) {
+                SideNav schiesstandNav = new SideNav();
+
+                // Eintragsverwaltung für Schießstandaufseher
+                schiesstandNav.addItem(createDebouncedSideNavItem("Eintragsverwaltung", EintraegeVerwaltungView.class,
+                        VaadinIcon.RECORDS.create()));
+
+                // Schießstanddetails
+                schiesstandNav.addItem(new SideNavItem("Schießstanddetails", SchiesstandDetailsView.class, VaadinIcon.COG.create()));
+
+                // Zertifikate
+                schiesstandNav.addItem(new SideNavItem("Meine Zertifikate", ZertifikateView.class,
+                        VaadinIcon.DIPLOMA.create()));
+
+                Details schiesstandDetails = createModernDetailsSection("Organisatorisches", schiesstandNav, VaadinIcon.BRIEFCASE, true, false);
+                navSections.add(schiesstandDetails);
             }
         }
 
@@ -334,7 +357,7 @@ public class MainLayout extends AppLayout {
 
         Details details = new Details();
         details.setSummary(titleLayout);
-        details.addContent(content);
+        details.add(content);
         details.setOpened(opened);
         details.setWidthFull();
 
@@ -386,4 +409,3 @@ public class MainLayout extends AppLayout {
         return item;
     }
 }
-

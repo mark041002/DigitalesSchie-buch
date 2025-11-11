@@ -35,3 +35,6 @@ node_modules/
 package-lock.json
 webpack.generated.js
 
+# Docker
+.env
+docker-compose.override.yml

@@ -18,6 +18,11 @@ public enum BenutzerRolle {
     AUFSEHER("Aufseher"),
 
     /**
+     * Schießstandaufseher mit erweiterten Berechtigungen für Schießstandverwaltung.
+     */
+    SCHIESSSTAND_AUFSEHER("Schießstandaufseher"),
+
+    /**
      * Vereinschef mit Verwaltungsrechten für einen Verein.
      */
     VEREINS_CHEF("Vereinschef"),

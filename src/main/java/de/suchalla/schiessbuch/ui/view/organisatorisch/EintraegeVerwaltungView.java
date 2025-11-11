@@ -1,13 +1,15 @@
-package de.suchalla.schiessbuch.ui.view;
+package de.suchalla.schiessbuch.ui.view.organisatorisch;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -19,7 +21,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextArea;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -37,6 +38,7 @@ import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
 import de.suchalla.schiessbuch.service.PdfExportService;
 import de.suchalla.schiessbuch.service.SignaturService;
+import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,7 +56,7 @@ import java.util.stream.Collectors;
  */
 @Route(value = "eintraege-verwaltung", layout = MainLayout.class)
 @PageTitle("Einträgsverwaltung | Digitales Schießbuch")
-@RolesAllowed({"AUFSEHER", "VEREINS_CHEF", "ADMIN"})
+@RolesAllowed({"AUFSEHER", "SCHIESSSTAND_AUFSEHER", "VEREINS_CHEF", "ADMIN"})
 @PreserveOnRefresh
 @Slf4j
 public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnterObserver {
@@ -65,11 +67,12 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     private final SignaturService signaturService;
 
     private final Grid<SchiessnachweisEintrag> grid = new Grid<>(SchiessnachweisEintrag.class, false);
-    private final TextField suchfeld = new TextField();
+    private final ComboBox<String> schuetzenComboBox = new ComboBox<>("Schütze");
+    private final ComboBox<String> aufseherComboBox = new ComboBox<>("Aufseher");
     private final DatePicker vonDatum = new DatePicker("Von");
     private final DatePicker bisDatum = new DatePicker("Bis");
     private final Button filterButton = new Button("Filtern");
-    private HorizontalLayout filterLayout;
+    private Div filterContainer;
     private Anchor pdfDownload;
 
     private final Benutzer currentUser;
@@ -140,7 +143,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
 
         // Sonst: Standard-Logik - lade Schießstand des aktuellen Benutzers
         if (currentUser != null) {
-            // Findet den ersten Schießstand, bei dem der Benutzer Aufseher ist
+            // Findet den ersten Schießstand, bei dem der Benutzer Aufseher ODER Vereinschef ist
             currentUser.getVereinsmitgliedschaften().stream()
                     .filter(m -> Boolean.TRUE.equals(m.getIstAufseher()) || Boolean.TRUE.equals(m.getIstVereinschef()))
                     .findFirst()
@@ -185,11 +188,44 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         Span schiesstandName = new Span(aktuellerSchiesstand.getName());
         schiesstandName.getStyle()
                 .set("font-size", "var(--lumo-font-size-m)")
-                .set("color", "var(--lumo-secondary-text-color)")
-                .set("font-weight", "500");
+                .set("color", "white")
+                .set("font-weight", "500")
+                .set("margin-left", "auto");
 
-        header.add(title, schiesstandName);
+        HorizontalLayout headerContent = new HorizontalLayout(title, schiesstandName);
+        headerContent.setWidthFull();
+        headerContent.setAlignItems(FlexComponent.Alignment.CENTER);
+        headerContent.setSpacing(true);
+        header.add(headerContent);
         contentWrapper.add(header);
+
+        // Info-Box mit modernem Styling
+        Div infoBox = new Div();
+        infoBox.addClassName("info-box");
+        infoBox.setWidthFull();
+        infoBox.getStyle()
+                .set("background", "var(--lumo-primary-color-10pct)")
+                .set("border-left", "4px solid var(--lumo-primary-color)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-m)")
+                .set("margin-bottom", "var(--lumo-space-l)")
+                .set("box-shadow", "var(--lumo-box-shadow-xs)");
+        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
+        infoIcon.getStyle().set("margin-right", "var(--lumo-space-s)");
+        Paragraph beschreibung = new Paragraph(
+                "Verwalten Sie Schießnachweis-Einträge: Signieren oder lehnen Sie Einträge ab. " +
+                "Nutzen Sie die Filter um gezielt nach Schützen, Aufsehern oder Status zu suchen."
+        );
+        beschreibung.getStyle()
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("margin", "0")
+                .set("display", "inline");
+        HorizontalLayout infoContent = new HorizontalLayout(infoIcon, beschreibung);
+        infoContent.setAlignItems(FlexComponent.Alignment.START);
+        infoContent.setSpacing(false);
+        infoBox.add(infoContent);
+        contentWrapper.add(infoBox);
 
         // Tabs-Container mit weißem Hintergrund
         Div tabsContainer = new Div();
@@ -227,8 +263,8 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                 aktuellerStatus = null; // Alle
             }
 
-            // Rebuild filter layout basierend auf Tab
-            updateFilterLayout(selectedTab == alleTab);
+            // Filter aktualisieren (ComboBoxen neu befüllen und Status-Filter anzeigen)
+            aktualisiereFilterOptionen();
             updateGrid();
         });
 
@@ -236,9 +272,14 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         contentWrapper.add(tabsContainer);
 
         // Filter-Container
-        Div filterContainer = new Div();
+        filterContainer = new Div();
         filterContainer.addClassName("filter-box");
         filterContainer.setWidthFull();
+        filterContainer.getStyle()
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-m)")
+                .set("margin-bottom", "var(--lumo-space-m)");
         filterContainer.add(createFilterLayout());
         contentWrapper.add(filterContainer);
 
@@ -256,13 +297,23 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     /**
      * Erstellt das Filter-Layout.
      */
-    private HorizontalLayout createFilterLayout() {
-        // Initialisiere Filter-Komponenten
-        suchfeld.setPlaceholder("Nach Namen suchen...");
-        suchfeld.setWidth("300px");
-        suchfeld.setPrefixComponent(VaadinIcon.SEARCH.create());
-        suchfeld.addValueChangeListener(e -> updateGrid());
+    private VerticalLayout createFilterLayout() {
+        VerticalLayout layout = new VerticalLayout();
+        layout.setSpacing(true);
+        layout.setPadding(false);
 
+        // ComboBoxen für Schützen und Aufseher
+        schuetzenComboBox.setPlaceholder("Alle Schützen");
+        schuetzenComboBox.setWidth("250px");
+        schuetzenComboBox.setClearButtonVisible(true);
+        schuetzenComboBox.addValueChangeListener(e -> updateGrid());
+
+        aufseherComboBox.setPlaceholder("Alle Aufseher");
+        aufseherComboBox.setWidth("250px");
+        aufseherComboBox.setClearButtonVisible(true);
+        aufseherComboBox.addValueChangeListener(e -> updateGrid());
+
+        // Datums-Filter
         vonDatum.setValue(LocalDate.now().minusMonths(3));
         vonDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
         vonDatum.setWidth("200px");
@@ -282,33 +333,59 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         pdfButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
         pdfDownload.add(pdfButton);
 
-        // Erstelle initiales Layout (ohne Datums-Filter)
-        filterLayout = new HorizontalLayout(suchfeld, pdfDownload);
-        filterLayout.setDefaultVerticalComponentAlignment(Alignment.END);
-        filterLayout.setAlignItems(FlexComponent.Alignment.END);
-        filterLayout.setWidthFull();
-        filterLayout.setSpacing(true);
-        filterLayout.setPadding(false);
-        filterLayout.getStyle().set("flex-wrap", "wrap");
+        // Filter-Zeilen
+        HorizontalLayout row1 = new HorizontalLayout(schuetzenComboBox, aufseherComboBox);
+        row1.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.END);
+        row1.setSpacing(true);
+        row1.getStyle().set("flex-wrap", "wrap");
 
-        return filterLayout;
+        HorizontalLayout row2 = new HorizontalLayout(vonDatum, bisDatum, filterButton, pdfDownload);
+        row2.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.END);
+        row2.setSpacing(true);
+        row2.getStyle().set("flex-wrap", "wrap");
+
+        layout.add(row1, row2);
+
+        // Initial die Optionen laden
+        aktualisiereFilterOptionen();
+
+        return layout;
     }
 
     /**
-     * Aktualisiert das Filter-Layout je nach ausgewähltem Tab.
+     * Aktualisiert die Filter-Optionen basierend auf den aktuellen Tabellendaten.
      */
-    private void updateFilterLayout(boolean showDateFilters) {
-        if (filterLayout != null) {
-            filterLayout.removeAll();
-
-            if (showDateFilters) {
-                // Mit Datums-Filtern für "Alle" Tab
-                filterLayout.add(suchfeld, vonDatum, bisDatum, filterButton, pdfDownload);
-            } else {
-                // Ohne Datums-Filter für andere Tabs
-                filterLayout.add(suchfeld, pdfDownload);
-            }
+    private void aktualisiereFilterOptionen() {
+        if (aktuellerSchiesstand == null) {
+            return;
         }
+
+        // Lade alle Einträge des Schießstands
+        List<SchiessnachweisEintrag> alleEintraege = schiessnachweisService.findeEintraegeAnSchiesstand(aktuellerSchiesstand);
+
+        // Filtern nach aktuellem Status (wenn nicht "Alle")
+        if (aktuellerStatus != null) {
+            alleEintraege = alleEintraege.stream()
+                    .filter(e -> e.getStatus() == aktuellerStatus)
+                    .collect(Collectors.toList());
+        }
+
+        // Extrahiere eindeutige Schützennamen
+        List<String> schuetzenNamen = alleEintraege.stream()
+                .map(e -> e.getSchuetze().getVollstaendigerName())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+        schuetzenComboBox.setItems(schuetzenNamen);
+
+        // Extrahiere eindeutige Aufsehernamen (nur signierte/abgelehnte Einträge)
+        List<String> aufseherNamen = alleEintraege.stream()
+                .filter(e -> e.getAufseher() != null)
+                .map(e -> e.getAufseher().getVollstaendigerName())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+        aufseherComboBox.setItems(aufseherNamen);
     }
 
     /**
@@ -348,7 +425,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                 .setHeader("Ergebnis")
                 .setAutoWidth(true)
                 .setClassNameGenerator(item -> "align-right");
-        grid.addColumn(this::getStatusText)
+        grid.addComponentColumn(this::createStatusBadge)
                 .setHeader("Status")
                 .setAutoWidth(true);
         grid.addColumn(eintrag -> eintrag.getAufseher() != null ?
@@ -381,7 +458,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
 
         if (eintrag.getStatus() == EintragStatus.UNSIGNIERT) {
             Button signierenButton = new Button("Signieren", e -> signiereEintrag(eintrag));
-            signierenButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_SMALL);
+            signierenButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
             Button ablehnenButton = new Button("Ablehnen", e -> zeigeAblehnungsDialog(eintrag));
             ablehnenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
@@ -487,12 +564,20 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                         .collect(Collectors.toList());
             }
 
-            // Filter nach Suchfeld
-            String suchbegriff = suchfeld.getValue();
-            if (suchbegriff != null && !suchbegriff.trim().isEmpty()) {
+            // Filter nach Schütze (ComboBox)
+            String selektierterSchuetze = schuetzenComboBox.getValue();
+            if (selektierterSchuetze != null && !selektierterSchuetze.trim().isEmpty()) {
                 eintraege = eintraege.stream()
-                        .filter(e -> e.getSchuetze().getVollstaendigerName().toLowerCase()
-                                .contains(suchbegriff.toLowerCase()))
+                        .filter(e -> e.getSchuetze().getVollstaendigerName().equals(selektierterSchuetze))
+                        .collect(Collectors.toList());
+            }
+
+            // Filter nach Aufseher (ComboBox)
+            String selektierterAufseher = aufseherComboBox.getValue();
+            if (selektierterAufseher != null && !selektierterAufseher.trim().isEmpty()) {
+                eintraege = eintraege.stream()
+                        .filter(e -> e.getAufseher() != null &&
+                                     e.getAufseher().getVollstaendigerName().equals(selektierterAufseher))
                         .collect(Collectors.toList());
             }
 
@@ -549,14 +634,39 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     }
 
     /**
-     * Gibt den deutschen Text für einen Status zurück.
+     * Erstellt ein farbiges Status-Badge.
      */
-    private String getStatusText(SchiessnachweisEintrag eintrag) {
-        return switch (eintrag.getStatus()) {
-            case OFFEN, UNSIGNIERT -> "Unsigniert";
-            case SIGNIERT -> "Signiert";
-            case ABGELEHNT -> "Abgelehnt";
-        };
+    private Span createStatusBadge(SchiessnachweisEintrag eintrag) {
+        Span badge = new Span();
+        badge.getStyle()
+                .set("padding", "4px 12px")
+                .set("border-radius", "12px")
+                .set("font-weight", "500")
+                .set("font-size", "12px")
+                .set("display", "inline-block");
+
+        switch (eintrag.getStatus()) {
+            case UNSIGNIERT, OFFEN -> {
+                badge.setText("Unsigniert");
+                badge.getStyle()
+                        .set("background-color", "#ffeb3b")
+                        .set("color", "#333333");
+            }
+            case SIGNIERT -> {
+                badge.setText("Signiert");
+                badge.getStyle()
+                        .set("background-color", "#4caf50")
+                        .set("color", "white");
+            }
+            case ABGELEHNT -> {
+                badge.setText("Abgelehnt");
+                badge.getStyle()
+                        .set("background-color", "#f44336")
+                        .set("color", "white");
+            }
+        }
+
+        return badge;
     }
 }
 

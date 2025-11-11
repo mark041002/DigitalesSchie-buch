@@ -49,8 +49,8 @@ public class VerbandService {
      * @return Optional mit Verband
      */
     @Transactional(readOnly = true)
-    public Optional<Verband> findeVerband(Long id) {
-        return verbandRepository.findById(id);
+    public Verband findeVerband(Long id) {
+        return verbandRepository.findById(id).orElse(null);
     }
 
     /**
@@ -97,7 +97,10 @@ public class VerbandService {
      * @param verbandId Die Verbands-ID
      */
     public void beitretenZuVerband(Benutzer benutzer, Long verbandId) {
-        Verband verband = findeVerband(verbandId).orElseThrow(() -> new IllegalArgumentException("Verband nicht gefunden"));
+        Verband verband = findeVerband(verbandId);
+        if(verband == null)
+            throw new IllegalArgumentException("Verband nicht gefunden");
+
         List<Verein> vereine = findeVereineVonVerband(verband);
         if (vereine.isEmpty()) {
             throw new IllegalArgumentException("Kein Verein im Verband zum Beitreten vorhanden");
@@ -119,8 +122,9 @@ public class VerbandService {
         }
         List<Vereinsmitgliedschaft> mitgliedschaften = vereinsmitgliedschaftService.findeMitgliedschaftenVonBenutzer(benutzer);
         mitgliedschaften.stream()
-                .filter(m -> m.getVerein() != null && m.getVerein().getVerband() != null)
-                .filter(m -> verbandId.equals(m.getVerein().getVerband().getId()))
+                .filter(m -> m.getVerein() != null && m.getVerein().getVerbaende() != null)
+                .filter(m -> m.getVerein().getVerbaende().stream()
+                        .anyMatch(v -> verbandId.equals(v.getId())))
                 .forEach(m -> vereinsmitgliedschaftService.mitgliedEntfernen(m.getId()));
     }
 
@@ -196,7 +200,7 @@ public class VerbandService {
      */
     @Transactional(readOnly = true)
     public List<Verein> findeVereineVonVerband(Verband verband) {
-        return vereinRepository.findByVerband(verband);
+        return vereinRepository.findByVerbaendeContaining(verband);
     }
 
     /**

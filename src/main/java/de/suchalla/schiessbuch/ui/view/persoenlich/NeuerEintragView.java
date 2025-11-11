@@ -1,4 +1,4 @@
-package de.suchalla.schiessbuch.ui.view;
+package de.suchalla.schiessbuch.ui.view.persoenlich;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -12,7 +12,6 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
@@ -30,6 +29,7 @@ import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.DisziplinService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
+import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.PermitAll;
 
 import java.time.LocalDate;
@@ -60,6 +60,7 @@ public class NeuerEintragView extends VerticalLayout {
     private final ComboBox<Waffenart> waffenart = new ComboBox<>("Waffenart");
     private final IntegerField anzahlSchuesse = new IntegerField("Anzahl Schüsse");
     private final TextArea bemerkung = new TextArea("Bemerkung");
+    private final TextField ergebnis = new TextField("Ergebnis");
 
     private final Benutzer currentUser;
 
@@ -100,12 +101,18 @@ public class NeuerEintragView extends VerticalLayout {
 
         H2 title = new H2("Neuer Schießnachweis-Eintrag");
         title.getStyle().set("margin", "0");
-
-        Span subtitle = new Span("Dokumentieren Sie Ihre Schießaktivität");
-        subtitle.addClassName("subtitle");
-
-        header.add(title, subtitle);
+        header.add(title);
         contentWrapper.add(header);
+
+        // Info-Box direkt unter dem Header
+        Div infoBoxHeader = new Div();
+        infoBoxHeader.addClassName("info-box");
+        Icon infoIconHeader = VaadinIcon.INFO_CIRCLE.create();
+        infoIconHeader.setSize("20px");
+        Span infoTextHeader = new Span("Dokumentieren Sie Ihre Schießaktivität");
+        infoTextHeader.getStyle().set("color", "var(--lumo-primary-text-color)");
+        infoBoxHeader.add(infoIconHeader, infoTextHeader);
+        contentWrapper.add(infoBoxHeader);
 
         // Formular in Card-Layout
         Div formCard = new Div();
@@ -155,12 +162,16 @@ public class NeuerEintragView extends VerticalLayout {
         anzahlSchuesse.setMin(1);
         anzahlSchuesse.setStepButtonsVisible(true);
 
+        // Ergebnis: OHNE Icon
+        ergebnis.setClearButtonVisible(true);
+        ergebnis.setPlaceholder("Ergebnis eintragen");
+
         // Bemerkung: OHNE Icon
         bemerkung.setMaxLength(500);
         bemerkung.setHelperText("Optional - max. 500 Zeichen");
 
         FormLayout formLayout = new FormLayout();
-        formLayout.add(datum, schiesstand, verband, disziplin, waffenart, kaliber, anzahlSchuesse, bemerkung);
+        formLayout.add(datum, schiesstand, verband, disziplin, waffenart, kaliber, anzahlSchuesse, ergebnis, bemerkung);
         formLayout.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0", 1),
                 new FormLayout.ResponsiveStep("500px", 2)
@@ -181,24 +192,12 @@ public class NeuerEintragView extends VerticalLayout {
 
         // Info-Box für Hinweise - jetzt ganz unten
         Div infoBox = new Div();
-        infoBox.getStyle()
-                .set("background-color", "var(--lumo-primary-color-10pct)")
-                .set("border-left", "4px solid var(--lumo-primary-color)")
-                .set("padding", "var(--lumo-space-m)")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("margin-top", "var(--lumo-space-m)");
-
+        infoBox.addClassName("info-box");
         Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
         infoIcon.setSize("20px");
-        infoIcon.getStyle().set("color", "var(--lumo-primary-color)");
-
         Span infoText = new Span("Alle mit * markierten Felder sind Pflichtfelder.");
-        infoText.getStyle().set("margin-left", "var(--lumo-space-s)");
-
-        HorizontalLayout infoLayout = new HorizontalLayout(infoIcon, infoText);
-        infoLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        infoLayout.setSpacing(false);
-        infoBox.add(infoLayout);
+        infoText.getStyle().set("color", "var(--lumo-primary-text-color)");
+        infoBox.add(infoIcon, infoText);
 
         formCard.add(formLayout, buttonLayout, infoBox);
         contentWrapper.add(formCard);
@@ -270,6 +269,7 @@ public class NeuerEintragView extends VerticalLayout {
                     .waffenart(waffenart.getValue().getAnzeigeText())
                     .schiesstand(schiesstand.getValue())
                     .anzahlSchuesse(anzahlSchuesse.getValue())
+                    .ergebnis(ergebnis.getValue())
                     .bemerkung(bemerkung.getValue())
                     .build();
 
@@ -325,6 +325,7 @@ public class NeuerEintragView extends VerticalLayout {
      */
     private void formularZuruecksetzen() {
         datum.setValue(LocalDate.now());
+        ergebnis.clear();
         verband.clear();
         schiesstand.clear();
         disziplin.clear();

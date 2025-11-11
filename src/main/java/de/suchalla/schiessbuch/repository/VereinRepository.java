@@ -24,7 +24,7 @@ public interface VereinRepository extends JpaRepository<Verein, Long> {
      * @param verband Der Verband
      * @return Liste der Vereine
      */
-    List<Verein> findByVerband(Verband verband);
+    List<Verein> findByVerbaendeContaining(Verband verband);
 
     /**
      * Findet einen Verein anhand der Vereinsnummer.
@@ -48,16 +48,16 @@ public interface VereinRepository extends JpaRepository<Verein, Long> {
      * @return Liste aller Vereine
      */
     @Override
-    @EntityGraph(attributePaths = {"verband", "mitgliedschaften", "mitgliedschaften.benutzer"})
+    @EntityGraph(attributePaths = {"verbaende", "mitgliedschaften", "mitgliedschaften.benutzer"})
     List<Verein> findAll();
 
     /**
-     * Findet einen Verein mit geladenen Mitgliedschaften und Verband anhand der ID.
+     * Findet einen Verein mit geladenen Mitgliedschaften und Verbänden anhand der ID.
      *
      * @param id Die Vereins-ID
      * @return Optional mit Verein
      */
     @Override
-    @EntityGraph(attributePaths = {"verband", "mitgliedschaften", "mitgliedschaften.benutzer"})
+    @EntityGraph(attributePaths = {"verbaende", "mitgliedschaften", "mitgliedschaften.benutzer"})
     Optional<Verein> findById(Long id);
 }

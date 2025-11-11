@@ -63,6 +63,14 @@ public class VereinService {
         existierend.setAdresse(verein.getAdresse());
         existierend.setBeschreibung(verein.getBeschreibung());
 
+        // Aktualisiere Verbände (Many-to-Many): Clear und neu hinzufügen
+        if (verein.getVerbaende() != null && !verein.getVerbaende().isEmpty()) {
+            existierend.getVerbaende().clear();
+            existierend.getVerbaende().addAll(verein.getVerbaende());
+        } else {
+            existierend.getVerbaende().clear();
+        }
+
         return vereinRepository.save(existierend);
     }
 

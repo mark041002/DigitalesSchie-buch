@@ -1,4 +1,4 @@
-package de.suchalla.schiessbuch.ui.view;
+package de.suchalla.schiessbuch.ui.view.persoenlich;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -6,7 +6,6 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -20,10 +19,12 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
+import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.VerbandService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
+import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.PermitAll;
 
 import java.util.List;
@@ -74,29 +75,43 @@ public class MeineVereineView extends VerticalLayout {
         contentWrapper.setPadding(false);
         contentWrapper.addClassName("content-wrapper");
 
-        // Header-Bereich mit modernem Styling
-        Div header = new Div();
+        // Header-Bereich wie bei "Meine Einträge"
+        HorizontalLayout header = new HorizontalLayout();
         header.addClassName("gradient-header");
         header.setWidthFull();
-
-        // Text-Container
-        Div textContainer = new Div();
+        header.setPadding(true);
+        header.setSpacing(true);
+        header.setAlignItems(Alignment.START);
 
         H2 title = new H2("Meine Vereine");
         title.getStyle().set("margin", "0");
 
-        Span subtitle = new Span("Verwalten Sie Ihre Vereinsmitgliedschaften");
-        subtitle.addClassName("subtitle");
-
-        textContainer.add(title, subtitle);
-
-        // Button für Vereinsbeitritt mit Icon
+        // Button für Vereinsbeitritt wie bei "Meine Einträge"
         Button beitretenButton = new Button("Einem Verein beitreten", new Icon(VaadinIcon.PLUS_CIRCLE));
-        beitretenButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_CONTRAST);
+        beitretenButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        beitretenButton.addClassName("neuer-eintrag-btn");
+        beitretenButton.getStyle().set("margin-left", "auto");
         beitretenButton.addClickListener(e -> zeigeVereinsbeitrittsDialog());
 
-        header.add(textContainer, beitretenButton);
+        header.add(title, beitretenButton);
         contentWrapper.add(header);
+
+        // Info-Box mit modernem Styling
+        Div infoBox = new Div();
+        infoBox.addClassName("info-box");
+        infoBox.setWidthFull();
+        infoBox.getStyle()
+                .set("margin-bottom", "var(--lumo-space-l)");
+        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
+        com.vaadin.flow.component.html.Paragraph beschreibung = new com.vaadin.flow.component.html.Paragraph(
+                "Sehen Sie alle Ihre Vereinsmitgliedschaften und verwalten Sie diese."
+        );
+        beschreibung.getStyle()
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("margin", "0");
+        infoBox.add(infoIcon, beschreibung);
+        contentWrapper.add(infoBox);
 
         // Grid-Container mit weißem Hintergrund
         Div gridContainer = new Div();
@@ -111,8 +126,13 @@ public class MeineVereineView extends VerticalLayout {
                 .setAutoWidth(true)
                 .setFlexGrow(1);
 
-        grid.addColumn(mitgliedschaft -> mitgliedschaft.getVerein().getVerband().getName())
-                .setHeader("Verband")
+        grid.addColumn(mitgliedschaft -> mitgliedschaft.getVerein().getVerbaende() != null && !mitgliedschaft.getVerein().getVerbaende().isEmpty()
+                ? mitgliedschaft.getVerein().getVerbaende().stream()
+                    .map(Verband::getName)
+                    .reduce((a, b) -> a + ", " + b)
+                    .orElse("")
+                : "")
+                .setHeader("Verbände")
                 .setAutoWidth(true);
 
         grid.addComponentColumn(this::createRolleBadge)
@@ -160,33 +180,21 @@ public class MeineVereineView extends VerticalLayout {
      */
     private Span createRolleBadge(Vereinsmitgliedschaft mitgliedschaft) {
         Span badge = new Span();
-        Icon icon;
         String text;
-        String theme;
 
         if (mitgliedschaft.getIstVereinschef()) {
-            icon = VaadinIcon.STAR.create();
             text = "Vereinschef";
-            theme = "badge success";
         } else if (mitgliedschaft.getIstAufseher()) {
-            icon = VaadinIcon.EYE.create();
             text = "Aufseher";
-            theme = "badge";
         } else {
-            icon = VaadinIcon.USER.create();
             text = "Schütze";
-            theme = "badge contrast";
         }
 
-        icon.getStyle().set("padding", "0");
-        icon.setSize("14px");
-
-        badge.add(icon, new Span(" " + text));
-        badge.getElement().getThemeList().addAll(java.util.Arrays.asList(theme.split(" ")));
+        badge.setText(text);
+        badge.addClassName("badge");
         badge.getStyle()
                 .set("display", "inline-flex")
-                .set("align-items", "center")
-                .set("gap", "4px");
+                .set("align-items", "center");
 
         return badge;
     }
@@ -196,52 +204,42 @@ public class MeineVereineView extends VerticalLayout {
      */
     private Span createStatusBadge(Vereinsmitgliedschaft mitgliedschaft) {
         Span badge = new Span();
-        Icon icon;
         String text;
-        String theme;
+        String cssClass;
 
         switch (mitgliedschaft.getStatus()) {
             case AKTIV -> {
-                icon = VaadinIcon.CHECK_CIRCLE.create();
                 text = "Aktiv";
-                theme = "badge success";
+                cssClass = "badge-success";
             }
             case BEANTRAGT -> {
-                icon = VaadinIcon.CLOCK.create();
                 text = "Beantragt";
-                theme = "badge primary";
+                cssClass = "badge-warning";
             }
             case ABGELEHNT -> {
-                icon = VaadinIcon.CLOSE_CIRCLE.create();
                 text = "Abgelehnt";
-                theme = "badge error";
+                cssClass = "badge-error";
             }
             case BEENDET -> {
-                icon = VaadinIcon.BAN.create();
                 text = "Beendet";
-                theme = "badge contrast";
+                cssClass = "badge-error";
             }
             case VERLASSEN -> {
-                icon = VaadinIcon.SIGN_OUT.create();
                 text = "Verlassen";
-                theme = "badge contrast";
+                cssClass = "badge-error";
             }
             default -> {
-                icon = VaadinIcon.QUESTION_CIRCLE.create();
                 text = "Unbekannt";
-                theme = "badge";
+                cssClass = "badge";
             }
         }
 
-        icon.getStyle().set("padding", "0");
-        icon.setSize("14px");
-
-        badge.add(icon, new Span(" " + text));
-        badge.getElement().getThemeList().addAll(java.util.Arrays.asList(theme.split(" ")));
+        badge.setText(text);
+        badge.addClassName("badge");
+        badge.addClassName(cssClass);
         badge.getStyle()
                 .set("display", "inline-flex")
-                .set("align-items", "center")
-                .set("gap", "4px");
+                .set("align-items", "center");
 
         return badge;
     }
@@ -257,32 +255,30 @@ public class MeineVereineView extends VerticalLayout {
         VerticalLayout layout = new VerticalLayout();
         layout.setSpacing(true);
         layout.setPadding(false);
+        layout.setWidthFull();
 
-        // Info-Box
+        // Info-Box über die gesamte Breite und mit Standard-Info-Box-Styling
         Div infoBox = new Div();
-        infoBox.getStyle()
-                .set("background-color", "var(--lumo-primary-color-10pct)")
-                .set("border-left", "4px solid var(--lumo-primary-color)")
-                .set("padding", "var(--lumo-space-m)")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("margin-bottom", "var(--lumo-space-m)");
+        infoBox.addClassName("info-box");
+        infoBox.setWidthFull();
 
         Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
         infoIcon.setSize("20px");
-        infoIcon.getStyle().set("color", "var(--lumo-primary-color)");
+        // Keine explizite Farbe setzen, Standard-Info-Box-Styling übernimmt das Blau
 
         Span infoText = new Span("Geben Sie die Vereinsnummer ein, um eine Beitrittsanfrage zu senden.");
         infoText.getStyle().set("margin-left", "var(--lumo-space-s)");
+        infoText.getStyle().set("color", "var(--lumo-primary-text-color)"); // Blauschrift
 
         HorizontalLayout infoLayout = new HorizontalLayout(infoIcon, infoText);
         infoLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         infoLayout.setSpacing(false);
+        infoLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START); // linksbündig
         infoBox.add(infoLayout);
 
         TextField vereinsNummerField = new TextField("Vereinsnummer");
         vereinsNummerField.setWidthFull();
         vereinsNummerField.setPlaceholder("z.B. DSB-12345");
-        vereinsNummerField.setPrefixComponent(VaadinIcon.BARCODE.create());
         vereinsNummerField.setClearButtonVisible(true);
 
         Button beitretenButton = new Button("Beitreten", new Icon(VaadinIcon.SIGN_IN), e -> {

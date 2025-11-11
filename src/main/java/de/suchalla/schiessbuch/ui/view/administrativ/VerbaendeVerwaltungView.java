@@ -1,4 +1,4 @@
-package de.suchalla.schiessbuch.ui.view;
+package de.suchalla.schiessbuch.ui.view.administrativ;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -7,6 +7,7 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -21,6 +22,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.component.UI;
 import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.service.VerbandService;
+import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 
 import java.util.List;
@@ -97,6 +99,9 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         formContainer.setWidthFull();
         formContainer.getStyle().set("margin-bottom", "var(--lumo-space-l)");
 
+        H3 erstellenTitle = new H3("Neuen Verband erstellen");
+        erstellenTitle.getStyle().set("margin-top", "0").set("margin-bottom", "var(--lumo-space-m)");
+
         // Formular
         nameField.setRequired(true);
         beschreibungField.setMaxLength(1000);
@@ -110,7 +115,7 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         Button speichernButton = new Button("Verband erstellen", e -> speichereVerband());
         speichernButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        formContainer.add(formLayout, speichernButton);
+        formContainer.add(erstellenTitle, formLayout, speichernButton);
         contentWrapper.add(formContainer);
 
         // Grid-Container mit weißem Hintergrund
@@ -267,3 +272,4 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         emptyStateMessage.setVisible(isEmpty);
     }
 }
+

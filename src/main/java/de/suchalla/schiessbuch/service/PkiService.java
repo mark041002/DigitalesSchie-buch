@@ -2,8 +2,10 @@ package de.suchalla.schiessbuch.service;
 
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
+import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
+import de.suchalla.schiessbuch.repository.SchiesstandRepository;
 import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.repository.BenutzerRepository;
 import jakarta.annotation.PostConstruct;
@@ -39,7 +41,9 @@ import java.util.Date;
 
 /**
  * Service für PKI-Zertifikatsverwaltung.
- * Hierarchie: Root CA -> Verein CA -> Aufseher
+ * Hierarchie:
+ * - Root CA -> Verein CA -> Aufseher (für Vereinsmitglieder)
+ * - Root CA -> Schießstandaufseher (für gewerbliche Schießstände)
  *
  * @author Markus Suchalla
  * @version 1.0.0
@@ -52,6 +56,7 @@ public class PkiService {
     private final DigitalesZertifikatRepository zertifikatRepository;
     private final VereinRepository vereinRepository;
     private final BenutzerRepository benutzerRepository;
+    private final SchiesstandRepository schiesstandRepository;
 
     static {
         // Bouncy Castle Provider registrieren
@@ -317,6 +322,103 @@ public class PkiService {
         } catch (Exception e) {
             log.error("Fehler beim Erstellen des Aufseher-Zertifikats", e);
             throw new RuntimeException("Aufseher-Zertifikat konnte nicht erstellt werden", e);
+        }
+    }
+
+    /**
+     * Erstellt ein Schießstandaufseher-Zertifikat, signiert vom Root-Zertifikat.
+     * Dies wird für gewerbliche Schießstände verwendet.
+     */
+    @Transactional
+    public DigitalesZertifikat createSchiesstandaufseheCertificate(Benutzer benutzer, Schiesstand schiesstand) {
+        try {
+            // Benutzer und Schießstand aus DB laden, um LazyInitializationException zu vermeiden
+            Benutzer managedBenutzer = benutzerRepository.findById(benutzer.getId())
+                    .orElseThrow(() -> new RuntimeException("Benutzer nicht gefunden"));
+            Schiesstand managedSchiesstand = schiesstandRepository.findById(schiesstand.getId())
+                    .orElseThrow(() -> new RuntimeException("Schießstand nicht gefunden"));
+
+            log.info("Erstelle Schießstandaufseher-Zertifikat für: {} am Schießstand: {}",
+                    managedBenutzer.getVollstaendigerName(), managedSchiesstand.getName());
+
+            // Prüfen ob bereits vorhanden
+            if (zertifikatRepository.existsByBenutzerAndSchiesstand(managedBenutzer, managedSchiesstand)) {
+                return zertifikatRepository.findByBenutzerAndSchiesstand(managedBenutzer, managedSchiesstand)
+                        .orElseThrow();
+            }
+
+            // Root-Zertifikat laden
+            DigitalesZertifikat rootZertifikat = zertifikatRepository.findByZertifikatsTyp("ROOT")
+                    .orElseThrow(() -> new RuntimeException("Root-Zertifikat nicht gefunden"));
+
+            // Key Pair für Schießstandaufseher generieren
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
+            keyGen.initialize(2048, new SecureRandom());
+            KeyPair aufseherKeyPair = keyGen.generateKeyPair();
+
+            // Schießstandaufseher-Zertifikat erstellen
+            X500Name issuerDN = new X500Name(rootZertifikat.getSubjectDN());
+            X500Name subjectDN = new X500Name(String.format(
+                    "CN=%s, O=Digitales Schiessbuch, OU=Schiesstandaufseher %s, C=DE",
+                    managedBenutzer.getVollstaendigerName(),
+                    managedSchiesstand.getName()
+            ));
+
+            BigInteger serialNumber = new BigInteger(128, new SecureRandom());
+            LocalDateTime now = LocalDateTime.now();
+
+            Date notBefore = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
+            Date notAfter = Date.from(now.plusYears(100).atZone(ZoneId.systemDefault()).toInstant());
+
+            X509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
+                    issuerDN,
+                    serialNumber,
+                    notBefore,
+                    notAfter,
+                    subjectDN,
+                    aufseherKeyPair.getPublic()
+            );
+
+            // Extensions für End Entity (Schießstandaufseher)
+            certBuilder.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+            certBuilder.addExtension(Extension.keyUsage, true,
+                    new KeyUsage(KeyUsage.digitalSignature | KeyUsage.nonRepudiation));
+
+            // Mit Root-Private-Key signieren (direktes Child vom Root)
+            PrivateKey rootPrivateKey = loadPrivateKeyFromPEM(rootZertifikat.getPrivateKeyPEM());
+            ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSA")
+                    .setProvider("BC")
+                    .build(rootPrivateKey);
+
+            X509CertificateHolder certHolder = certBuilder.build(signer);
+            X509Certificate aufseherCert = new JcaX509CertificateConverter()
+                    .setProvider("BC")
+                    .getCertificate(certHolder);
+
+            // In Datenbank speichern
+            DigitalesZertifikat schiesstandaufseherZertifikat = DigitalesZertifikat.builder()
+                    .zertifikatsTyp("SCHIESSTANDAUFSEHER")
+                    .seriennummer(serialNumber.toString(16))
+                    .subjectDN(subjectDN.toString())
+                    .issuerDN(issuerDN.toString())
+                    .zertifikatPEM(convertToPEM(aufseherCert))
+                    .privateKeyPEM(convertPrivateKeyToPEM(aufseherKeyPair.getPrivate()))
+                    .gueltigAb(now)
+                    .gueltigBis(null) // Unbegrenzt gültig
+                    .widerrufen(false)
+                    .benutzer(managedBenutzer)
+                    .schiesstand(managedSchiesstand)
+                    .parentZertifikat(rootZertifikat)
+                    .build();
+
+            zertifikatRepository.save(schiesstandaufseherZertifikat);
+            log.info("Schießstandaufseher-Zertifikat erstellt für: {}", managedBenutzer.getVollstaendigerName());
+
+            return schiesstandaufseherZertifikat;
+
+        } catch (Exception e) {
+            log.error("Fehler beim Erstellen des Schießstandaufseher-Zertifikats", e);
+            throw new RuntimeException("Schießstandaufseher-Zertifikat konnte nicht erstellt werden", e);
         }
     }
 

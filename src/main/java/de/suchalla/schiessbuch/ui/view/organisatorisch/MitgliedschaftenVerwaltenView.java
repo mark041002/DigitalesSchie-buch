@@ -1,4 +1,4 @@
-package de.suchalla.schiessbuch.ui.view;
+package de.suchalla.schiessbuch.ui.view.organisatorisch;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -8,6 +8,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -31,6 +32,7 @@ import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.PdfExportService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
+import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,7 +49,7 @@ import java.util.stream.Collectors;
  */
 @Route(value = "mitgliedsverwaltung", layout = MainLayout.class)
 @PageTitle("Mitgliedsverwaltung | Digitales Schießbuch")
-@RolesAllowed({"VEREINS_CHEF", "AUFSEHER", "ADMIN"})
+@RolesAllowed({"VEREINS_CHEF", "AUFSEHER", "SCHIESSSTAND_AUFSEHER", "ADMIN"})
 @Slf4j
 public class MitgliedschaftenVerwaltenView extends VerticalLayout {
 
@@ -134,11 +136,43 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         Span vereinsName = new Span(aktuellerVerein.getName());
         vereinsName.getStyle()
                 .set("font-size", "var(--lumo-font-size-m)")
-                .set("color", "var(--lumo-secondary-text-color)")
-                .set("font-weight", "500");
+                .set("color", "white")
+                .set("font-weight", "500")
+                .set("margin-left", "auto");
 
-        header.add(title, vereinsName);
+        HorizontalLayout headerContent = new HorizontalLayout(title, vereinsName);
+        headerContent.setWidthFull();
+        headerContent.setAlignItems(FlexComponent.Alignment.CENTER);
+        headerContent.setSpacing(true);
+        header.add(headerContent);
         contentWrapper.add(header);
+
+        // Info-Box mit modernem Styling
+        Div infoBox = new Div();
+        infoBox.addClassName("info-box");
+        infoBox.setWidthFull();
+        infoBox.getStyle()
+                .set("background", "var(--lumo-primary-color-10pct)")
+                .set("border-left", "4px solid var(--lumo-primary-color)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-m)")
+                .set("margin-bottom", "var(--lumo-space-l)")
+                .set("box-shadow", "var(--lumo-box-shadow-xs)");
+        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
+        infoIcon.getStyle().set("margin-right", "var(--lumo-space-s)");
+        Paragraph beschreibung = new Paragraph(
+                "Verwalten Sie die Mitgliedschaften Ihres Vereins. Genehmigen oder lehnen Sie Beitrittsanfragen ab und verwalten Sie aktive Mitglieder."
+        );
+        beschreibung.getStyle()
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("margin", "0")
+                .set("display", "inline");
+        HorizontalLayout infoContent = new HorizontalLayout(infoIcon, beschreibung);
+        infoContent.setAlignItems(FlexComponent.Alignment.START);
+        infoContent.setSpacing(false);
+        infoBox.add(infoContent);
+        contentWrapper.add(infoBox);
 
         // Tabs-Container mit weißem Hintergrund
         Div tabsContainer = new Div();
@@ -194,6 +228,11 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         Div filterContainer = new Div();
         filterContainer.addClassName("filter-box");
         filterContainer.setWidthFull();
+        filterContainer.getStyle()
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-m)")
+                .set("margin-bottom", "var(--lumo-space-m)");
         filterContainer.add(createFilterLayout());
         contentWrapper.add(filterContainer);
 
@@ -293,7 +332,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
                 .setHeader("Rolle")
                 .setAutoWidth(true);
 
-        // Status-Spalte mit Referenz speichern
+        // Status-Spalte with reference
         statusColumn = mitgliederGrid.addColumn(this::getStatusText)
                 .setHeader("Status")
                 .setAutoWidth(true);

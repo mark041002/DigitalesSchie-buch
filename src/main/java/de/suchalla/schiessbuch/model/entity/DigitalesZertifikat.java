@@ -9,7 +9,9 @@ import java.time.LocalDateTime;
 
 /**
  * Entity-Klasse für digitale PKI-Zertifikate.
- * Hierarchie: Root -> Verein -> Aufseher
+ * Hierarchie:
+ * - Root -> Verein -> Aufseher (für Vereinsmitglieder)
+ * - Root -> Schießstandaufseher (für gewerbliche Schießstände)
  *
  * @author Markus Suchalla
  * @version 1.0.0
@@ -30,7 +32,7 @@ public class DigitalesZertifikat {
     private Long id;
 
     /**
-     * Typ: ROOT, VEREIN, AUFSEHER
+     * Typ: ROOT, VEREIN, AUFSEHER, SCHIESSTANDAUFSEHER
      */
     @NotBlank(message = "Zertifikatstyp darf nicht leer sein")
     @Column(name = "zertifikats_typ", nullable = false)
@@ -115,6 +117,13 @@ public class DigitalesZertifikat {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verein_id")
     private Verein verein;
+
+    /**
+     * Referenz zum Schießstand (für Schießstandaufseher-Zertifikate)
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "schiesstand_id")
+    private Schiesstand schiesstand;
 
     /**
      * Parent-Zertifikat in der Hierarchie

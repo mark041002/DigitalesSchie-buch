@@ -48,7 +48,7 @@ public class Verband {
     @Column(name = "aktualisiert_am")
     private LocalDateTime aktualisiertAm;
 
-    @OneToMany(mappedBy = "verband", cascade = CascadeType.ALL)
+    @ManyToMany(mappedBy = "verbaende")
     @Builder.Default
     private Set<Verein> vereine = new HashSet<>();
 

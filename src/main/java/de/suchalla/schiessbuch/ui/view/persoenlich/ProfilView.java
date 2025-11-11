@@ -1,4 +1,4 @@
-package de.suchalla.schiessbuch.ui.view;
+package de.suchalla.schiessbuch.ui.view.persoenlich;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -20,6 +20,7 @@ import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.BenutzerService;
+import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.PermitAll;
 
 /**
@@ -79,11 +80,25 @@ public class ProfilView extends VerticalLayout {
         H2 title = new H2("Mein Profil");
         title.getStyle().set("margin", "0");
 
-        Span subtitle = new Span("Verwalten Sie Ihre persönlichen Informationen");
-        subtitle.addClassName("subtitle");
-
-        header.add(title, subtitle);
+        header.add(title);
         contentWrapper.add(header);
+
+        // Info-Box mit modernem Styling
+        Div infoBox = new Div();
+        infoBox.addClassName("info-box");
+        infoBox.setWidthFull();
+        infoBox.getStyle()
+                .set("margin-bottom", "var(--lumo-space-l)");
+        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
+        com.vaadin.flow.component.html.Paragraph beschreibung = new com.vaadin.flow.component.html.Paragraph(
+                "Verwalten Sie Ihre persönlichen Daten und Sicherheitseinstellungen."
+        );
+        beschreibung.getStyle()
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("margin", "0");
+        infoBox.add(infoIcon, beschreibung);
+        contentWrapper.add(infoBox);
 
         // Profilinformationen
         infoCard = createInfoCard();
@@ -405,4 +420,3 @@ public class ProfilView extends VerticalLayout {
         dialog.open();
     }
 }
-

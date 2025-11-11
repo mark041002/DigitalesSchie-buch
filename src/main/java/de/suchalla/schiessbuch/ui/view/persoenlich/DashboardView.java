@@ -1,4 +1,4 @@
-package de.suchalla.schiessbuch.ui.view;
+package de.suchalla.schiessbuch.ui.view.persoenlich;
 
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
@@ -10,11 +10,18 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
+import de.suchalla.schiessbuch.model.entity.Verein;
+import de.suchalla.schiessbuch.model.entity.Schiesstand;
+import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
+import de.suchalla.schiessbuch.repository.SchiesstandRepository;
 import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
 import de.suchalla.schiessbuch.security.SecurityService;
-import de.suchalla.schiessbuch.service.BenachrichtigungsService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
+import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
+import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.PermitAll;
+
+import java.util.List;
 
 /**
  * Dashboard-View als Startseite.
@@ -31,14 +38,17 @@ public class DashboardView extends VerticalLayout {
 
     private final SecurityService securityService;
     private final SchiessnachweisService schiessnachweisService;
-    private final BenachrichtigungsService benachrichtigungsService;
+    private final VereinsmitgliedschaftService vereinsmitgliedschaftService;
+    private final SchiesstandRepository schiesstandRepository;
 
     public DashboardView(SecurityService securityService,
                          SchiessnachweisService schiessnachweisService,
-                         BenachrichtigungsService benachrichtigungsService) {
+                         VereinsmitgliedschaftService vereinsmitgliedschaftService,
+                         SchiesstandRepository schiesstandRepository) {
         this.securityService = securityService;
         this.schiessnachweisService = schiessnachweisService;
-        this.benachrichtigungsService = benachrichtigungsService;
+        this.vereinsmitgliedschaftService = vereinsmitgliedschaftService;
+        this.schiesstandRepository = schiesstandRepository;
 
         setSpacing(false);
         setPadding(false);
@@ -123,30 +133,85 @@ public class DashboardView extends VerticalLayout {
 
         try {
             long unsignierteEintraege = schiessnachweisService.zaehleUnsignierteEintraege(user);
-            long ungeleseneNachrichten = benachrichtigungsService.zaehleUngelesene(user);
 
-            grid.add(
-                    createStatCard("Unsignierte Einträge", String.valueOf(unsignierteEintraege),
-                            VaadinIcon.EDIT, "var(--lumo-warning-color)"),
-                    createStatCard("Ungelesene Nachrichten", String.valueOf(ungeleseneNachrichten),
-                            VaadinIcon.BELL, "var(--lumo-primary-color)"),
-                    createStatCard("Rolle", getRollenText(user.getRolle()),
-                            VaadinIcon.USER_STAR, "var(--lumo-success-color)")
-            );
+            // Für Aufseher, Schießstandaufseher und Vereinschef: Zähle offene Einträge in ihren Vereinen
+            long offeneEintraege = 0;
+            long beitrittsanfragen = 0;
+            if (user.getRolle() == BenutzerRolle.AUFSEHER || user.getRolle() == BenutzerRolle.SCHIESSSTAND_AUFSEHER || user.getRolle() == BenutzerRolle.VEREINS_CHEF || user.getRolle() == BenutzerRolle.ADMIN) {
+                Verein verein = user.getVereinsmitgliedschaften().stream()
+                    .filter(m -> (Boolean.TRUE.equals(m.getIstAufseher()) || Boolean.TRUE.equals(m.getIstVereinschef())) && m.getVerein() != null)
+                    .map(Vereinsmitgliedschaft::getVerein)
+                    .findFirst()
+                    .orElse(null);
+                if (verein != null) {
+                    List<Schiesstand> schiesstaende = schiesstandRepository.findByVerein(verein);
+                    offeneEintraege = schiesstaende.stream()
+                        .mapToLong(schiesstand -> schiessnachweisService.findeUnsignierteEintraege(schiesstand).size())
+                        .sum();
+                    // Zähle Beitrittsanfragen für Vereinschef
+                    beitrittsanfragen = vereinsmitgliedschaftService.findeBeitrittsanfragen(verein).size();
+                }
+            }
+
+            // Karten basierend auf Rolle
+            if (user.getRolle() == BenutzerRolle.AUFSEHER || user.getRolle() == BenutzerRolle.SCHIESSSTAND_AUFSEHER || user.getRolle() == BenutzerRolle.ADMIN) {
+                grid.add(
+                        createStatCard("Meine unsignierten Einträge", String.valueOf(unsignierteEintraege),
+                                VaadinIcon.EDIT, "var(--lumo-warning-color)", "meine-eintraege"),
+                        createStatCard("Einträge zum Signieren", String.valueOf(offeneEintraege),
+                                VaadinIcon.CLIPBOARD_CHECK, "var(--lumo-error-color)", "eintraege-verwaltung?tab=unsigniert"),
+                        createStatCard("Rolle", getRollenText(user.getRolle()),
+                                VaadinIcon.USER_STAR, "var(--lumo-success-color)", null)
+                );
+            } else if (user.getRolle() == BenutzerRolle.VEREINS_CHEF) {
+                grid.add(
+                        createStatCard("Meine unsignierten Einträge", String.valueOf(unsignierteEintraege),
+                                VaadinIcon.EDIT, "var(--lumo-warning-color)", "meine-eintraege"),
+                        createStatCard("Einträge zum Signieren", String.valueOf(offeneEintraege),
+                                VaadinIcon.CLIPBOARD_CHECK, "var(--lumo-error-color)", "eintraege-verwaltung?tab=unsigniert"),
+                        createStatCard("Beitrittsanfragen", String.valueOf(beitrittsanfragen),
+                                VaadinIcon.USERS, "var(--lumo-primary-color)", "vereinsmitglieder"),
+                        createStatCard("Rolle", getRollenText(user.getRolle()),
+                                VaadinIcon.USER_STAR, "var(--lumo-success-color)", null)
+                );
+            } else {
+                grid.add(
+                        createStatCard("Unsignierte Einträge", String.valueOf(unsignierteEintraege),
+                                VaadinIcon.EDIT, "var(--lumo-warning-color)", "meine-eintraege"),
+                        createStatCard("Rolle", getRollenText(user.getRolle()),
+                                VaadinIcon.USER_STAR, "var(--lumo-success-color)", null)
+                );
+            }
         } catch (Exception e) {
             // Fallback wenn Services nicht verfügbar
             grid.add(
-                // Status-Karte entfernt, keine Fallback-Karte mehr
+                createStatCard("Rolle", getRollenText(user.getRolle()),
+                        VaadinIcon.USER_STAR, "var(--lumo-success-color)", null)
             );
         }
 
         return grid;
     }
 
-    private Div createStatCard(String label, String value, VaadinIcon icon, String color) {
+    private Div createStatCard(String label, String value, VaadinIcon icon, String color, String route) {
         Div card = new Div();
         card.addClassName("stat-card");
-        card.getStyle().set("border-left", "4px solid " + color);
+        card.getStyle()
+                .set("border-left", "4px solid " + color)
+                .set("cursor", route != null ? "pointer" : "default")
+                .set("background", "#ffffff")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-m)")
+                .set("box-shadow", "var(--lumo-box-shadow-xs)");
+
+        // Click-Handling, nur wenn clickable (route != null)
+        if (route != null) {
+            card.getElement().executeJs(
+                    "this.addEventListener('click', () => {" +
+                    "  window.location.href = '" + route + "';" +
+                    "});"
+            );
+        }
 
         Div header = new Div();
         header.getStyle()
@@ -211,12 +276,24 @@ public class DashboardView extends VerticalLayout {
 
         // Buttons: flexible Karten, nebeneinander; min-width sorgt für Umbruch auf Mobile
         actionsGrid.add(
-                createActionButton("Neuer Eintrag", VaadinIcon.PLUS, "meine-eintraege"),
-                createActionButton("Meine Einträge", VaadinIcon.BOOK, "meine-eintraege"),
-                createActionButton("Benachrichtigungen", VaadinIcon.BELL, "benachrichtigungen"),
+                createActionButton("Neuer Eintrag", VaadinIcon.PLUS, "neuer-eintrag"),
+                createActionButton("Eintragsverwaltung", VaadinIcon.BOOK, "eintraege-verwaltung"),
                 createActionButton("Zertifikat verifizieren", VaadinIcon.DIPLOMA, "zertifikat-verifizierung"),
                 createActionButton("Profil", VaadinIcon.USER, "profil")
         );
+
+        // Zusätzliche Buttons für Vereinschef
+        if (user.getRolle() == BenutzerRolle.VEREINS_CHEF) {
+            actionsGrid.add(createActionButton("Alle Mitglieder", VaadinIcon.USERS, "vereinsmitglieder"));
+            actionsGrid.add(createActionButton("Eintragsverwaltung", VaadinIcon.RECORDS, "eintraege-verwaltung"));
+        }
+
+        // Eintragsverwaltung-Button für Aufseher und Admin
+        if (user.getRolle() == BenutzerRolle.AUFSEHER || user.getRolle() == BenutzerRolle.ADMIN) {
+            actionsGrid.add(createActionButton("Eintragsverwaltung", VaadinIcon.RECORDS, "eintraege-verwaltung"));
+        }
+
+
 
         // Infobox unter den Aktionen
         Div infoBox = new Div();
@@ -228,10 +305,12 @@ public class DashboardView extends VerticalLayout {
                 .set("margin-top", "var(--lumo-space-m)")
                 .set("box-shadow", "var(--lumo-box-shadow-xs)");
 
-        Span infoIcon = new Span("ℹ️");
+        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
         infoIcon.getStyle()
-                .set("font-size", "var(--lumo-font-size-xl)")
-                .set("margin-right", "var(--lumo-space-s)");
+                .set("color", "var(--lumo-primary-color)")
+                .set("margin-right", "var(--lumo-space-s)")
+                .set("flex-shrink", "0");
 
         Span infoText = new Span("Nutzen Sie diese Aktionen für häufig verwendete Funktionen");
         infoText.getStyle()
@@ -316,6 +395,7 @@ public class DashboardView extends VerticalLayout {
             case ADMIN -> "Administrator";
             case VEREINS_CHEF -> "Vereinschef";
             case AUFSEHER -> "Aufseher";
+            case SCHIESSSTAND_AUFSEHER -> "Schießstandaufseher";
             case SCHUETZE -> "Schütze";
             default -> rolle.getBezeichnung();
         };

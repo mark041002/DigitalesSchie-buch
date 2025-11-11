@@ -53,8 +53,9 @@
     background: var(--lumo-primary-color-10pct);
     border-left: 4px solid var(--lumo-primary-color);
     border-radius: var(--lumo-border-radius-m);
-    padding: var(--lumo-space-m);
-    margin-bottom: var(--lumo-space-l);
+    padding: var(--lumo-space-l) var(--lumo-space-m);
+    margin-top: var(--lumo-space-m);
+    margin-bottom: var(--lumo-space-m);
     box-shadow: var(--lumo-box-shadow-xs);
     display: flex;
     align-items: flex-start;
@@ -176,6 +177,7 @@
     box-shadow: var(--lumo-box-shadow-s);
     border: 1px solid var(--lumo-contrast-10pct);
     transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
 }
 
 .stat-card:hover {
@@ -284,6 +286,24 @@
     gap: var(--lumo-space-s);
     flex-wrap: wrap;
     margin-top: var(--lumo-space-m);
+}
+
+/* Button für neuen Eintrag - schlicht grün, Hover weiß */
+.neuer-eintrag-btn {
+    background: var(--lumo-success-color);
+    color: white;
+    border-radius: 24px;
+    box-shadow: none;
+    font-weight: 600;
+    padding: 0.5em 1.8em;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+    border: none;
+}
+
+.neuer-eintrag-btn:hover, .neuer-eintrag-btn:focus {
+    background: white;
+    color: var(--lumo-success-color);
+    transform: translateY(-2px) scale(1.04);
 }
 
 /* ==========================================================================
@@ -489,3 +509,38 @@ vaadin-dialog-overlay::part(footer) {
         flex: 1 1 100%;
     }
 }
+
+/* Schnellzugriff-Buttons - Responsive Flexbox-Styles */
+.quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--lumo-space-m);
+    justify-content: center;
+    align-items: stretch;
+    width: 100%;
+    margin-bottom: var(--lumo-space-l);
+}
+
+/* Badge Farben für Status */
+.badge-success {
+    background-color: #27ae60 !important; /* Grün */
+    color: #fff !important;
+}
+.badge-warning {
+    background-color: #f1c40f !important; /* Gelb */
+    color: #fff !important;
+}
+.badge-error {
+    background-color: #e74c3c !important; /* Rot */
+    color: #fff !important;
+}
+.badge {
+    padding: 0.25em 0.75em;
+    border-radius: 1em;
+    font-size: 0.95em;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+}
+

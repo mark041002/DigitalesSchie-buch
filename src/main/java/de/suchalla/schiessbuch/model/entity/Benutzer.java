@@ -108,7 +108,16 @@ public class Benutzer {
      * @return true wenn Aufseher
      */
     public boolean istAufseher() {
-        return rolle == BenutzerRolle.AUFSEHER;
+        return rolle == BenutzerRolle.AUFSEHER || rolle == BenutzerRolle.SCHIESSSTAND_AUFSEHER;
+    }
+
+    /**
+     * Prüft, ob der Benutzer ein Schießstandaufseher ist.
+     *
+     * @return true wenn Schießstandaufseher
+     */
+    public boolean istSchiesstandAufseher() {
+        return rolle == BenutzerRolle.SCHIESSSTAND_AUFSEHER;
     }
 
     /**

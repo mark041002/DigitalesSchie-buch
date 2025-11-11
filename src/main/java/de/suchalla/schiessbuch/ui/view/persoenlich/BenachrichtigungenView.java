@@ -1,4 +1,4 @@
-package de.suchalla.schiessbuch.ui.view;
+package de.suchalla.schiessbuch.ui.view.persoenlich;
 
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
@@ -11,6 +11,7 @@ import de.suchalla.schiessbuch.model.entity.Benachrichtigung;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.BenachrichtigungsService;
+import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.PermitAll;
 
 import java.time.format.DateTimeFormatter;
@@ -66,11 +67,25 @@ public class BenachrichtigungenView extends VerticalLayout {
         H2 title = new H2("Benachrichtigungen");
         title.getStyle().set("margin", "0");
 
-        Span subtitle = new Span("Ihre aktuellen Mitteilungen und Updates");
-        subtitle.addClassName("subtitle");
-
-        header.add(title, subtitle);
+        header.add(title);
         contentWrapper.add(header);
+
+        // Info-Box mit modernem Styling
+        Div infoBox = new Div();
+        infoBox.addClassName("info-box");
+        infoBox.setWidthFull();
+        infoBox.getStyle()
+                .set("margin-bottom", "var(--lumo-space-l)");
+        com.vaadin.flow.component.icon.Icon infoIcon = com.vaadin.flow.component.icon.VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
+        com.vaadin.flow.component.html.Paragraph beschreibung = new com.vaadin.flow.component.html.Paragraph(
+                "Bleiben Sie über wichtige Mitteilungen und Updates informiert."
+        );
+        beschreibung.getStyle()
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("margin", "0");
+        infoBox.add(infoIcon, beschreibung);
+        contentWrapper.add(infoBox);
 
         // Grid-Container mit weißem Hintergrund
         Div gridContainer = new Div();
@@ -132,4 +147,3 @@ public class BenachrichtigungenView extends VerticalLayout {
         }
     }
 }
-

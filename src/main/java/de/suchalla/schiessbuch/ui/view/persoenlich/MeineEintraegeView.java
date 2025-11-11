@@ -1,13 +1,11 @@
-package de.suchalla.schiessbuch.ui.view;
+package de.suchalla.schiessbuch.ui.view.persoenlich;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
@@ -15,14 +13,18 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
+import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.PdfExportService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
+import de.suchalla.schiessbuch.service.SchiesstandService;
+import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.PermitAll;
 
 import java.io.ByteArrayInputStream;
@@ -42,6 +44,7 @@ public class MeineEintraegeView extends VerticalLayout {
 
     private final SchiessnachweisService schiessnachweisService;
     private final PdfExportService pdfExportService;
+    private final SchiesstandService schiesstandService;
 
     private final Grid<SchiessnachweisEintrag> grid = new Grid<>(SchiessnachweisEintrag.class, false);
     private final DatePicker vonDatum = new DatePicker("Von");
@@ -50,11 +53,16 @@ public class MeineEintraegeView extends VerticalLayout {
 
     private final Benutzer currentUser;
 
+    private final Select<String> statusFilter = new Select<>();
+    private final ComboBox<Schiesstand> schiessstandFilter = new ComboBox<>();
+
     public MeineEintraegeView(SecurityService securityService,
                               SchiessnachweisService schiessnachweisService,
-                              PdfExportService pdfExportService) {
+                              PdfExportService pdfExportService,
+                              SchiesstandService schiesstandService) {
         this.schiessnachweisService = schiessnachweisService;
         this.pdfExportService = pdfExportService;
+        this.schiesstandService = schiesstandService;
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
         setSpacing(false);
@@ -77,24 +85,23 @@ public class MeineEintraegeView extends VerticalLayout {
         contentWrapper.addClassName("content-wrapper");
 
         // Header-Bereich
-        Div header = new Div();
+        HorizontalLayout header = new HorizontalLayout();
         header.addClassName("gradient-header");
         header.setWidthFull();
+        header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        header.setAlignItems(FlexComponent.Alignment.CENTER);
 
         // Text-Container
         Div textContainer = new Div();
-
-        H2 title = new H2("Meine Schießnachweis-Einträge");
+        H3 title = new H3("Meine Schießnachweis-Einträge");
         title.getStyle().set("margin", "0");
-
-        Span subtitle = new Span("Übersicht Ihrer dokumentierten Schießaktivitäten");
-        subtitle.addClassName("subtitle");
-
-        textContainer.add(title, subtitle);
+        title.getStyle().set("color", "var(--lumo-primary-contrast-color)"); // Überschrift weiß
+        textContainer.add(title);
 
         // Button für neuen Eintrag
         Button neuerEintragButton = new Button("Neuer Eintrag", new Icon(VaadinIcon.PLUS_CIRCLE));
-        neuerEintragButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_CONTRAST);
+        neuerEintragButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        neuerEintragButton.addClassName("neuer-eintrag-btn");
         neuerEintragButton.addClickListener(e ->
             getUI().ifPresent(ui -> ui.navigate(NeuerEintragView.class))
         );
@@ -102,9 +109,28 @@ public class MeineEintraegeView extends VerticalLayout {
         header.add(textContainer, neuerEintragButton);
         contentWrapper.add(header);
 
-        // Filter-Bereich mit modernem Styling - alles nebeneinander
+        // Info-Box separat unter dem Header
+        Div infoBox = new Div();
+        infoBox.addClassName("info-box");
+        infoBox.setWidthFull();
+        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
+        com.vaadin.flow.component.html.Paragraph beschreibung = new com.vaadin.flow.component.html.Paragraph(
+                "Filtern Sie Ihre Einträge nach Datum oder exportieren Sie diese als PDF-Datei."
+        );
+        beschreibung.getStyle().set("margin", "0");
+        infoBox.add(infoIcon, beschreibung);
+        contentWrapper.add(infoBox);
+
+        // Filter-Bereich mit modernem Styling - alles nebeneinander in einem Container
         Div filterBox = new Div();
         filterBox.addClassName("filter-box");
+        filterBox.setWidthFull();
+        filterBox.getStyle()
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-m)")
+                .set("margin-bottom", "var(--lumo-space-m)");
 
         vonDatum.setValue(LocalDate.now().minusMonths(3));
         vonDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
@@ -114,6 +140,21 @@ public class MeineEintraegeView extends VerticalLayout {
         bisDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
         bisDatum.setWidth("200px");
 
+        // Status-Filter
+        statusFilter.setLabel("Status");
+        statusFilter.setItems("Alle", "Signiert", "Unsigniert");
+        statusFilter.setValue("Alle");
+        statusFilter.setWidth("160px");
+
+        // Schießstand-Filter
+        schiessstandFilter.setLabel("Schießstand");
+        schiessstandFilter.setWidth("200px");
+        List<Schiesstand> schiessstaende = schiesstandService.findAll();
+        schiessstandFilter.setItems(schiessstaende);
+        schiessstandFilter.setItemLabelGenerator(Schiesstand::getName);
+        schiessstandFilter.setPlaceholder("Alle");
+
+        // Filter-Button
         Button filterButton = new Button("Filtern", new Icon(VaadinIcon.FILTER));
         filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         filterButton.addClickListener(e -> updateGrid());
@@ -126,11 +167,11 @@ public class MeineEintraegeView extends VerticalLayout {
         pdfDownload.add(pdfButton);
 
         // Alles in einem HorizontalLayout nebeneinander
-        HorizontalLayout filterLayout = new HorizontalLayout(vonDatum, bisDatum, filterButton, pdfDownload);
+        HorizontalLayout filterLayout = new HorizontalLayout(vonDatum, bisDatum, statusFilter, schiessstandFilter, filterButton, pdfDownload);
         filterLayout.setAlignItems(FlexComponent.Alignment.END);
         filterLayout.setSpacing(true);
         filterLayout.setWidthFull();
-        filterLayout.getStyle().set("flex-wrap", "wrap");
+        filterLayout.getStyle().set("flex-wrap", "wrap").set("margin-top", "var(--lumo-space-m)");
 
         filterBox.add(filterLayout);
         contentWrapper.add(filterBox);
@@ -210,48 +251,12 @@ public class MeineEintraegeView extends VerticalLayout {
         gridContainer.add(grid, emptyStateMessage);
         contentWrapper.add(gridContainer);
         add(contentWrapper);
+
+        // Initiale Einträge laden
+        List<SchiessnachweisEintrag> initialEintraege = schiessnachweisService.findeEintraegeImZeitraum(currentUser, vonDatum.getValue(), bisDatum.getValue());
+        updateFilterOptions(initialEintraege);
     }
 
-    /**
-     * Erstellt ein Badge für den Status.
-     */
-    private Span createStatusBadge(SchiessnachweisEintrag eintrag) {
-        Span badge = new Span();
-        Icon icon;
-        String text = getStatusText(eintrag.getStatus());
-        String theme;
-
-        switch (eintrag.getStatus()) {
-            case OFFEN, UNSIGNIERT -> {
-                icon = VaadinIcon.EDIT.create();
-                theme = "badge contrast";
-            }
-            case SIGNIERT -> {
-                icon = VaadinIcon.CHECK_CIRCLE.create();
-                theme = "badge success";
-            }
-            case ABGELEHNT -> {
-                icon = VaadinIcon.CLOSE_CIRCLE.create();
-                theme = "badge error";
-            }
-            default -> {
-                icon = VaadinIcon.QUESTION_CIRCLE.create();
-                theme = "badge";
-            }
-        }
-
-        icon.getStyle().set("padding", "0");
-        icon.setSize("14px");
-
-        badge.add(icon, new Span(" " + text));
-        badge.getElement().getThemeList().addAll(java.util.Arrays.asList(theme.split(" ")));
-        badge.getStyle()
-                .set("display", "inline-flex")
-                .set("align-items", "center")
-                .set("gap", "4px");
-
-        return badge;
-    }
 
     /**
      * Erstellt Aktions-Buttons für Grid-Zeilen.
@@ -262,9 +267,9 @@ public class MeineEintraegeView extends VerticalLayout {
     private HorizontalLayout createActionButtons(SchiessnachweisEintrag eintrag) {
         HorizontalLayout layout = new HorizontalLayout();
         layout.setSpacing(true);
-
-        if (eintrag.kannGeloeschtWerden()) {
-            Button deleteButton = new Button("Löschen", new Icon(VaadinIcon.TRASH));
+        // Löschen ist jetzt auch für signierte Einträge möglich
+        if (eintrag.kannGeloeschtWerden() || eintrag.getStatus() == de.suchalla.schiessbuch.model.enums.EintragStatus.SIGNIERT) {
+            Button deleteButton = new Button("Löschen", new com.vaadin.flow.component.icon.Icon(com.vaadin.flow.component.icon.VaadinIcon.TRASH));
             deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
             deleteButton.addClickListener(e -> deleteEintrag(eintrag));
             layout.add(deleteButton);
@@ -296,15 +301,62 @@ public class MeineEintraegeView extends VerticalLayout {
         if (currentUser != null) {
             LocalDate von = vonDatum.getValue();
             LocalDate bis = bisDatum.getValue();
+            String status = statusFilter.getValue();
+            Schiesstand schiessstand = schiessstandFilter.getValue();
 
             List<SchiessnachweisEintrag> eintraege = schiessnachweisService
                     .findeEintraegeImZeitraum(currentUser, von, bis);
+
+            // Filteroptionen dynamisch aktualisieren
+            updateFilterOptions(eintraege);
+
+            // Status-Filter anwenden
+            if (status != null && !status.isEmpty()) {
+                eintraege = eintraege.stream()
+                        .filter(e -> getStatusText(e.getStatus()).equals(status))
+                        .toList();
+            }
+            // Schießstand-Filter anwenden
+            if (schiessstand != null) {
+                eintraege = eintraege.stream()
+                        .filter(e -> e.getSchiesstand().equals(schiessstand))
+                        .toList();
+            }
             grid.setItems(eintraege);
 
             // Zeige/Verstecke Empty State Message
             boolean isEmpty = eintraege.isEmpty();
             grid.setVisible(!isEmpty);
             emptyStateMessage.setVisible(isEmpty);
+        }
+    }
+
+    /**
+     * Aktualisiert die Filteroptionen für Status und Schießstand basierend auf den vorhandenen Einträgen.
+     *
+     * @param eintraege Die Liste der Einträge
+     */
+    private void updateFilterOptions(List<SchiessnachweisEintrag> eintraege) {
+        // Status-Optionen
+        List<String> statusOptions = eintraege.stream()
+                .map(e -> getStatusText(e.getStatus()))
+                .distinct()
+                .sorted()
+                .toList();
+        statusFilter.setItems(statusOptions);
+        if (!statusOptions.contains(statusFilter.getValue())) {
+            statusFilter.setValue(statusOptions.isEmpty() ? null : statusOptions.get(0));
+        }
+
+        // Schießstand-Optionen
+        List<Schiesstand> schiesstandOptions = eintraege.stream()
+                .map(SchiessnachweisEintrag::getSchiesstand)
+                .distinct()
+                .sorted((a, b) -> a.getName().compareToIgnoreCase(b.getName()))
+                .toList();
+        schiessstandFilter.setItems(schiesstandOptions);
+        if (!schiesstandOptions.contains(schiessstandFilter.getValue())) {
+            schiessstandFilter.setValue(schiesstandOptions.isEmpty() ? null : schiesstandOptions.get(0));
         }
     }
 
@@ -330,6 +382,42 @@ public class MeineEintraegeView extends VerticalLayout {
                 return new ByteArrayInputStream(new byte[0]);
             }
         });
+    }
+
+    /**
+     * Erstellt ein farbiges Status-Badge.
+     */
+    private Span createStatusBadge(SchiessnachweisEintrag eintrag) {
+        Span badge = new Span();
+        badge.getStyle()
+                .set("padding", "4px 12px")
+                .set("border-radius", "12px")
+                .set("font-weight", "500")
+                .set("font-size", "12px")
+                .set("display", "inline-block");
+
+        switch (eintrag.getStatus()) {
+            case OFFEN, UNSIGNIERT -> {
+                badge.setText("Unsigniert");
+                badge.getStyle()
+                        .set("background-color", "#ffeb3b")
+                        .set("color", "#333333");
+            }
+            case SIGNIERT -> {
+                badge.setText("Signiert");
+                badge.getStyle()
+                        .set("background-color", "#4caf50")
+                        .set("color", "white");
+            }
+            case ABGELEHNT -> {
+                badge.setText("Abgelehnt");
+                badge.getStyle()
+                        .set("background-color", "#f44336")
+                        .set("color", "white");
+            }
+        }
+
+        return badge;
     }
 
     /**

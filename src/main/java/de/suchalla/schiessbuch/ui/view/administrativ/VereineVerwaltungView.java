@@ -1,13 +1,13 @@
-package de.suchalla.schiessbuch.ui.view;
+package de.suchalla.schiessbuch.ui.view.administrativ;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -24,14 +24,17 @@ import com.vaadin.flow.component.textfield.TextArea;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
-import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
 import de.suchalla.schiessbuch.service.VerbandService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
+import de.suchalla.schiessbuch.ui.view.MainLayout;
+import de.suchalla.schiessbuch.ui.view.organisatorisch.*;
 import jakarta.annotation.security.RolesAllowed;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * View für Vereinsverwaltung (nur für Admins).
@@ -52,7 +55,7 @@ public class VereineVerwaltungView extends VerticalLayout {
     private final TextField nameField = new TextField("Name");
     private final TextField adresseField = new TextField("Adresse");
     private final TextField vereinsNummerField = new TextField("Vereinsnummer");
-    private final ComboBox<Verband> verbandComboBox = new ComboBox<>("Verband");
+    private final MultiSelectComboBox<Verband> verbaendeComboBox = new MultiSelectComboBox<>("Verbände");
 
     public VereineVerwaltungView(VerbandService verbandService, VereinsmitgliedschaftService mitgliedschaftService) {
         this.verbandService = verbandService;
@@ -114,15 +117,18 @@ public class VereineVerwaltungView extends VerticalLayout {
         formContainer.setWidthFull();
         formContainer.getStyle().set("margin-bottom", "var(--lumo-space-l)");
 
+        H3 erstellenTitle = new H3("Neuen Verein erstellen");
+        erstellenTitle.getStyle().set("margin-top", "0").set("margin-bottom", "var(--lumo-space-m)");
+
         // Formular
         nameField.setRequired(true);
 
-        verbandComboBox.setRequired(true);
-        verbandComboBox.setItems(verbandService.findeAlleVerbaende());
-        verbandComboBox.setItemLabelGenerator(Verband::getName);
-        verbandComboBox.setPlaceholder("Verband auswählen...");
+        verbaendeComboBox.setRequired(true);
+        verbaendeComboBox.setItems(verbandService.findeAlleVerbaende());
+        verbaendeComboBox.setItemLabelGenerator(Verband::getName);
+        verbaendeComboBox.setPlaceholder("Verbände auswählen...");
 
-        FormLayout formLayout = new FormLayout(nameField, adresseField, vereinsNummerField, verbandComboBox);
+        FormLayout formLayout = new FormLayout(nameField, adresseField, vereinsNummerField, verbaendeComboBox);
         formLayout.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0", 1),
                 new FormLayout.ResponsiveStep("500px", 2)
@@ -131,7 +137,7 @@ public class VereineVerwaltungView extends VerticalLayout {
         Button speichernButton = new Button("Verein erstellen", e -> speichereVerein());
         speichernButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        formContainer.add(formLayout, speichernButton);
+        formContainer.add(erstellenTitle, formLayout, speichernButton);
         contentWrapper.add(formContainer);
 
         // Grid-Container mit weißem Hintergrund
@@ -178,8 +184,13 @@ public class VereineVerwaltungView extends VerticalLayout {
                 .setAutoWidth(true)
                 .setFlexGrow(0)
                 .setClassNameGenerator(item -> "align-right");
-        grid.addColumn(verein -> verein.getVerband() != null ? verein.getVerband().getName() : "")
-                .setHeader("Verband")
+        grid.addColumn(verein -> verein.getVerbaende() != null && !verein.getVerbaende().isEmpty()
+                ? verein.getVerbaende().stream()
+                    .map(Verband::getName)
+                    .reduce((a, b) -> a + ", " + b)
+                    .orElse("")
+                : "")
+                .setHeader("Verbände")
                 .setAutoWidth(true)
                 .setFlexGrow(1);
         grid.addComponentColumn(verein -> {
@@ -230,7 +241,7 @@ public class VereineVerwaltungView extends VerticalLayout {
         String name = nameField.getValue();
         String adresse = adresseField.getValue();
         String vereinsNummer = vereinsNummerField.getValue();
-        Verband verband = verbandComboBox.getValue();
+        Set<Verband> verbaende = verbaendeComboBox.getValue();
 
         if (name == null || name.trim().isEmpty()) {
             Notification.show("Name ist erforderlich")
@@ -238,8 +249,14 @@ public class VereineVerwaltungView extends VerticalLayout {
             return;
         }
 
-        if (verband == null) {
-            Notification.show("Verband ist erforderlich")
+        if (vereinsNummer == null || vereinsNummer.trim().isEmpty()) {
+            Notification.show("Vereinsnummer ist erforderlich")
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
+
+        if (verbaende == null || verbaende.isEmpty()) {
+            Notification.show("Mindestens ein Verband ist erforderlich")
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return;
         }
@@ -248,7 +265,7 @@ public class VereineVerwaltungView extends VerticalLayout {
         verein.setName(name);
         verein.setAdresse(adresse);
         verein.setVereinsNummer(vereinsNummer);
-        verein.setVerband(verband);
+        verein.setVerbaende(verbaende);
 
         try {
             verbandService.erstelleVerein(verein);
@@ -257,7 +274,7 @@ public class VereineVerwaltungView extends VerticalLayout {
             nameField.clear();
             adresseField.clear();
             vereinsNummerField.clear();
-            verbandComboBox.clear();
+            verbaendeComboBox.clear();
             updateGrid();
 
         } catch (Exception e) {
@@ -420,12 +437,25 @@ public class VereineVerwaltungView extends VerticalLayout {
         adresseField.setWidthFull();
         adresseField.setHeight("100px");
 
-        formLayout.add(nameField, nummerField, adresseField);
+        MultiSelectComboBox<Verband> verbaendeField = new MultiSelectComboBox<>("Verbände");
+        verbaendeField.setItems(verbandService.findeAlleVerbaende());
+        verbaendeField.setItemLabelGenerator(Verband::getName);
+        verbaendeField.setValue(verein.getVerbaende() != null ? verein.getVerbaende() : new HashSet<>());
+        verbaendeField.setWidthFull();
+        verbaendeField.setRequired(true);
+
+        formLayout.add(nameField, nummerField, adresseField, verbaendeField);
 
         Button speichernBtn = new Button("Speichern", e -> {
+            if (verbaendeField.getValue() == null || verbaendeField.getValue().isEmpty()) {
+                Notification.show("Mindestens ein Verband ist erforderlich")
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
             verein.setName(nameField.getValue());
             verein.setVereinsNummer(nummerField.getValue());
             verein.setAdresse(adresseField.getValue());
+            verein.setVerbaende(verbaendeField.getValue());
             verbandService.erstelleVerein(verein);
             Notification.show("Verein aktualisiert").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             dialog.close();
@@ -441,3 +471,4 @@ public class VereineVerwaltungView extends VerticalLayout {
         dialog.open();
     }
 }
+
