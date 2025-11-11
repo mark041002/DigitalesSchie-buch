@@ -178,40 +178,33 @@ public class VereineVerwaltungView extends VerticalLayout {
                 .setAutoWidth(true)
                 .setFlexGrow(0)
                 .setClassNameGenerator(item -> "align-right");
-        grid.addColumn(verein -> {
-            // Vereinschef finden
-            return verein.getMitgliedschaften().stream()
-                    .filter(m -> Boolean.TRUE.equals(m.getIstVereinschef()))
-                    .findFirst()
-                    .map(m -> m.getBenutzer().getVollstaendigerName())
-                    .orElse("-");
-        }).setHeader("Vereinschef")
-          .setAutoWidth(true)
-          .setFlexGrow(1);
-
-        // Aktionen-Spalte mit Mitglieder und Löschen Buttons
+        grid.addColumn(verein -> verein.getVerband() != null ? verein.getVerband().getName() : "")
+                .setHeader("Verband")
+                .setAutoWidth(true)
+                .setFlexGrow(1);
         grid.addComponentColumn(verein -> {
-            Button mitgliederButton = new Button("Mitglieder", VaadinIcon.USERS.create());
-            mitgliederButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
-            mitgliederButton.addClickListener(e -> zeigeMitgliederDialog(verein));
+                    HorizontalLayout layout = new HorizontalLayout();
+                    layout.setSpacing(true);
+                    layout.getStyle().set("flex-wrap", "nowrap");
 
-            Button detailButton = new Button("Details", VaadinIcon.FILE_TEXT.create());
-            detailButton.addThemeVariants(ButtonVariant.LUMO_SMALL); // Design wie Mitglieder-Button
-            detailButton.addClickListener(e -> zeigeVereinDetailsDialog(verein));
+                    Button mitgliederBtn = new Button("Mitglieder", VaadinIcon.USERS.create());
+                    mitgliederBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_PRIMARY);
+                    mitgliederBtn.addClickListener(e -> zeigeMitgliederDialog(verein));
 
-            Button loeschenButton = new Button("Löschen", VaadinIcon.TRASH.create());
-            loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-            loeschenButton.addClickListener(e -> zeigeLoeschDialog(verein));
+                    Button detailsBtn = new Button("Details", VaadinIcon.EDIT.create());
+                    detailsBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_PRIMARY);
+                    detailsBtn.addClickListener(e -> zeigeVereinDetailsDialog(verein));
 
-            HorizontalLayout actions = new HorizontalLayout(mitgliederButton, detailButton, loeschenButton);
-            actions.setSpacing(true);
-            actions.setPadding(false);
-            actions.setWidthFull();
-            return actions;
-        }).setHeader("Aktionen")
-          .setAutoWidth(true)
-          .setFlexGrow(0)
-          .setClassNameGenerator(item -> "actions-cell-padding");
+                    Button loeschenBtn = new Button("Löschen", VaadinIcon.TRASH.create());
+                    loeschenBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ERROR);
+                    loeschenBtn.addClickListener(e -> zeigeLoeschDialog(verein));
+
+                    layout.add(mitgliederBtn, detailsBtn, loeschenBtn);
+                    return layout;
+                }).setHeader("Aktionen")
+                .setAutoWidth(true)
+                .setFlexGrow(0)
+                .setClassNameGenerator(item -> "actions-cell-padding");
 
 
         // Empty State Message erstellen
@@ -323,40 +316,81 @@ public class VereineVerwaltungView extends VerticalLayout {
     private void zeigeMitgliederDialog(Verein verein) {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Mitglieder von " + verein.getName());
-        dialog.setWidth("600px");
+        dialog.setWidth("750px");
+        dialog.setMaxWidth("95vw");
+
         List<Vereinsmitgliedschaft> mitglieder = mitgliedschaftService.findeAlleMitgliedschaften(verein);
+
         VerticalLayout layout = new VerticalLayout();
-        layout.setSpacing(true);
+        layout.setSpacing(false);
         layout.setPadding(false);
-        for (Vereinsmitgliedschaft m : mitglieder) {
-            HorizontalLayout row = new HorizontalLayout();
-            row.setWidthFull();
-            String name = m.getBenutzer().getVollstaendigerName();
-            String rolle = Boolean.TRUE.equals(m.getIstVereinschef()) ? "Vereinschef" : (Boolean.TRUE.equals(m.getIstAufseher()) ? "Aufseher" : "Mitglied");
-            com.vaadin.flow.component.html.Span nameSpan = new com.vaadin.flow.component.html.Span(name + " (" + rolle + ")");
-            Button entfernenBtn = new Button("Entfernen", ev -> {
-                mitgliedschaftService.mitgliedEntfernen(m.getId());
-                Notification.show("Mitglied entfernt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                dialog.close();
-            });
-            entfernenBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-            Button aufseherBtn = new Button(Boolean.TRUE.equals(m.getIstAufseher()) ? "Aufseher entziehen" : "Zu Aufseher ernennen", ev -> {
-                mitgliedschaftService.setzeAufseherStatus(m.getId(), !Boolean.TRUE.equals(m.getIstAufseher()));
-                Notification.show(Boolean.TRUE.equals(m.getIstAufseher()) ? "Aufseher entzogen" : "Zum Aufseher ernannt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                dialog.close();
-            });
-            aufseherBtn.addThemeVariants(ButtonVariant.LUMO_SMALL);
-            Button chefBtn = new Button("Zum Vereinschef ernennen", ev -> {
-                mitgliedschaftService.setzeVereinschef(m, mitglieder);
-                Notification.show("Vereinschef geändert").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                dialog.close();
-            });
-            chefBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
-            row.add(nameSpan, entfernenBtn, aufseherBtn, chefBtn);
-            layout.add(row);
+        layout.setWidthFull();
+
+        if (mitglieder.isEmpty()) {
+            com.vaadin.flow.component.html.Paragraph emptyText = new com.vaadin.flow.component.html.Paragraph(
+                    "Diesem Verein sind noch keine Mitglieder zugeordnet."
+            );
+            emptyText.getStyle()
+                    .set("text-align", "center")
+                    .set("color", "var(--lumo-secondary-text-color)")
+                    .set("padding", "var(--lumo-space-l)");
+            layout.add(emptyText);
+        } else {
+            for (Vereinsmitgliedschaft m : mitglieder) {
+                HorizontalLayout row = new HorizontalLayout();
+                row.setWidthFull();
+                row.setAlignItems(com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment.CENTER);
+                row.getStyle()
+                        .set("padding", "var(--lumo-space-s)")
+                        .set("border-bottom", "1px solid var(--lumo-contrast-10pct)");
+
+                String name = m.getBenutzer().getVollstaendigerName();
+                String rolle = Boolean.TRUE.equals(m.getIstVereinschef()) ? "Vereinschef" :
+                        (Boolean.TRUE.equals(m.getIstAufseher()) ? "Aufseher" : "Mitglied");
+
+                com.vaadin.flow.component.html.Span nameSpan = new com.vaadin.flow.component.html.Span(name + " (" + rolle + ")");
+                nameSpan.getStyle()
+                        .set("flex", "1")
+                        .set("font-weight", "500")
+                        .set("padding-right", "var(--lumo-space-m)");
+
+                HorizontalLayout buttonLayout = new HorizontalLayout();
+                buttonLayout.setSpacing(true);
+                buttonLayout.getStyle().set("gap", "var(--lumo-space-xs)");
+
+                Button entfernenBtn = new Button("Entfernen", ev -> {
+                    mitgliedschaftService.mitgliedEntfernen(m.getId());
+                    Notification.show("Mitglied entfernt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                    dialog.close();
+                    updateGrid();
+                });
+                entfernenBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+
+                Button aufseherBtn = new Button(Boolean.TRUE.equals(m.getIstAufseher()) ? "Aufseher entziehen" : "Zu Aufseher ernennen", ev -> {
+                    mitgliedschaftService.setzeAufseherStatus(m.getId(), !Boolean.TRUE.equals(m.getIstAufseher()));
+                    Notification.show(Boolean.TRUE.equals(m.getIstAufseher()) ? "Aufseher entzogen" : "Zum Aufseher ernannt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                    dialog.close();
+                    updateGrid();
+                });
+                aufseherBtn.addThemeVariants(ButtonVariant.LUMO_SMALL);
+
+                Button chefBtn = new Button("Zum Vereinschef ernennen", ev -> {
+                    mitgliedschaftService.setzeVereinschef(m, mitglieder);
+                    Notification.show("Vereinschef geändert").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                    dialog.close();
+                    updateGrid();
+                });
+                chefBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+
+                buttonLayout.add(entfernenBtn, aufseherBtn, chefBtn);
+                row.add(nameSpan, buttonLayout);
+                layout.add(row);
+            }
         }
+
         Button closeBtn = new Button("Schließen", e -> dialog.close());
         closeBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
         dialog.add(layout);
         dialog.getFooter().add(closeBtn);
         dialog.open();
@@ -365,11 +399,29 @@ public class VereineVerwaltungView extends VerticalLayout {
     private void zeigeVereinDetailsDialog(Verein verein) {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Vereinsdetails bearbeiten");
-        dialog.setWidth("500px");
-        TextField nameField = new TextField("Name", verein.getName());
-        TextField nummerField = new TextField("Vereinsnummer", verein.getVereinsNummer());
-        TextArea adresseField = new TextArea("Adresse", verein.getAdresse());
+        dialog.setWidth("600px");
+        dialog.setMaxWidth("95vw");
+
+        VerticalLayout formLayout = new VerticalLayout();
+        formLayout.setSpacing(true);
+        formLayout.setPadding(false);
+        formLayout.setWidthFull();
+
+        TextField nameField = new TextField("Name");
+        nameField.setValue(verein.getName() != null ? verein.getName() : "");
+        nameField.setWidthFull();
+
+        TextField nummerField = new TextField("Vereinsnummer");
+        nummerField.setValue(verein.getVereinsNummer() != null ? verein.getVereinsNummer() : "");
+        nummerField.setWidthFull();
+
+        TextArea adresseField = new TextArea("Adresse");
+        adresseField.setValue(verein.getAdresse() != null ? verein.getAdresse() : "");
         adresseField.setWidthFull();
+        adresseField.setHeight("100px");
+
+        formLayout.add(nameField, nummerField, adresseField);
+
         Button speichernBtn = new Button("Speichern", e -> {
             verein.setName(nameField.getValue());
             verein.setVereinsNummer(nummerField.getValue());
@@ -380,8 +432,11 @@ public class VereineVerwaltungView extends VerticalLayout {
             updateGrid();
         });
         speichernBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
         Button abbrechenBtn = new Button("Abbrechen", e -> dialog.close());
-        dialog.add(new VerticalLayout(nameField, nummerField, adresseField));
+        abbrechenBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+        dialog.add(formLayout);
         dialog.getFooter().add(abbrechenBtn, speichernBtn);
         dialog.open();
     }
