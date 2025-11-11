@@ -47,7 +47,6 @@ public interface VereinRepository extends JpaRepository<Verein, Long> {
      *
      * @return Liste aller Vereine
      */
-    @Override
     @EntityGraph(attributePaths = {"verbaende", "mitgliedschaften", "mitgliedschaften.benutzer"})
     List<Verein> findAll();
 
@@ -57,7 +56,6 @@ public interface VereinRepository extends JpaRepository<Verein, Long> {
      * @param id Die Vereins-ID
      * @return Optional mit Verein
      */
-    @Override
     @EntityGraph(attributePaths = {"verbaende", "mitgliedschaften", "mitgliedschaften.benutzer"})
     Optional<Verein> findById(Long id);
 }

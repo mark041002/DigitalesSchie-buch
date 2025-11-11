@@ -11,36 +11,18 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository fÃ¼r SchiessnachweisEintrag-EntitÃ¤ten.
+ * Repository für SchiessnachweisEintrag-Entitäten.
  *
  * @author Markus Suchalla
  * @version 1.0.0
  */
 @Repository
 public interface SchiessnachweisEintragRepository extends JpaRepository<SchiessnachweisEintrag, Long> {
-
-    /**
-     * Findet alle EintrÃ¤ge eines SchÃ¼tzen.
-     *
-     * @param schuetze Der SchÃ¼tze
-     * @return Liste der EintrÃ¤ge
-     */
-    @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
-    List<SchiessnachweisEintrag> findBySchuetze(Benutzer schuetze);
-
-    /**
-     * Findet alle EintrÃ¤ge eines SchÃ¼tzen mit bestimmtem Status.
-     *
-     * @param schuetze Der SchÃ¼tze
-     * @param status Der Status
-     * @return Liste der EintrÃ¤ge
-     */
-    @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
-    List<SchiessnachweisEintrag> findBySchuetzeAndStatus(Benutzer schuetze, EintragStatus status);
 
     /**
      * Findet alle EintrÃ¤ge eines SchÃ¼tzen in einem Zeitraum.
@@ -76,18 +58,6 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
     List<SchiessnachweisEintrag> findBySchiesstand(Schiesstand schiesstand);
 
     /**
-     * Findet alle EintrÃ¤ge an einem SchieÃŸstand in einem Zeitraum.
-     *
-     * @param schiesstand Der SchieÃŸstand
-     * @param von Start-Datum
-     * @param bis End-Datum
-     * @return Liste der EintrÃ¤ge
-     */
-    @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
-    List<SchiessnachweisEintrag> findBySchiesstandAndDatumBetween(
-            Schiesstand schiesstand, LocalDate von, LocalDate bis);
-
-    /**
      * Findet alle EintrÃ¤ge an einem SchieÃŸstand mit bestimmtem Status.
      *
      * @param schiesstand Der SchieÃŸstand
@@ -111,20 +81,6 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
             "LEFT JOIN FETCH e.zertifikat " +
             "WHERE e.schuetze = :schuetze")
     List<SchiessnachweisEintrag> findBySchuetzeWithDetails(@Param("schuetze") Benutzer schuetze);
-
-    /**
-     * Findet alle unsignierten EintrÃ¤ge mit eager loading.
-     *
-     * @return Liste der EintrÃ¤ge
-     */
-    @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
-            "LEFT JOIN FETCH e.schuetze " +
-            "LEFT JOIN FETCH e.disziplin " +
-            "LEFT JOIN FETCH e.schiesstand " +
-            "LEFT JOIN FETCH e.zertifikat " +
-            "WHERE e.istSigniert = false")
-    List<SchiessnachweisEintrag> findUnsignierteEintraegeWithDetails();
-
 
     /**
      * Findet alle EintrÃ¤ge eines SchieÃŸstands fÃ¼r einen bestimmten SchÃ¼tzen.
@@ -191,18 +147,6 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
     Optional<SchiessnachweisEintrag> findByIdWithVerein(@Param("id") Long id);
 
     /**
-     * Findet alle EintrÃ¤ge mit allen Beziehungen.
-     *
-     * @return Liste aller EintrÃ¤ge
-     */
-    @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
-            "LEFT JOIN FETCH e.schuetze " +
-            "LEFT JOIN FETCH e.disziplin " +
-            "LEFT JOIN FETCH e.schiesstand " +
-            "LEFT JOIN FETCH e.aufseher " +
-            "LEFT JOIN FETCH e.zertifikat")
-    List<SchiessnachweisEintrag> findAllWithDetails();
-    /**
      * Findet alle unsignierten EintrÃ¤ge (OFFEN oder UNSIGNIERT) fÃ¼r eine Liste von SchieÃŸstÃ¤nden.
      *
      * @param schiesstaende Liste der SchieÃŸstÃ¤nde
@@ -218,4 +162,5 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
             "AND (e.status = 'OFFEN' OR e.status = 'UNSIGNIERT') " +
             "ORDER BY e.datum DESC")
     List<SchiessnachweisEintrag> findUnsignierteEintraegeForSchiesstaende(@Param("schiesstaende") List<Schiesstand> schiesstaende);
+
 }

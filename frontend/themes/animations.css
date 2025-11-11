@@ -1,0 +1,172 @@
+/* ==========================================================================
+   Digitales Schießbuch - Animations und visuelle Effekte
+   ========================================================================== */
+
+/* Badge Pulse Animation für wichtige Status */
+.badge-pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Loading Skeleton */
+.skeleton {
+    background: linear-gradient(90deg,
+    var(--lumo-contrast-10pct) 25%,
+    var(--lumo-contrast-5pct) 50%,
+    var(--lumo-contrast-10pct) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Success/Error Feedback Animationen */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+.shake {
+    animation: shake 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Gradient Text für Überschriften */
+.gradient-text {
+    background: linear-gradient(135deg, var(--lumo-primary-color), var(--lumo-primary-color-50pct));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Moderne Schatten-Varianten */
+.shadow-soft {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-medium {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.shadow-hard {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}
+
+/* Glassmorphism-Effekt */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+    .glass-effect {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Badge Farben für Status */
+.badge-success {
+    background-color: #27ae60 ;
+    color: #fff ;
+}
+
+.badge-warning {
+    background-color: #f1c40f ;
+    color: #fff ;
+}
+
+.badge-error {
+    background-color: #e74c3c ;
+    color: #fff ;
+}
+
+.badge {
+    padding: 0.25em 0.75em;
+    border-radius: 1em;
+    font-size: 0.95em;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+/* Badge-Varianten mit Icons */
+vaadin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Status-Indikatoren */
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.status-indicator.active {
+    background-color: var(--lumo-success-color);
+    box-shadow: 0 0 8px var(--lumo-success-color);
+}
+
+.status-indicator.pending {
+    background-color: var(--lumo-warning-color);
+    box-shadow: 0 0 8px var(--lumo-warning-color);
+}
+
+.status-indicator.inactive {
+    background-color: var(--lumo-error-color);
+    box-shadow: 0 0 8px var(--lumo-error-color);
+}
+
+/* Moderne Divider */
+.divider {
+    height: 1px;
+    background: linear-gradient(90deg,
+    transparent,
+    var(--lumo-contrast-20pct),
+    transparent);
+    margin: var(--lumo-space-m) 0;
+}
+
+/* Zebra-Streifen für bessere Lesbarkeit */
+.striped-layout > *:nth-child(even) {
+    background-color: var(--lumo-contrast-5pct);
+}
+
+/* Tooltip-Style */
+[title] {
+    position: relative;
+}
+
+/* Focus-Ring für Accessibility */
+*:focus-visible {
+    outline: 2px solid var(--lumo-primary-color);
+    outline-offset: 2px;
+    border-radius: var(--lumo-border-radius-s);
+}
+

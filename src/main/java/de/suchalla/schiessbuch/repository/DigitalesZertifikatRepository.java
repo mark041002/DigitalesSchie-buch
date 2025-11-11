@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,32 +49,10 @@ public interface DigitalesZertifikatRepository extends JpaRepository<DigitalesZe
     Optional<DigitalesZertifikat> findByVereinAndZertifikatsTyp(Verein verein, String zertifikatsTyp);
 
     /**
-     * Findet alle Zertifikate eines Vereins
-     */
-    List<DigitalesZertifikat> findByVerein(Verein verein);
-
-    /**
-     * Findet alle gültigen Zertifikate eines Vereins
-     */
-    List<DigitalesZertifikat> findByVereinAndWiderrufenFalse(Verein verein);
-
-    /**
      * Findet alle Zertifikate mit EAGER loading von Benutzer, Verein und Schießstand
      */
     @Query("SELECT z FROM DigitalesZertifikat z LEFT JOIN FETCH z.benutzer LEFT JOIN FETCH z.verein LEFT JOIN FETCH z.schiesstand LEFT JOIN FETCH z.parentZertifikat")
     List<DigitalesZertifikat> findAllWithDetails();
-
-    /**
-     * Findet Zertifikat eines Benutzers mit EAGER loading
-     */
-    @Query("SELECT z FROM DigitalesZertifikat z LEFT JOIN FETCH z.benutzer LEFT JOIN FETCH z.verein LEFT JOIN FETCH z.schiesstand LEFT JOIN FETCH z.parentZertifikat WHERE z.benutzer = :benutzer")
-    Optional<DigitalesZertifikat> findByBenutzerWithDetails(Benutzer benutzer);
-
-    /**
-     * Findet alle Zertifikate eines Vereins mit EAGER loading
-     */
-    @Query("SELECT z FROM DigitalesZertifikat z LEFT JOIN FETCH z.benutzer LEFT JOIN FETCH z.verein LEFT JOIN FETCH z.schiesstand LEFT JOIN FETCH z.parentZertifikat WHERE z.verein = :verein")
-    List<DigitalesZertifikat> findByVereinWithDetails(Verein verein);
 
     /**
      * Prüft, ob ein Benutzer bereits ein Zertifikat hat
@@ -91,18 +70,8 @@ public interface DigitalesZertifikatRepository extends JpaRepository<DigitalesZe
     Optional<DigitalesZertifikat> findByBenutzerAndSchiesstand(Benutzer benutzer, Schiesstand schiesstand);
 
     /**
-     * Findet alle Zertifikate eines Schießstands
-     */
-    List<DigitalesZertifikat> findBySchiesstand(Schiesstand schiesstand);
-
-    /**
-     * Findet alle Zertifikate eines Schießstands mit EAGER loading
-     */
-    @Query("SELECT z FROM DigitalesZertifikat z LEFT JOIN FETCH z.benutzer LEFT JOIN FETCH z.schiesstand LEFT JOIN FETCH z.parentZertifikat WHERE z.schiesstand = :schiesstand")
-    List<DigitalesZertifikat> findBySchiesstandWithDetails(Schiesstand schiesstand);
-
-    /**
      * Prüft, ob ein Benutzer bereits ein Zertifikat für einen Schießstand hat
      */
     boolean existsByBenutzerAndSchiesstand(Benutzer benutzer, Schiesstand schiesstand);
+
 }

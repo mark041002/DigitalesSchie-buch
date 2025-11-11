@@ -1,0 +1,45 @@
+/* ==========================================================================
+   Digitales Schießbuch - Print und Accessibility
+   ========================================================================== */
+
+/* Print-Optimierungen */
+@media print {
+    .no-print {
+        display: none;
+    }
+
+    vaadin-grid {
+        box-shadow: none;
+    }
+}
+
+/* Responsive Grid-Anpassungen für mobile Geräte */
+@media (max-width: 768px) {
+    vaadin-grid {
+        font-size: 0.875rem;
+    }
+
+    /* Stat-Cards: Eine Spalte auf Mobile */
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* View Container auf Mobile anpassen */
+    .view-container {
+        padding: var(--lumo-space-s);
+    }
+
+    /* Content Wrapper auf Mobile */
+    .content-wrapper {
+        padding: 0;
+    }
+
+    /* Gradient-Header: Kompaktere Darstellung */
+    .gradient-header {
+        padding: var(--lumo-space-m);
+    }
+
+    .gradient-header h2 {
+        font-size: var(--lumo-font-size-l);
+    }
+}

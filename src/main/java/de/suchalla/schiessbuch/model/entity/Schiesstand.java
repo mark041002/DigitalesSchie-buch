@@ -39,7 +39,7 @@ public class Schiesstand {
     @Column(nullable = false)
     private SchiesstandTyp typ;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verein_id")
     private Verein verein;
 

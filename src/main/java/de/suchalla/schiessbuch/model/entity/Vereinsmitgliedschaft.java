@@ -46,6 +46,7 @@ public class Vereinsmitgliedschaft {
     @Builder.Default
     private MitgliedschaftStatus status = MitgliedschaftStatus.BEANTRAGT;
 
+    @Getter
     @Column(name = "beitritt_datum", nullable = false)
     private LocalDate beitrittDatum;
 
@@ -87,7 +88,4 @@ public class Vereinsmitgliedschaft {
         aktualisiertAm = LocalDateTime.now();
     }
 
-    public LocalDate getBeitrittDatum() {
-        return beitrittDatum;
-    }
 }

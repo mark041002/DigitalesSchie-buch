@@ -172,7 +172,7 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
      */
     private boolean istGueltigZuZeitpunkt(DigitalesZertifikat zertifikat, LocalDateTime zeitpunkt) {
         // Prüfe ob Zeitpunkt im Gültigkeitszeitraum liegt
-        boolean imZeitraum = !zeitpunkt.isBefore(zertifikat.getGueltigAb()) &&
+        boolean imZeitraum = !zeitpunkt.isBefore(zertifikat.getGueltigSeit()) &&
                              !zeitpunkt.isAfter(zertifikat.getGueltigBis());
 
         // Prüfe ob nicht widerrufen oder erst nach dem Prüfzeitpunkt widerrufen wurde
@@ -286,7 +286,7 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
                 }
             }
 
-            details.add(createDetailRow("Gültig von:", zertifikat.getGueltigAb().format(dateFormatter) + " Uhr"));
+            details.add(createDetailRow("Gültig von:", zertifikat.getGueltigSeit().format(dateFormatter) + " Uhr"));
             details.add(createDetailRow("Gültig bis:", zertifikat.getGueltigBis().format(dateFormatter) + " Uhr"));
 
             // Widerruf-Informationen

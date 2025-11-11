@@ -23,7 +23,6 @@ import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.Verein;
-import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
 import de.suchalla.schiessbuch.model.enums.SchiesstandTyp;
 import de.suchalla.schiessbuch.service.BenutzerService;
 import de.suchalla.schiessbuch.service.DisziplinService;
@@ -54,8 +53,7 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
     private final TextField adresseField = new TextField("Adresse");
     private final ComboBox<SchiesstandTyp> typComboBox = new ComboBox<>("Typ");
     private final ComboBox<Verein> vereinComboBox = new ComboBox<>("Verein");
-    private final ComboBox<Benutzer> inhaberComboBox = new ComboBox<>("Inhaber / Vereinschef");
-
+    private final ComboBox<Benutzer> inhaberComboBox = new ComboBox<>("Inhaber");
     public SchiesstaendeVerwaltungView(BenutzerService benutzerService, DisziplinService disziplinService, VerbandService verbandService) {
         this.benutzerService = benutzerService;
         this.disziplinService = disziplinService;
@@ -126,17 +124,14 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
             if (e.getValue() == SchiesstandTyp.VEREINSGEBUNDEN) {
                 vereinComboBox.setVisible(true);
                 vereinComboBox.setRequired(true);
-                inhaberComboBox.setVisible(true);
-                inhaberComboBox.setRequired(true);
-                // Vereinschefs laden
-                List<Benutzer> vereinschefs = benutzerService.findByRolle(BenutzerRolle.VEREINS_CHEF);
-                inhaberComboBox.setItems(vereinschefs);
+                inhaberComboBox.setVisible(false);
+                inhaberComboBox.setRequired(false);
+                inhaberComboBox.clear();
             } else if (e.getValue() == SchiesstandTyp.GEWERBLICH) {
                 vereinComboBox.setVisible(false);
                 vereinComboBox.setRequired(false);
                 inhaberComboBox.setVisible(true);
                 inhaberComboBox.setRequired(true);
-                inhaberComboBox.clear();
                 // Alle Benutzer als mögliche gewerbliche Inhaber
                 List<Benutzer> inhaber = benutzerService.findAlleBenutzer();
                 inhaberComboBox.setItems(inhaber);
@@ -155,7 +150,6 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
         inhaberComboBox.addCustomValueSetListener(event ->
                 Notification.show("Bitte wählen Sie einen Benutzer aus der Liste.", 3000, Notification.Position.MIDDLE)
         );
-
         vereinComboBox.setItems(verbandService.findeAlleVereine());
         vereinComboBox.setItemLabelGenerator(Verein::getName);
         vereinComboBox.setVisible(false);
@@ -275,16 +269,11 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
         detailsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
         detailsButton.addClickListener(e -> zeigeBearbeitungsDialog(schiesstand));
 
-        Button aufseherButton = new Button(schiesstand.getTyp() == SchiesstandTyp.GEWERBLICH ?
-                "Aufseher ernennen" : "Vereinschef ernennen");
-        aufseherButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
-        aufseherButton.addClickListener(e -> zeigeAufseherDialog(schiesstand));
-
         Button loeschenButton = new Button("Löschen", VaadinIcon.TRASH.create());
         loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
         loeschenButton.addClickListener(e -> zeigeLoeschDialog(schiesstand));
 
-        HorizontalLayout actions = new HorizontalLayout(detailsButton, aufseherButton, loeschenButton);
+        HorizontalLayout actions = new HorizontalLayout(detailsButton, loeschenButton);
         actions.setSpacing(false);
         actions.setPadding(false);
         actions.setMargin(false);
@@ -305,12 +294,24 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
             return;
         }
 
+        if (typComboBox.getValue() == SchiesstandTyp.GEWERBLICH && inhaberComboBox.isEmpty()) {
+            Notification.show("Inhaber ist für gewerbliche Schießstände erforderlich")
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
+
         try {
+            Benutzer aufseher = null;
+            if (typComboBox.getValue() == SchiesstandTyp.GEWERBLICH) {
+                aufseher = inhaberComboBox.getValue();
+            }
+
             Schiesstand schiesstand = Schiesstand.builder()
                     .name(nameField.getValue())
                     .typ(typComboBox.getValue())
                     .verein(vereinComboBox.getValue())
                     .adresse(adresseField.getValue())
+                    .aufseher(aufseher)
                     .build();
 
             disziplinService.erstelleSchiesstand(schiesstand);
@@ -320,6 +321,7 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
             nameField.clear();
             typComboBox.clear();
             vereinComboBox.clear();
+            inhaberComboBox.clear();
             adresseField.clear();
             updateGrid();
 
@@ -426,7 +428,17 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
         vereinComboBoxEdit.setWidthFull();
         vereinComboBoxEdit.setVisible(schiesstand.getTyp() == SchiesstandTyp.VEREINSGEBUNDEN);
 
-        layout.add(nameFieldEdit, vereinComboBoxEdit, adresseFieldEdit);
+        // Inhaber-ComboBox (nur bei gewerblich)
+        ComboBox<Benutzer> inhaberComboBoxEdit = new ComboBox<>("Inhaber");
+        inhaberComboBoxEdit.setItems(benutzerService.findAlleBenutzer());
+        inhaberComboBoxEdit.setItemLabelGenerator(Benutzer::getVollstaendigerName);
+        inhaberComboBoxEdit.setValue(schiesstand.getAufseher());
+        inhaberComboBoxEdit.setWidthFull();
+        inhaberComboBoxEdit.setVisible(schiesstand.getTyp() == SchiesstandTyp.GEWERBLICH);
+        inhaberComboBoxEdit.setRequired(schiesstand.getTyp() == SchiesstandTyp.GEWERBLICH);
+        inhaberComboBoxEdit.setPlaceholder("Inhaber auswählen...");
+
+        layout.add(nameFieldEdit, vereinComboBoxEdit, inhaberComboBoxEdit, adresseFieldEdit);
 
         Button speichernButton = new Button("Speichern", e -> {
             if (nameFieldEdit.isEmpty()) {
@@ -435,10 +447,21 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
                 return;
             }
 
+            if (schiesstand.getTyp() == SchiesstandTyp.GEWERBLICH && inhaberComboBoxEdit.isEmpty()) {
+                Notification.show("Inhaber ist für gewerbliche Schießstände erforderlich")
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
+
             try {
                 schiesstand.setName(nameFieldEdit.getValue());
                 schiesstand.setAdresse(adresseFieldEdit.getValue());
                 schiesstand.setVerein(vereinComboBoxEdit.getValue());
+
+                // Bei gewerblichen Schießständen den Inhaber aktualisieren
+                if (schiesstand.getTyp() == SchiesstandTyp.GEWERBLICH) {
+                    schiesstand.setAufseher(inhaberComboBoxEdit.getValue());
+                }
 
                 disziplinService.aktualisiereSchiesstand(schiesstand);
                 Notification.show("Schießstand erfolgreich aktualisiert")

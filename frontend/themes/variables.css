@@ -1,0 +1,20 @@
+/* ==========================================================================
+   Digitales Schießbuch - CSS-Variablen und globale Einstellungen
+   ========================================================================== */
+
+:root {
+    /* Spacing-Konstanten (erben von Lumo) */
+    /* --lumo-space-xs, --lumo-space-s, --lumo-space-m, --lumo-space-l, --lumo-space-xl */
+
+    /* Farben-Varianten (werden in den Komponenten genutzt) */
+    --primary-gradient: linear-gradient(135deg, var(--lumo-primary-color) 0%, var(--lumo-primary-color-50pct) 100%);
+    --background-gradient: linear-gradient(135deg, var(--lumo-contrast-5pct) 0%, var(--lumo-contrast-10pct) 50%, var(--lumo-contrast-5pct) 100%);
+    --glass-effect-bg: rgba(255, 255, 255, 0.1);
+    --glass-effect-border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Smooth Scrolling */
+html {
+    scroll-behavior: smooth;
+}
+

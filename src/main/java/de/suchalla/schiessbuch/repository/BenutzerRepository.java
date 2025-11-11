@@ -44,14 +44,6 @@ public interface BenutzerRepository extends JpaRepository<Benutzer, Long> {
     List<Benutzer> findByRolle(BenutzerRolle rolle);
 
     /**
-     * Findet alle aktiven Benutzer.
-     *
-     * @param aktiv Aktiv-Status
-     * @return Liste der Benutzer
-     */
-    List<Benutzer> findByAktiv(Boolean aktiv);
-
-    /**
      * Prüft, ob ein Benutzer mit gegebener E-Mail existiert.
      *
      * @param email E-Mail-Adresse
@@ -67,4 +59,9 @@ public interface BenutzerRepository extends JpaRepository<Benutzer, Long> {
      */
     @Query("SELECT b FROM Benutzer b LEFT JOIN FETCH b.vereinsmitgliedschaften WHERE b.email = :email")
     Optional<Benutzer> findByEmailWithMitgliedschaften(@Param("email") String email);
+
+    default String getVollstaendigerName(Benutzer benutzer) {
+        return benutzer.getVorname() + " " + benutzer.getNachname();
+    }
+
 }

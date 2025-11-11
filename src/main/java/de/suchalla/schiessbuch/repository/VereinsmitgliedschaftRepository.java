@@ -30,50 +30,6 @@ public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmi
     List<Vereinsmitgliedschaft> findByBenutzer(Benutzer benutzer);
 
     /**
-     * Findet alle aktiven Mitgliedschaften eines Benutzers.
-     *
-     * @param benutzer Der Benutzer
-     * @param aktiv Aktiv-Status
-     * @return Liste der Mitgliedschaften
-     */
-    List<Vereinsmitgliedschaft> findByBenutzerAndAktiv(Benutzer benutzer, Boolean aktiv);
-
-    /**
-     * Findet alle Mitgliedschaften eines Vereins.
-     *
-     * @param verein Der Verein
-     * @return Liste der Mitgliedschaften
-     */
-    List<Vereinsmitgliedschaft> findByVerein(Verein verein);
-
-    /**
-     * Findet alle aktiven Mitgliedschaften eines Vereins.
-     *
-     * @param verein Der Verein
-     * @param aktiv Aktiv-Status
-     * @return Liste der Mitgliedschaften
-     */
-    List<Vereinsmitgliedschaft> findByVereinAndAktiv(Verein verein, Boolean aktiv);
-
-    /**
-     * Findet alle Mitgliedschaften eines Vereins mit bestimmtem Status.
-     *
-     * @param verein Der Verein
-     * @param status Der Status
-     * @return Liste der Mitgliedschaften
-     */
-    List<Vereinsmitgliedschaft> findByVereinAndStatus(Verein verein, MitgliedschaftStatus status);
-
-    /**
-     * Prüft, ob eine Mitgliedschaft bereits existiert.
-     *
-     * @param benutzer Der Benutzer
-     * @param verein Der Verein
-     * @return Optional mit Mitgliedschaft
-     */
-    Optional<Vereinsmitgliedschaft> findByBenutzerAndVerein(Benutzer benutzer, Verein verein);
-
-    /**
      * Gibt alle Mitgliedschaften eines Benutzers für einen Verein zurück (kann mehrere Einträge enthalten).
      * Wird verwendet, um mit eventuell vorhandenen Duplikaten robust umzugehen.
      *
@@ -82,18 +38,6 @@ public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmi
      * @return Liste der Mitgliedschaften
      */
     List<Vereinsmitgliedschaft> findAllByBenutzerAndVerein(Benutzer benutzer, Verein verein);
-
-    /**
-     * Findet alle Mitgliedschaften eines Benutzers mit eager loading.
-     * Die Verbände werden bereits via @ManyToMany(fetch = FetchType.EAGER) in Verein geladen.
-     *
-     * @param benutzer Der Benutzer
-     * @return Liste der Mitgliedschaften
-     */
-    @Query("SELECT DISTINCT m FROM Vereinsmitgliedschaft m " +
-           "LEFT JOIN FETCH m.verein v " +
-           "WHERE m.benutzer = :benutzer")
-    List<Vereinsmitgliedschaft> findByBenutzerWithDetails(@Param("benutzer") Benutzer benutzer);
 
     /**
      * Findet alle Mitgliedschaften eines Vereins mit eager loading.

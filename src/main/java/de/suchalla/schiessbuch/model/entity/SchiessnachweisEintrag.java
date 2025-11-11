@@ -106,33 +106,5 @@ public class SchiessnachweisEintrag {
         aktualisiertAm = LocalDateTime.now();
     }
 
-    /**
-     * Signiert den Eintrag durch einen Aufseher.
-     *
-     * @param aufseher Der signierende Aufseher
-     */
-    public void signieren(Benutzer aufseher) {
-        this.aufseher = aufseher;
-        this.istSigniert = true;
-        this.status = EintragStatus.SIGNIERT;
-        this.signiertAm = LocalDateTime.now();
-    }
 
-    /**
-     * Prüft, ob der Eintrag bearbeitet werden kann.
-     *
-     * @return true wenn bearbeitbar
-     */
-    public boolean kannBearbeitetWerden() {
-        return status == EintragStatus.OFFEN || status == EintragStatus.UNSIGNIERT;
-    }
-
-    /**
-     * Prüft, ob der Eintrag gelöscht werden kann.
-     *
-     * @return true wenn löschbar
-     */
-    public boolean kannGeloeschtWerden() {
-        return status == EintragStatus.OFFEN || status == EintragStatus.UNSIGNIERT;
-    }
 }

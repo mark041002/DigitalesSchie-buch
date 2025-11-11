@@ -1,0 +1,153 @@
+/* ==========================================================================
+   Digitales Schießbuch - Layout-Komponenten
+   ========================================================================== */
+
+/* View Container */
+.view-container {
+    background: linear-gradient(135deg,
+    var(--lumo-contrast-5pct) 0%,
+    var(--lumo-contrast-10pct) 50%,
+    var(--lumo-contrast-5pct) 100%);
+    min-height: calc(100vh - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Content Wrapper - zentrierte Inhalte */
+.content-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--lumo-space-l);
+    box-sizing: border-box;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: var(--lumo-space-m);
+    }
+}
+
+/* Header mit Gradient */
+.gradient-header {
+    width: 100%;
+    background: linear-gradient(135deg, var(--lumo-primary-color) 0%, var(--lumo-primary-color-50pct) 100%);
+    color: var(--lumo-primary-contrast-color);
+    padding: var(--lumo-space-l);
+    border-radius: var(--lumo-border-radius-l);
+    margin-bottom: var(--lumo-space-l);
+    box-shadow: var(--lumo-box-shadow-m);
+    box-sizing: border-box;
+}
+
+.gradient-header h2 {
+    margin: 0 0 var(--lumo-space-s) 0;
+    color: var(--lumo-primary-contrast-color);
+}
+
+.gradient-header .subtitle {
+    display: block;
+    opacity: 0.9;
+    font-size: var(--lumo-font-size-m);
+    margin-top: var(--lumo-space-xs);
+}
+
+/* Form Container */
+.form-container {
+    width: 100%;
+    background: var(--lumo-base-color);
+    padding: var(--lumo-space-l);
+    border-radius: var(--lumo-border-radius-l);
+    box-shadow: var(--lumo-box-shadow-s);
+    border: 1px solid var(--lumo-contrast-10pct);
+    margin-bottom: var(--lumo-space-l);
+    box-sizing: border-box;
+}
+
+/* Grid Container */
+.grid-container {
+    width: 100%;
+    background: var(--lumo-base-color);
+    padding: var(--lumo-space-l);
+    border-radius: var(--lumo-border-radius-l);
+    box-shadow: var(--lumo-box-shadow-s);
+    border: 1px solid var(--lumo-contrast-10pct);
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+    .grid-container {
+        overflow-x: auto ;
+        overflow-y: visible ;
+        -webkit-overflow-scrolling: touch;
+        width: 100% ;
+        max-width: calc(100vw - var(--lumo-space-m) * 2);
+        padding: var(--lumo-space-s) ;
+        margin: 0 auto;
+    }
+
+    .grid-container vaadin-grid {
+        min-width: 900px;
+        width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .grid-container vaadin-grid {
+        min-width: 1000px;
+    }
+}
+
+/* Rounded Grid */
+.rounded-grid {
+    border-radius: var(--lumo-border-radius-m);
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    min-height: 400px;
+}
+
+/* Align Right - für Grid-Spalten */
+.align-right {
+    text-align: right;
+}
+
+/* Button Container */
+.button-container {
+    display: flex;
+    gap: var(--lumo-space-s);
+    flex-wrap: wrap;
+    margin-top: var(--lumo-space-m);
+}
+
+/* Schnellzugriff-Buttons - Responsive Flexbox-Styles */
+.quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--lumo-space-m);
+    justify-content: center;
+    align-items: stretch;
+    width: 100%;
+    margin-bottom: var(--lumo-space-l);
+}
+
+@media (max-width: 768px) {
+    .quick-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--lumo-space-s);
+        justify-content: center;
+    }
+
+    .quick-actions > * {
+        flex: 1 1 100% ;
+        max-width: 100%;
+    }
+}
+

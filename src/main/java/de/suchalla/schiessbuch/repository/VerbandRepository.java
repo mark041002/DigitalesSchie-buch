@@ -18,14 +18,6 @@ import java.util.Optional;
 public interface VerbandRepository extends JpaRepository<Verband, Long> {
 
     /**
-     * Findet einen Verband anhand des Namens.
-     *
-     * @param name Der Verbandsname
-     * @return Optional mit Verband
-     */
-    Optional<Verband> findByName(String name);
-
-    /**
      * Prüft, ob ein Verband mit dem Namen existiert.
      *
      * @param name Der Verbandsname

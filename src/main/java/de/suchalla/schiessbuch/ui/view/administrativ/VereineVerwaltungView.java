@@ -2,6 +2,7 @@ package de.suchalla.schiessbuch.ui.view.administrativ;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -21,9 +22,11 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.textfield.TextArea;
+import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
+import de.suchalla.schiessbuch.service.BenutzerService;
 import de.suchalla.schiessbuch.service.VerbandService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
@@ -49,6 +52,7 @@ public class VereineVerwaltungView extends VerticalLayout {
 
     private final VerbandService verbandService;
     private final VereinsmitgliedschaftService mitgliedschaftService;
+    private final BenutzerService benutzerService;
     private final Grid<Verein> grid = new Grid<>(Verein.class, false);
     private Div emptyStateMessage;
 
@@ -56,10 +60,12 @@ public class VereineVerwaltungView extends VerticalLayout {
     private final TextField adresseField = new TextField("Adresse");
     private final TextField vereinsNummerField = new TextField("Vereinsnummer");
     private final MultiSelectComboBox<Verband> verbaendeComboBox = new MultiSelectComboBox<>("Verbände");
+    private final ComboBox<Benutzer> vereinschefComboBox = new ComboBox<>("Vereinschef");
 
-    public VereineVerwaltungView(VerbandService verbandService, VereinsmitgliedschaftService mitgliedschaftService) {
+    public VereineVerwaltungView(VerbandService verbandService, VereinsmitgliedschaftService mitgliedschaftService, BenutzerService benutzerService) {
         this.verbandService = verbandService;
         this.mitgliedschaftService = mitgliedschaftService;
+        this.benutzerService = benutzerService;
 
         setSpacing(false);
         setPadding(false);
@@ -122,13 +128,17 @@ public class VereineVerwaltungView extends VerticalLayout {
 
         // Formular
         nameField.setRequired(true);
-
+        vereinsNummerField.setRequired(true);
         verbaendeComboBox.setRequired(true);
         verbaendeComboBox.setItems(verbandService.findeAlleVerbaende());
         verbaendeComboBox.setItemLabelGenerator(Verband::getName);
         verbaendeComboBox.setPlaceholder("Verbände auswählen...");
 
-        FormLayout formLayout = new FormLayout(nameField, adresseField, vereinsNummerField, verbaendeComboBox);
+        vereinschefComboBox.setItems(benutzerService.findAlleBenutzer());
+        vereinschefComboBox.setItemLabelGenerator(Benutzer::getVollstaendigerName);
+        vereinschefComboBox.setClearButtonVisible(true);
+
+        FormLayout formLayout = new FormLayout(nameField, adresseField, vereinsNummerField, verbaendeComboBox, vereinschefComboBox);
         formLayout.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0", 1),
                 new FormLayout.ResponsiveStep("500px", 2)
@@ -202,7 +212,7 @@ public class VereineVerwaltungView extends VerticalLayout {
                     mitgliederBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_PRIMARY);
                     mitgliederBtn.addClickListener(e -> zeigeMitgliederDialog(verein));
 
-                    Button detailsBtn = new Button("Details", VaadinIcon.EDIT.create());
+                    Button detailsBtn = new Button("Details", VaadinIcon.SEARCH.create());
                     detailsBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_PRIMARY);
                     detailsBtn.addClickListener(e -> zeigeVereinDetailsDialog(verein));
 
@@ -242,6 +252,7 @@ public class VereineVerwaltungView extends VerticalLayout {
         String adresse = adresseField.getValue();
         String vereinsNummer = vereinsNummerField.getValue();
         Set<Verband> verbaende = verbaendeComboBox.getValue();
+        Benutzer vereinschef = vereinschefComboBox.getValue();
 
         if (name == null || name.trim().isEmpty()) {
             Notification.show("Name ist erforderlich")
@@ -268,13 +279,24 @@ public class VereineVerwaltungView extends VerticalLayout {
         verein.setVerbaende(verbaende);
 
         try {
-            verbandService.erstelleVerein(verein);
+            Verein gespeicherterVerein = verbandService.erstelleVerein(verein);
+
+            // Vereinschef als Mitglied hinzufügen und zum Chef ernennen
+            if (vereinschef != null) {
+                Vereinsmitgliedschaft mitgliedschaft = mitgliedschaftService.beantragenMitgliedschaft(vereinschef, gespeicherterVerein.getId());
+                // Direkt genehmigen und zum Vereinschef machen
+                mitgliedschaftService.genehmigeAnfrage(mitgliedschaft.getId());
+                mitgliedschaft.setIstVereinschef(true);
+                mitgliedschaftService.genehmigeAnfrage(mitgliedschaft.getId()); // nochmal speichern mit Chef-Flag
+            }
+
             Notification.show("Verein erfolgreich erstellt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
             nameField.clear();
             adresseField.clear();
             vereinsNummerField.clear();
             verbaendeComboBox.clear();
+            vereinschefComboBox.clear();
             updateGrid();
 
         } catch (Exception e) {
@@ -383,23 +405,7 @@ public class VereineVerwaltungView extends VerticalLayout {
                 });
                 entfernenBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
 
-                Button aufseherBtn = new Button(Boolean.TRUE.equals(m.getIstAufseher()) ? "Aufseher entziehen" : "Zu Aufseher ernennen", ev -> {
-                    mitgliedschaftService.setzeAufseherStatus(m.getId(), !Boolean.TRUE.equals(m.getIstAufseher()));
-                    Notification.show(Boolean.TRUE.equals(m.getIstAufseher()) ? "Aufseher entzogen" : "Zum Aufseher ernannt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                    dialog.close();
-                    updateGrid();
-                });
-                aufseherBtn.addThemeVariants(ButtonVariant.LUMO_SMALL);
-
-                Button chefBtn = new Button("Zum Vereinschef ernennen", ev -> {
-                    mitgliedschaftService.setzeVereinschef(m, mitglieder);
-                    Notification.show("Vereinschef geändert").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                    dialog.close();
-                    updateGrid();
-                });
-                chefBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
-
-                buttonLayout.add(entfernenBtn, aufseherBtn, chefBtn);
+                buttonLayout.add(entfernenBtn);
                 row.add(nameSpan, buttonLayout);
                 layout.add(row);
             }
@@ -444,7 +450,25 @@ public class VereineVerwaltungView extends VerticalLayout {
         verbaendeField.setWidthFull();
         verbaendeField.setRequired(true);
 
-        formLayout.add(nameField, nummerField, adresseField, verbaendeField);
+        // Vereinschef-ComboBox
+        ComboBox<Benutzer> vereinschefComboBox = new ComboBox<>("Vereinschef");
+        List<Vereinsmitgliedschaft> aktiveMitglieder = mitgliedschaftService.findeAktiveMitgliedschaften(verein);
+        List<Benutzer> mitgliederBenutzer = aktiveMitglieder.stream()
+                .map(Vereinsmitgliedschaft::getBenutzer)
+                .collect(java.util.stream.Collectors.toList());
+        vereinschefComboBox.setItems(mitgliederBenutzer);
+        vereinschefComboBox.setItemLabelGenerator(Benutzer::getVollstaendigerName);
+        vereinschefComboBox.setWidthFull();
+        vereinschefComboBox.setPlaceholder("Vereinschef auswählen...");
+        vereinschefComboBox.setClearButtonVisible(true);
+
+        // Aktuellen Vereinschef vorauswählen
+        aktiveMitglieder.stream()
+                .filter(m -> Boolean.TRUE.equals(m.getIstVereinschef()))
+                .findFirst()
+                .ifPresent(aktuellerChef -> vereinschefComboBox.setValue(aktuellerChef.getBenutzer()));
+
+        formLayout.add(nameField, nummerField, adresseField, verbaendeField, vereinschefComboBox);
 
         Button speichernBtn = new Button("Speichern", e -> {
             if (verbaendeField.getValue() == null || verbaendeField.getValue().isEmpty()) {
@@ -452,11 +476,34 @@ public class VereineVerwaltungView extends VerticalLayout {
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return;
             }
+
             verein.setName(nameField.getValue());
             verein.setVereinsNummer(nummerField.getValue());
             verein.setAdresse(adresseField.getValue());
             verein.setVerbaende(verbaendeField.getValue());
             verbandService.erstelleVerein(verein);
+
+            // Vereinschef setzen, falls ausgewählt
+            Benutzer neuerVereinschef = vereinschefComboBox.getValue();
+            if (neuerVereinschef != null) {
+                // Finde die Mitgliedschaft des ausgewählten Benutzers
+                List<Vereinsmitgliedschaft> alleMitglieder = mitgliedschaftService.findeAktiveMitgliedschaften(verein);
+                alleMitglieder.stream()
+                        .filter(m -> m.getBenutzer().getId().equals(neuerVereinschef.getId()))
+                        .findFirst()
+                        .ifPresent(neueMitgliedschaft ->
+                                mitgliedschaftService.setzeVereinschef(neueMitgliedschaft, alleMitglieder));
+            } else {
+                // Falls kein Vereinschef ausgewählt, alle Vereinschef-Flags entfernen
+                List<Vereinsmitgliedschaft> alleMitglieder = mitgliedschaftService.findeAktiveMitgliedschaften(verein);
+                alleMitglieder.stream()
+                        .filter(m -> Boolean.TRUE.equals(m.getIstVereinschef()))
+                        .forEach(m -> {
+                            m.setIstVereinschef(false);
+                            mitgliedschaftService.genehmigeAnfrage(m.getId()); // speichern
+                        });
+            }
+
             Notification.show("Verein aktualisiert").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             dialog.close();
             updateGrid();

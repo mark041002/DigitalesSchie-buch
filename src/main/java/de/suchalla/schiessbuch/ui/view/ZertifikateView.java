@@ -123,13 +123,13 @@ public class ZertifikateView extends VerticalLayout {
         grid.setColumnReorderingAllowed(true);
         // Höhe wird dynamisch in updateGrid() gesetzt
 
-        grid.addColumn(DigitalesZertifikat::getId)
-                .setHeader("ID")
-                .setWidth("80px")
-                .setAutoWidth(true)
-                .setFlexGrow(0)
-                .setClassNameGenerator(item -> "align-right");
-
+        // Entfernte Spalten: ID, Widerrufen am, Widerrufsgrund
+        // grid.addColumn(DigitalesZertifikat::getId)
+        //         .setHeader("ID")
+        //         .setWidth("80px")
+        //         .setAutoWidth(true)
+        //         .setFlexGrow(0)
+        //         .setClassNameGenerator(item -> "align-right");
         grid.addColumn(zertifikat -> {
             if (zertifikat.getBenutzer() != null) {
                 return zertifikat.getBenutzer().getVollstaendigerName();
@@ -166,7 +166,7 @@ public class ZertifikateView extends VerticalLayout {
                 .setAutoWidth(true)
                 .setFlexGrow(1);
 
-        grid.addColumn(zertifikat -> formatDatum(zertifikat.getGueltigAb()))
+        grid.addColumn(zertifikat -> formatDatum(zertifikat.getGueltigSeit()))
                 .setHeader("Gültig seit")
                 .setAutoWidth(true)
                 .setFlexGrow(0);
@@ -176,16 +176,16 @@ public class ZertifikateView extends VerticalLayout {
                 .setAutoWidth(true)
                 .setFlexGrow(0);
 
-        grid.addColumn(zertifikat -> zertifikat.getWiderrufenAm() != null ? formatDatum(zertifikat.getWiderrufenAm()) : "-")
-                .setHeader("Widerrufen am")
-                .setAutoWidth(true)
-                .setFlexGrow(0);
-
-        grid.addColumn(zertifikat -> zertifikat.getWiderrufsGrund() != null ? zertifikat.getWiderrufsGrund() : "-")
-                .setHeader("Widerrufsgrund")
-                .setAutoWidth(true)
-                .setFlexGrow(1);
-
+        grid.addColumn(zertifikat -> zertifikat.getWiderrufenAm() != null ? formatDatum(zertifikat.getWiderrufenAm()) : "-");
+        // Entfernte Spalten:
+        // grid.addColumn(zertifikat -> zertifikat.getWiderrufenAm() != null ? formatDatum(zertifikat.getWiderrufenAm()) : "-")
+        //         .setHeader("Widerrufen am")
+        //         .setAutoWidth(true)
+        //         .setFlexGrow(0);
+        // grid.addColumn(zertifikat -> zertifikat.getWiderrufsGrund() != null ? zertifikat.getWiderrufsGrund() : "-")
+        //         .setHeader("Widerrufsgrund")
+        //         .setAutoWidth(true)
+        //         .setFlexGrow(1);
         grid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen")
                 .setWidth("120px")
@@ -290,7 +290,7 @@ public class ZertifikateView extends VerticalLayout {
 
         layout.add(createDetailRow("Typ:", zertifikat.getZertifikatsTyp()));
         layout.add(createDetailRow("Seriennummer:", zertifikat.getSeriennummer()));
-        layout.add(createDetailRow("Gültig ab:", formatDatum(zertifikat.getGueltigAb())));
+        layout.add(createDetailRow("Gültig seit:", formatDatum(zertifikat.getGueltigSeit())));
         layout.add(createDetailRow("Gültig bis:", formatDatum(zertifikat.getGueltigBis())));
         layout.add(createDetailRow("Widerrufen am:", formatDatum(zertifikat.getWiderrufenAm())));
         layout.add(createDetailRow("Widerrufsgrund:", zertifikat.getWiderrufsGrund() != null ? zertifikat.getWiderrufsGrund() : "-"));

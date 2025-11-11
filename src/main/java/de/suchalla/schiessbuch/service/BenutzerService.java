@@ -26,7 +26,6 @@ public class BenutzerService {
 
     private final BenutzerRepository benutzerRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
 
     /**
      * Registriert einen neuen Benutzer.
@@ -42,31 +41,8 @@ public class BenutzerService {
 
         benutzer.setPasswort(passwordEncoder.encode(benutzer.getPasswort()));
         benutzer.setRolle(BenutzerRolle.SCHUETZE);
-        benutzer.setAktiv(true);
 
         return benutzerRepository.save(benutzer);
-    }
-
-    /**
-     * Findet einen Benutzer anhand der ID.
-     *
-     * @param id Die Benutzer-ID
-     * @return Optional mit Benutzer
-     */
-    @Transactional(readOnly = true)
-    public Optional<Benutzer> findeBenutzer(Long id) {
-        return benutzerRepository.findById(id);
-    }
-
-    /**
-     * Findet einen Benutzer anhand der E-Mail-Adresse.
-     *
-     * @param email Die E-Mail-Adresse
-     * @return Optional mit Benutzer
-     */
-    @Transactional(readOnly = true)
-    public Optional<Benutzer> findeBenutzerNachEmail(String email) {
-        return benutzerRepository.findByEmail(email);
     }
 
     /**
@@ -93,29 +69,8 @@ public class BenutzerService {
      * Aktualisiert einen Benutzer.
      *
      * @param benutzer Der zu aktualisierende Benutzer
-     * @return Der aktualisierte Benutzer
      */
-    public Benutzer aktualisiereBenutzer(Benutzer benutzer) {
-        return benutzerRepository.save(benutzer);
-    }
-
-    /**
-     * Ändert das Passwort eines Benutzers.
-     *
-     * @param benutzerId Die Benutzer-ID
-     * @param altesPasswort Das alte Passwort
-     * @param neuesPasswort Das neue Passwort
-     * @throws IllegalArgumentException wenn alte Passwort nicht korrekt ist
-     */
-    public void aenderePasswort(Long benutzerId, String altesPasswort, String neuesPasswort) {
-        Benutzer benutzer = benutzerRepository.findById(benutzerId)
-                .orElseThrow(() -> new IllegalArgumentException("Benutzer nicht gefunden"));
-
-        if (!passwordEncoder.matches(altesPasswort, benutzer.getPasswort())) {
-            throw new IllegalArgumentException("Altes Passwort ist nicht korrekt");
-        }
-
-        benutzer.setPasswort(passwordEncoder.encode(neuesPasswort));
+    public void aktualisiereBenutzer(Benutzer benutzer) {
         benutzerRepository.save(benutzer);
     }
 
@@ -134,77 +89,6 @@ public class BenutzerService {
     }
 
     /**
-     * Initiiert einen Passwort-Reset.
-     *
-     * @param email Die E-Mail-Adresse des Benutzers
-     * @return true wenn erfolgreich
-     */
-    public boolean initiierePasswortReset(String email) {
-        Optional<Benutzer> benutzerOpt = benutzerRepository.findByEmail(email);
-        if (benutzerOpt.isEmpty()) {
-            return false;
-        }
-
-        Benutzer benutzer = benutzerOpt.get();
-        String token = UUID.randomUUID().toString();
-        benutzer.setResetToken(token);
-        benutzer.setResetTokenAblauf(LocalDateTime.now().plusHours(24));
-        benutzerRepository.save(benutzer);
-
-        emailService.sendePasswortResetEmail(benutzer.getEmail(), token);
-        return true;
-    }
-
-    /**
-     * Setzt das Passwort mittels Reset-Token zurück.
-     *
-     * @param token Das Reset-Token
-     * @param neuesPasswort Das neue Passwort
-     * @throws IllegalArgumentException wenn Token ungültig oder abgelaufen
-     */
-    public void setzePasswortZurueck(String token, String neuesPasswort) {
-        Benutzer benutzer = benutzerRepository.findByResetToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("Ungültiges Reset-Token"));
-
-        if (benutzer.getResetTokenAblauf().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Reset-Token ist abgelaufen");
-        }
-
-        benutzer.setPasswort(passwordEncoder.encode(neuesPasswort));
-        benutzer.setResetToken(null);
-        benutzer.setResetTokenAblauf(null);
-        benutzerRepository.save(benutzer);
-    }
-
-    /**
-     * Ändert die Rolle eines Benutzers.
-     *
-     * @param benutzerId Die Benutzer-ID
-     * @param neueRolle Die neue Rolle
-     * @return Der aktualisierte Benutzer
-     */
-    public Benutzer aendereRolle(Long benutzerId, BenutzerRolle neueRolle) {
-        Benutzer benutzer = benutzerRepository.findById(benutzerId)
-                .orElseThrow(() -> new IllegalArgumentException("Benutzer nicht gefunden"));
-
-        benutzer.setRolle(neueRolle);
-        return benutzerRepository.save(benutzer);
-    }
-
-    /**
-     * Deaktiviert einen Benutzer.
-     *
-     * @param benutzerId Die Benutzer-ID
-     */
-    public void deaktiviereBenutzer(Long benutzerId) {
-        Benutzer benutzer = benutzerRepository.findById(benutzerId)
-                .orElseThrow(() -> new IllegalArgumentException("Benutzer nicht gefunden"));
-
-        benutzer.setAktiv(false);
-        benutzerRepository.save(benutzer);
-    }
-
-    /**
      * Löscht einen Benutzer und alle personenbezogenen Daten.
      *
      * @param benutzerId Die Benutzer-ID
@@ -217,7 +101,6 @@ public class BenutzerService {
         benutzer.setVorname("Gelöscht");
         benutzer.setNachname("Gelöscht");
         benutzer.setEmail("geloescht_" + benutzerId + "@deleted.local");
-        benutzer.setAktiv(false);
         benutzerRepository.save(benutzer);
     }
 }

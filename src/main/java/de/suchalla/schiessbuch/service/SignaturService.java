@@ -4,7 +4,6 @@ import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
 import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
 import de.suchalla.schiessbuch.model.entity.Verein;
-import de.suchalla.schiessbuch.model.enums.EintragStatus;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import de.suchalla.schiessbuch.repository.SchiessnachweisEintragRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +28,8 @@ public class SignaturService {
     private final PkiService pkiService;
     private final DigitalesZertifikatRepository zertifikatRepository;
     private final SchiessnachweisEintragRepository eintragRepository;
+    private final SchiessnachweisService schiessnachweisService;
+    private final ZertifikatVerifizierungsService zertifikatVerifizierungsService;
 
     /**
      * Signiert einen Schießnachweis-Eintrag mit dem Zertifikat des Aufsehers.
@@ -67,7 +68,7 @@ public class SignaturService {
             log.info("Zertifikat-Typ: {}", aufseherZertifikat.getZertifikatsTyp());
             log.info("Zertifikat-Seriennummer: {}", aufseherZertifikat.getSeriennummer());
             log.info("Zertifikat-Inhaber: {}", aufseher.getVollstaendigerName());
-            log.info("Zertifikat gültig von: {} bis: {}", aufseherZertifikat.getGueltigAb(), aufseherZertifikat.getGueltigBis());
+            log.info("Zertifikat gültig von: {} bis: {}", aufseherZertifikat.getGueltigSeit(), aufseherZertifikat.getGueltigBis());
             log.info("==============================");
 
             // Daten für Signatur zusammenstellen
@@ -90,10 +91,10 @@ public class SignaturService {
             log.info("Setze Zertifikat: ID={}, SN={}", aufseherZertifikat.getId(), aufseherZertifikat.getSeriennummer());
             eintrag.setZertifikat(aufseherZertifikat);
 
-            log.info("Rufe signieren() Methode auf...");
-            eintrag.signieren(aufseher);
+            log.info("Rufe signiereEintrag() Service-Methode auf...");
+            schiessnachweisService.signiereEintrag(eintrag.getId(), aufseher, signature);
 
-            log.info("Eintrag-Status nach signieren(): {}", eintrag.getStatus());
+            log.info("Eintrag-Status nach signiereEintrag(): {}", eintrag.getStatus());
             log.info("Eintrag.istSigniert: {}", eintrag.getIstSigniert());
             log.info("Eintrag.zertifikat != null: {}", eintrag.getZertifikat() != null);
 
@@ -128,7 +129,7 @@ public class SignaturService {
 
             // Prüfe, ob das Zertifikat zum Zeitpunkt der Signierung gültig war
             LocalDateTime signiertAm = eintrag.getSigniertAm();
-            if (signiertAm != null && !eintrag.getZertifikat().warGueltigAm(signiertAm)) {
+            if (signiertAm != null && !zertifikatVerifizierungsService.warZertifikatGueltigAm(eintrag.getZertifikat(), signiertAm)) {
                 log.warn("Zertifikat war zum Signaturzeitpunkt {} nicht gültig", signiertAm);
                 return false;
             }

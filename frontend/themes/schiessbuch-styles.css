@@ -334,24 +334,24 @@ vaadin-dialog-overlay::part(backdrop) {
 @media (min-width: 1400px) {
     /* Extra große Bildschirme */
     vaadin-dialog-overlay::part(overlay) {
-        max-width: 1200px !important;
-        width: 90vw !important;
+        max-width: 1200px ;
+        width: 90vw ;
     }
 }
 
 @media (min-width: 1200px) and (max-width: 1399px) {
     /* Große Bildschirme */
     vaadin-dialog-overlay::part(overlay) {
-        max-width: 1000px !important;
-        width: 85vw !important;
+        max-width: 1000px ;
+        width: 85vw ;
     }
 }
 
 @media (min-width: 992px) and (max-width: 1199px) {
     /* Mittlere Bildschirme */
     vaadin-dialog-overlay::part(overlay) {
-        max-width: 900px !important;
-        width: 85vw !important;
+        max-width: 900px ;
+        width: 85vw ;
     }
 }
 
@@ -411,7 +411,7 @@ vaadin-dialog-overlay vaadin-horizontal-layout vaadin-button {
 /* Form-Felder in Dialogen - alle gleich breit */
 vaadin-dialog-overlay vaadin-vertical-layout vaadin-text-field,
 vaadin-dialog-overlay vaadin-vertical-layout vaadin-text-area {
-    width: 100% !important;
+    width: 100% ;
 }
 
 /* Text-Area spezifisches Styling */
@@ -523,16 +523,16 @@ vaadin-dialog-overlay::part(footer) {
 
 /* Badge Farben für Status */
 .badge-success {
-    background-color: #27ae60 !important; /* Grün */
-    color: #fff !important;
+    background-color: #27ae60 ; /* Grün */
+    color: #fff ;
 }
 .badge-warning {
-    background-color: #f1c40f !important; /* Gelb */
-    color: #fff !important;
+    background-color: #f1c40f ; /* Gelb */
+    color: #fff ;
 }
 .badge-error {
-    background-color: #e74c3c !important; /* Rot */
-    color: #fff !important;
+    background-color: #e74c3c ; /* Rot */
+    color: #fff ;
 }
 .badge {
     padding: 0.25em 0.75em;
@@ -543,4 +543,5 @@ vaadin-dialog-overlay::part(footer) {
     align-items: center;
     gap: 0.5em;
 }
+
 

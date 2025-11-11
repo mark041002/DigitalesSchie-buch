@@ -15,10 +15,12 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.*;
+import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
 import de.suchalla.schiessbuch.repository.VereinRepository;
+import de.suchalla.schiessbuch.service.AktiveBenutzerService;
 import de.suchalla.schiessbuch.service.VerbandService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
@@ -43,6 +45,7 @@ public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlPa
     private final VerbandService verbandService;
     private final VereinsmitgliedschaftService mitgliedschaftService;
     private final VereinRepository vereinRepository;
+    private final AktiveBenutzerService aktiveBenutzerService;
     private final Grid<Vereinsmitgliedschaft> grid = new Grid<>(Vereinsmitgliedschaft.class, false);
     private Div emptyStateMessage;
     private Long vereinId;
@@ -50,10 +53,12 @@ public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlPa
 
     public MitgliederVerwaltungView(VerbandService verbandService,
                                     VereinsmitgliedschaftService mitgliedschaftService,
-                                    VereinRepository vereinRepository) {
+                                    VereinRepository vereinRepository,
+                                    AktiveBenutzerService aktiveBenutzerService) {
         this.verbandService = verbandService;
         this.mitgliedschaftService = mitgliedschaftService;
         this.vereinRepository = vereinRepository;
+        this.aktiveBenutzerService = aktiveBenutzerService;
 
         setSpacing(false);
         setPadding(false);
@@ -137,6 +142,27 @@ public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlPa
 
         infoBox.add(infoIcon, beschreibung);
         contentWrapper.add(infoBox);
+
+        // Übersicht eingeloggte Mitglieder
+        VerticalLayout eingeloggteMitgliederLayout = new VerticalLayout();
+        eingeloggteMitgliederLayout.setSpacing(false);
+        eingeloggteMitgliederLayout.setPadding(false);
+        eingeloggteMitgliederLayout.addClassName("eingeloggte-mitglieder-wrapper");
+
+        H2 eingeloggteTitle = new H2("Aktuell eingeloggte Mitglieder");
+        eingeloggteTitle.getStyle().set("margin", "0");
+        eingeloggteMitgliederLayout.add(eingeloggteTitle);
+
+        Grid<Benutzer> eingeloggteGrid = new Grid<>(Benutzer.class, false);
+        eingeloggteGrid.setWidthFull();
+        eingeloggteGrid.addColumn(Benutzer::getId).setHeader("ID").setWidth("80px").setAutoWidth(true);
+        eingeloggteGrid.addColumn(b -> b.getVorname() + " " + b.getNachname()).setHeader("Name").setAutoWidth(true);
+        eingeloggteGrid.addColumn(Benutzer::getEmail).setHeader("E-Mail").setAutoWidth(true);
+        eingeloggteGrid.addColumn(b -> b.getRolle() != null ? b.getRolle().name() : "-").setHeader("Rolle").setAutoWidth(true);
+        eingeloggteGrid.setItems(aktiveBenutzerService.getEingeloggteBenutzer());
+
+        eingeloggteMitgliederLayout.add(eingeloggteGrid);
+        contentWrapper.add(eingeloggteMitgliederLayout);
 
         // Grid-Container mit weißem Hintergrund
         Div gridContainer = new Div();
@@ -382,3 +408,4 @@ public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlPa
         };
     }
 }
+

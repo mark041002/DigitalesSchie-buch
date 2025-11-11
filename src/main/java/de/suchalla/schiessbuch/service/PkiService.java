@@ -119,7 +119,7 @@ public class PkiService {
                         .issuerDN(rootDN.toString())
                         .zertifikatPEM(convertToPEM(rootCert))
                         .privateKeyPEM(convertPrivateKeyToPEM(rootKeyPair.getPrivate()))
-                        .gueltigAb(now)
+                        .gueltigSeit(now)
                         .gueltigBis(null) // Unbegrenzt gültig
                         .widerrufen(false)
                         .build();
@@ -210,7 +210,7 @@ public class PkiService {
                     .issuerDN(issuerDN.toString())
                     .zertifikatPEM(convertToPEM(vereinCert))
                     .privateKeyPEM(convertPrivateKeyToPEM(vereinKeyPair.getPrivate()))
-                    .gueltigAb(now)
+                    .gueltigSeit(now)
                     .gueltigBis(null) // Unbegrenzt gültig
                     .widerrufen(false)
                     .verein(managedVerein)
@@ -306,7 +306,7 @@ public class PkiService {
                     .issuerDN(issuerDN.toString())
                     .zertifikatPEM(convertToPEM(aufseherCert))
                     .privateKeyPEM(convertPrivateKeyToPEM(aufseherKeyPair.getPrivate()))
-                    .gueltigAb(now)
+                    .gueltigSeit(now)
                     .gueltigBis(null) // Unbegrenzt gültig
                     .widerrufen(false)
                     .benutzer(managedBenutzer)
@@ -403,7 +403,7 @@ public class PkiService {
                     .issuerDN(issuerDN.toString())
                     .zertifikatPEM(convertToPEM(aufseherCert))
                     .privateKeyPEM(convertPrivateKeyToPEM(aufseherKeyPair.getPrivate()))
-                    .gueltigAb(now)
+                    .gueltigSeit(now)
                     .gueltigBis(null) // Unbegrenzt gültig
                     .widerrufen(false)
                     .benutzer(managedBenutzer)

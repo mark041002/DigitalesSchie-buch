@@ -267,13 +267,10 @@ public class MeineEintraegeView extends VerticalLayout {
     private HorizontalLayout createActionButtons(SchiessnachweisEintrag eintrag) {
         HorizontalLayout layout = new HorizontalLayout();
         layout.setSpacing(true);
-        // Löschen ist jetzt auch für signierte Einträge möglich
-        if (eintrag.kannGeloeschtWerden() || eintrag.getStatus() == de.suchalla.schiessbuch.model.enums.EintragStatus.SIGNIERT) {
-            Button deleteButton = new Button("Löschen", new com.vaadin.flow.component.icon.Icon(com.vaadin.flow.component.icon.VaadinIcon.TRASH));
-            deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-            deleteButton.addClickListener(e -> deleteEintrag(eintrag));
-            layout.add(deleteButton);
-        }
+        Button deleteButton = new Button("Löschen", new com.vaadin.flow.component.icon.Icon(com.vaadin.flow.component.icon.VaadinIcon.TRASH));
+        deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+        deleteButton.addClickListener(e -> deleteEintrag(eintrag));
+        layout.add(deleteButton);
 
         return layout;
     }

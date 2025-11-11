@@ -52,7 +52,6 @@ public class DataInitializer implements CommandLineRunner {
                     .vorname("System")
                     .nachname("Administrator")
                     .rolle(BenutzerRolle.ADMIN)
-                    .aktiv(true)
                     .build();
             benutzerRepository.save(admin);
             log.info("Admin-Benutzer erstellt: admin@schiessbuch.de / admin123");
@@ -64,7 +63,6 @@ public class DataInitializer implements CommandLineRunner {
                     .vorname("Max")
                     .nachname("Mustermann")
                     .rolle(BenutzerRolle.SCHUETZE)
-                    .aktiv(true)
                     .build();
             benutzerRepository.save(schuetze);
             log.info("Test-Schütze erstellt: schuetze@test.de / test123");
@@ -75,7 +73,6 @@ public class DataInitializer implements CommandLineRunner {
                     .vorname("Klaus")
                     .nachname("Aufseher")
                     .rolle(BenutzerRolle.AUFSEHER)
-                    .aktiv(true)
                     .build();
             benutzerRepository.save(aufseher);
 
@@ -87,7 +84,6 @@ public class DataInitializer implements CommandLineRunner {
                     .vorname("Peter")
                     .nachname("Standaufseher")
                     .rolle(BenutzerRolle.SCHIESSSTAND_AUFSEHER)
-                    .aktiv(true)
                     .build();
             benutzerRepository.save(schiesstandAufseher);
             log.info("Test-Schießstandaufseher erstellt: standaufseher@test.de / test123");
@@ -98,7 +94,6 @@ public class DataInitializer implements CommandLineRunner {
                     .vorname("Werner")
                     .nachname("Vereinschef")
                     .rolle(BenutzerRolle.VEREINS_CHEF)
-                    .aktiv(true)
                     .build();
             benutzerRepository.save(vereinschef);
             log.info("Test-Vereinschef erstellt: vereinschef@test.de / test123");

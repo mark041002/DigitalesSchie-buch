@@ -146,17 +146,17 @@ vaadin-button:hover:not([disabled]) {
 
     /* Stat-Cards: Eine Spalte auf Mobile */
     .stats-grid {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: 1fr ;
     }
 
     /* Grid-Container: Verbessertes horizontales Scrollen für Mobile */
     .grid-container {
-        overflow-x: auto !important;
-        overflow-y: visible !important;
+        overflow-x: auto ;
+        overflow-y: visible ;
         -webkit-overflow-scrolling: touch;
-        width: 100% !important;
+        width: 100% ;
         max-width: calc(100vw - var(--lumo-space-m) * 2);
-        padding: var(--lumo-space-s) !important;
+        padding: var(--lumo-space-s) ;
         margin: 0 auto;
     }
 
@@ -181,17 +181,17 @@ vaadin-button:hover:not([disabled]) {
 @media (max-width: 480px) {
     /* Quick-Actions: Volle Breite auf sehr kleinen Bildschirmen */
     .quick-actions > * {
-        flex: 1 1 100% !important;
+        flex: 1 1 100% ;
         max-width: 100%;
     }
 
     /* Gradient-Header: Kompaktere Darstellung */
     .gradient-header {
-        padding: var(--lumo-space-m) !important;
+        padding: var(--lumo-space-m) ;
     }
 
     .gradient-header h2 {
-        font-size: var(--lumo-font-size-l) !important;
+        font-size: var(--lumo-font-size-l) ;
     }
 
     /* Grid noch breiter auf sehr kleinen Screens */
@@ -289,10 +289,10 @@ vaadin-badge {
 /* Print-Optimierungen */
 @media print {
     .no-print {
-        display: none !important;
+        display: none ;
     }
 
     vaadin-grid {
-        box-shadow: none !important;
+        box-shadow: none ;
     }
 }

@@ -32,7 +32,6 @@ public class SecurityConfiguration extends VaadinWebSecurity {
      */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        // Öffentliche Endpunkte definieren
         http.authorizeHttpRequests(auth ->
             auth.requestMatchers(
                 new AntPathRequestMatcher("/images/**"),

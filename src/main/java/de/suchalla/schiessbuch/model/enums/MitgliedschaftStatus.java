@@ -7,29 +7,10 @@ package de.suchalla.schiessbuch.model.enums;
  * @version 1.0.0
  */
 public enum MitgliedschaftStatus {
-    /**
-     * Beitrittsanfrage wurde gestellt, wartet auf Genehmigung.
-     */
     BEANTRAGT("Beantragt"),
-
-    /**
-     * Mitgliedschaft wurde genehmigt und ist aktiv.
-     */
     AKTIV("Aktiv"),
-
-    /**
-     * Beitrittsanfrage wurde abgelehnt.
-     */
     ABGELEHNT("Abgelehnt"),
-
-    /**
-     * Mitgliedschaft wurde beendet.
-     */
     BEENDET("Beendet"),
-
-    /**
-     * Benutzer hat den Verein verlassen.
-     */
     VERLASSEN("Verlassen");
 
     private final String bezeichnung;

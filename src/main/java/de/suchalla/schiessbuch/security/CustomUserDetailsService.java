@@ -26,23 +26,14 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        // Login erfolgt jetzt über E-Mail statt Benutzername
         Benutzer benutzer = benutzerRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Benutzer nicht gefunden: " + email));
-
-        if (!benutzer.getAktiv()) {
-            throw new UsernameNotFoundException("Benutzer ist deaktiviert: " + email);
-        }
 
         return User.builder()
                 .username(benutzer.getEmail())  // E-Mail als Username verwenden
                 .password(benutzer.getPasswort())
                 .authorities(Collections.singletonList(
                         new SimpleGrantedAuthority("ROLE_" + benutzer.getRolle().name())))
-                .accountExpired(false)
-                .accountLocked(false)
-                .credentialsExpired(false)
-                .disabled(!benutzer.getAktiv())
                 .build();
     }
 }

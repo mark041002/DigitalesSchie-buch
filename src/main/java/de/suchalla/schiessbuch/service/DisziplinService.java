@@ -30,21 +30,9 @@ public class DisziplinService {
      * Erstellt eine neue Disziplin.
      *
      * @param disziplin Die zu erstellende Disziplin
-     * @return Die gespeicherte Disziplin
      */
-    public Disziplin erstelleDisziplin(Disziplin disziplin) {
-        return disziplinRepository.save(disziplin);
-    }
-
-    /**
-     * Findet eine Disziplin anhand der ID.
-     *
-     * @param id Die Disziplin-ID
-     * @return Optional mit Disziplin
-     */
-    @Transactional(readOnly = true)
-    public Optional<Disziplin> findeDisziplin(Long id) {
-        return disziplinRepository.findById(id);
+    public void erstelleDisziplin(Disziplin disziplin) {
+        disziplinRepository.save(disziplin);
     }
 
     /**
@@ -69,16 +57,6 @@ public class DisziplinService {
     }
 
     /**
-     * Aktualisiert eine Disziplin.
-     *
-     * @param disziplin Die zu aktualisierende Disziplin
-     * @return Die aktualisierte Disziplin
-     */
-    public Disziplin aktualisiereDisziplin(Disziplin disziplin) {
-        return disziplinRepository.save(disziplin);
-    }
-
-    /**
      * Löscht eine Disziplin.
      *
      * @param disziplinId Die Disziplin-ID
@@ -91,10 +69,9 @@ public class DisziplinService {
      * Erstellt einen neuen Schießstand.
      *
      * @param schiesstand Der zu erstellende Schießstand
-     * @return Der gespeicherte Schießstand
      */
-    public Schiesstand erstelleSchiesstand(Schiesstand schiesstand) {
-        return schiesstandRepository.save(schiesstand);
+    public void erstelleSchiesstand(Schiesstand schiesstand) {
+        schiesstandRepository.save(schiesstand);
     }
 
     /**
@@ -116,17 +93,6 @@ public class DisziplinService {
     @Transactional(readOnly = true)
     public List<Schiesstand> findeAlleSchiesstaende() {
         return schiesstandRepository.findAllWithVerein();
-    }
-
-    /**
-     * Sucht Schießstände nach Namen.
-     *
-     * @param name Suchbegriff
-     * @return Liste der Schießstände
-     */
-    @Transactional(readOnly = true)
-    public List<Schiesstand> sucheSchiesstaende(String name) {
-        return schiesstandRepository.findByNameContainingIgnoreCase(name);
     }
 
     /**

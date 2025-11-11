@@ -4,6 +4,7 @@ import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -21,7 +22,6 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.html.Div;
 
 /**
  * Haupt-Layout der Anwendung mit Navigation.
@@ -30,8 +30,16 @@ import com.vaadin.flow.component.html.Div;
  * @version 1.1.0
  */
 @PermitAll
-@CssImport("./themes/schiessbuch-styles.css")
-@CssImport("./themes/modern-enhancements.css")
+@CssImport("./themes/variables.css")
+@CssImport("./themes/layout.css")
+@CssImport("./themes/cards.css")
+@CssImport("./themes/notifications.css")
+@CssImport("./themes/dialogs.css")
+@CssImport("./themes/buttons.css")
+@CssImport("./themes/animations.css")
+@CssImport("./themes/responsive.css")
+@CssImport("./themes/sidebar-fix.css")
+@JsModule("./js/MainLayout-interactions.js")
 public class MainLayout extends AppLayout {
 
     private final SecurityService securityService;
@@ -81,10 +89,10 @@ public class MainLayout extends AppLayout {
 
         String username = currentUser != null ? currentUser.getVollstaendigerName() : "Gast";
 
-        // Profil-Button (nur Desktop)
+        // Profil-Button (nur Desktop, rechts)
         Button profilButton = new Button(username, VaadinIcon.USER.create());
         profilButton.addClickListener(e ->
-            getUI().ifPresent(ui -> ui.navigate(ProfilView.class))
+                getUI().ifPresent(ui -> ui.navigate(ProfilView.class))
         );
         profilButton.getStyle()
                 .set("background", "var(--lumo-contrast-5pct)")
@@ -93,23 +101,23 @@ public class MainLayout extends AppLayout {
                 .set("font-weight", "500");
         profilButton.addClassName("header-desktop-only");
 
-        // Logout-Button (nur Desktop)
-        Button logout = new Button("Abmelden", VaadinIcon.SIGN_OUT.create());
-        logout.addClickListener(e -> securityService.logout());
-        logout.getStyle()
+        // Logout-Button (nur Desktop, rechts)
+        Button logoutButton = new Button("Abmelden", VaadinIcon.SIGN_OUT.create());
+        logoutButton.addClickListener(e -> securityService.logout());
+        logoutButton.getStyle()
                 .set("background", "var(--lumo-error-color-10pct)")
                 .set("color", "var(--lumo-error-text-color)")
                 .set("border-radius", "var(--lumo-border-radius-m)")
                 .set("padding", "var(--lumo-space-xs) var(--lumo-space-m)")
                 .set("font-weight", "500");
-        logout.addClassName("header-desktop-only");
+        logoutButton.addClassName("header-desktop-only");
 
-        HorizontalLayout rightSide = new HorizontalLayout(profilButton, logout);
-        rightSide.setSpacing(true);
-        rightSide.setAlignItems(FlexComponent.Alignment.CENTER);
-        rightSide.getStyle().set("gap", "var(--lumo-space-s)");
+        HorizontalLayout rightButtons = new HorizontalLayout(profilButton, logoutButton);
+        rightButtons.setSpacing(true);
+        rightButtons.setAlignItems(FlexComponent.Alignment.CENTER);
+        rightButtons.getStyle().set("gap", "var(--lumo-space-s)");
 
-        HorizontalLayout header = new HorizontalLayout(toggle, logoLink, rightSide);
+        HorizontalLayout header = new HorizontalLayout(toggle, logoLink, rightButtons);
         header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
         header.expand(logoLink);
         header.setWidthFull();
@@ -137,11 +145,14 @@ public class MainLayout extends AppLayout {
                 .set("padding", "var(--lumo-space-m)")
                 .set("background", "var(--lumo-base-color)")
                 .set("box-sizing", "border-box")
-                .set("overflow-x", "hidden")
-                .set("max-width", "100%")
                 .set("display", "flex")
                 .set("flex-direction", "column")
-                .set("height", "100%");
+                .set("height", "100%")
+                .set("width", "100%")
+                .set("max-width", "280px")
+                .set("overflow", "hidden")
+                .set("gap", "0");
+        drawerLayout.addClassName("responsive-drawer");
 
         // Container für Navigationssektionen (wächst und nimmt verfügbaren Platz ein)
         VerticalLayout navSections = new VerticalLayout();
@@ -149,18 +160,22 @@ public class MainLayout extends AppLayout {
         navSections.setSpacing(false);
         navSections.setWidthFull();
         navSections.getStyle()
-                .set("flex", "1")
-                .set("overflow-y", "auto");
+                .set("flex", "1 1 auto")
+                .set("overflow-y", "auto")
+                .set("overflow-x", "hidden")
+                .set("min-height", "0");
 
         if (currentUser != null) {
             // Persönliche Funktionen
             SideNav persoenlichNav = new SideNav();
+            persoenlichNav.setWidthFull();
+            persoenlichNav.getStyle()
+                    .set("white-space", "normal")
+                    .set("word-wrap", "break-word");
             persoenlichNav.addItem(new SideNavItem("Dashboard", DashboardView.class, VaadinIcon.HOME.create()));
             persoenlichNav.addItem(new SideNavItem("Meine Einträge", MeineEintraegeView.class, VaadinIcon.BOOK.create()));
             persoenlichNav.addItem(new SideNavItem("Neuer Eintrag", NeuerEintragView.class, VaadinIcon.PLUS.create()));
             persoenlichNav.addItem(new SideNavItem("Meine Vereine", MeineVereineView.class, VaadinIcon.GROUP.create()));
-            persoenlichNav.addItem(new SideNavItem("Benachrichtigungen", BenachrichtigungenView.class,
-                    VaadinIcon.BELL.create()));
 
             Details persoenlichDetails = createModernDetailsSection("Persönlich", persoenlichNav, VaadinIcon.USER, true, true);
             navSections.add(persoenlichDetails);
@@ -168,12 +183,15 @@ public class MainLayout extends AppLayout {
             // Vereinsfunktionen (nur für AUFSEHER und VEREINS_CHEF, nicht für SCHIESSSTAND_AUFSEHER)
             boolean istAufseherOderChef = (currentUser.getRolle() != de.suchalla.schiessbuch.model.enums.BenutzerRolle.SCHIESSSTAND_AUFSEHER) &&
                     currentUser.getVereinsmitgliedschaften().stream()
-                    .anyMatch(m -> Boolean.TRUE.equals(m.getIstAufseher()) ||
-                                   Boolean.TRUE.equals(m.getIstVereinschef()));
+                            .anyMatch(m -> Boolean.TRUE.equals(m.getIstAufseher()) ||
+                                    Boolean.TRUE.equals(m.getIstVereinschef()));
 
             if (istAufseherOderChef) {
                 SideNav vereinNav = new SideNav();
-
+                vereinNav.setWidthFull();
+                vereinNav.getStyle()
+                        .set("white-space", "normal")
+                        .set("word-wrap", "break-word");
 
                 // Eintragsverwaltung für Aufseher, Vereinschefs und Admins
                 vereinNav.addItem(createDebouncedSideNavItem("Eintragsverwaltung", EintraegeVerwaltungView.class,
@@ -202,6 +220,10 @@ public class MainLayout extends AppLayout {
             // Admin-Funktionen
             if (currentUser.getRolle() == de.suchalla.schiessbuch.model.enums.BenutzerRolle.ADMIN) {
                 SideNav adminNav = new SideNav();
+                adminNav.setWidthFull();
+                adminNav.getStyle()
+                        .set("white-space", "normal")
+                        .set("word-wrap", "break-word");
                 adminNav.addItem(new SideNavItem("Verbände", VerbaendeVerwaltungView.class, VaadinIcon.GLOBE.create()));
                 adminNav.addItem(new SideNavItem("Vereine", VereineVerwaltungView.class, VaadinIcon.BUILDING.create()));
                 adminNav.addItem(new SideNavItem("Schießstände", SchiesstaendeVerwaltungView.class, VaadinIcon.CROSSHAIRS.create()));
@@ -215,6 +237,10 @@ public class MainLayout extends AppLayout {
             // Schießstandaufseher-Funktionen
             if (currentUser.getRolle() == de.suchalla.schiessbuch.model.enums.BenutzerRolle.SCHIESSSTAND_AUFSEHER) {
                 SideNav schiesstandNav = new SideNav();
+                schiesstandNav.setWidthFull();
+                schiesstandNav.getStyle()
+                        .set("white-space", "normal")
+                        .set("word-wrap", "break-word");
 
                 // Eintragsverwaltung für Schießstandaufseher
                 schiesstandNav.addItem(createDebouncedSideNavItem("Eintragsverwaltung", EintraegeVerwaltungView.class,
@@ -234,102 +260,65 @@ public class MainLayout extends AppLayout {
 
         // Öffentliche Funktionen
         SideNav oeffentlichNav = new SideNav();
+        oeffentlichNav.setWidthFull();
+        oeffentlichNav.getStyle()
+                .set("white-space", "normal")
+                .set("word-wrap", "break-word");
         oeffentlichNav.addItem(new SideNavItem("Zertifikat verifizieren", ZertifikatVerifizierungView.class, VaadinIcon.CHECK_CIRCLE.create()));
 
         Details oeffentlichDetails = createModernDetailsSection("Öffentlich", oeffentlichNav, VaadinIcon.GLOBE_WIRE, false, false);
         navSections.add(oeffentlichDetails);
 
-        drawerLayout.add(navSections);
-
-        // Mobile-only Bereich am unteren Ende der Sidebar
+        // User-Aktionen in Navigation (nur Mobile) - wird als normale Sektion angezeigt
         if (currentUser != null) {
-            VerticalLayout mobileUserActions = createMobileUserActions();
-            drawerLayout.add(mobileUserActions);
+            VerticalLayout mobileUserSection = createMobileUserSection();
+            navSections.add(mobileUserSection);
         }
+
+        drawerLayout.add(navSections);
 
         addToDrawer(drawerLayout);
     }
 
     /**
-     * Erstellt den Benutzeraktionsbereich für mobile Geräte am unteren Ende der Sidebar.
+     * Erstellt die User-Sektion für Mobile (wird in Navigation integriert).
      */
-    private VerticalLayout createMobileUserActions() {
-        VerticalLayout mobileActions = new VerticalLayout();
-        mobileActions.setPadding(false);
-        mobileActions.setSpacing(false);
-        mobileActions.setWidthFull();
-        mobileActions.addClassName("drawer-mobile-only");
-        mobileActions.getStyle()
-                .set("border-top", "2px solid var(--lumo-contrast-10pct)")
+    private VerticalLayout createMobileUserSection() {
+        VerticalLayout mobileSection = new VerticalLayout();
+        mobileSection.setPadding(false);
+        mobileSection.setSpacing(false);
+        mobileSection.setWidthFull();
+        mobileSection.addClassName("mobile-user-section");
+        mobileSection.getStyle()
+                .set("margin-top", "var(--lumo-space-m)")
                 .set("padding-top", "var(--lumo-space-m)")
-                .set("margin-top", "var(--lumo-space-m)");
+                .set("border-top", "2px solid var(--lumo-contrast-10pct)");
 
         String username = currentUser != null ? currentUser.getVollstaendigerName() : "Gast";
 
-        // Klickbarer Benutzername (zentriert) - navigiert zum Profil
-        Div userInfo = new Div();
-        userInfo.getStyle()
-                .set("padding", "var(--lumo-space-m)")
+        // Profil-Button für Mobile
+        Button profilButton = new Button(username, VaadinIcon.USER.create());
+        profilButton.addClickListener(e ->
+                getUI().ifPresent(ui -> ui.navigate(ProfilView.class))
+        );
+        profilButton.setWidthFull();
+        profilButton.getStyle()
                 .set("background", "var(--lumo-primary-color-10pct)")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("margin-bottom", "var(--lumo-space-s)")
-                .set("display", "flex")
-                .set("flex-direction", "column")
-                .set("align-items", "center")
-                .set("justify-content", "center")
-                .set("gap", "var(--lumo-space-xs)")
-                .set("cursor", "pointer")
-                .set("transition", "all 0.2s ease");
-
-        // Klick-Handler für Navigation zum Profil
-        userInfo.getElement().addEventListener("click", e ->
-            getUI().ifPresent(ui -> ui.navigate(ProfilView.class))
-        );
-
-        // Hover-Effekt
-        userInfo.getElement().executeJs(
-                "this.addEventListener('mouseenter', () => {" +
-                "  this.style.background = 'var(--lumo-primary-color-20pct)';" +
-                "  this.style.transform = 'scale(1.02)';" +
-                "});" +
-                "this.addEventListener('mouseleave', () => {" +
-                "  this.style.background = 'var(--lumo-primary-color-10pct)';" +
-                "  this.style.transform = 'scale(1)';" +
-                "});"
-        );
-
-        Icon userIcon = VaadinIcon.USER.create();
-        userIcon.setSize("32px");
-        userIcon.getStyle().set("color", "var(--lumo-primary-color)");
-
-        Span userNameSpan = new Span(username);
-        userNameSpan.getStyle()
-                .set("font-weight", "700")
-                .set("font-size", "var(--lumo-font-size-l)")
                 .set("color", "var(--lumo-primary-text-color)")
-                .set("text-align", "center")
-                .set("max-width", "100%")
-                .set("overflow", "hidden")
-                .set("text-overflow", "ellipsis");
-
-        Span profilHint = new Span("Zum Profil");
-        profilHint.getStyle()
-                .set("font-size", "var(--lumo-font-size-xs)")
-                .set("color", "var(--lumo-secondary-text-color)")
-                .set("text-align", "center");
-
-        userInfo.add(userIcon, userNameSpan, profilHint);
+                .set("justify-content", "flex-start")
+                .set("margin-bottom", "var(--lumo-space-xs)");
 
         // Logout-Button für Mobile
-        Button mobileLogoutButton = new Button("Abmelden", VaadinIcon.SIGN_OUT.create());
-        mobileLogoutButton.addClickListener(e -> securityService.logout());
-        mobileLogoutButton.setWidthFull();
-        mobileLogoutButton.getStyle()
+        Button logoutButton = new Button("Abmelden", VaadinIcon.SIGN_OUT.create());
+        logoutButton.addClickListener(e -> securityService.logout());
+        logoutButton.setWidthFull();
+        logoutButton.getStyle()
                 .set("background", "var(--lumo-error-color-10pct)")
-                .set("color", "var(--lumo-error-text-color)");
+                .set("color", "var(--lumo-error-text-color)")
+                .set("justify-content", "flex-start");
 
-        mobileActions.add(userInfo, mobileLogoutButton);
-        return mobileActions;
+        mobileSection.add(profilButton, logoutButton);
+        return mobileSection;
     }
 
     /**
@@ -371,17 +360,8 @@ public class MainLayout extends AppLayout {
                 .set("border", "none")
                 .set("transition", "all 0.2s ease");
 
-        // Hover-Effekt
-        details.getElement().executeJs(
-                "this.addEventListener('mouseenter', () => {" +
-                "  this.style.boxShadow = 'var(--lumo-box-shadow-s)';" +
-                "  this.style.background = 'var(--lumo-contrast-10pct)';" +
-                "});" +
-                "this.addEventListener('mouseleave', () => {" +
-                "  this.style.boxShadow = 'var(--lumo-box-shadow-xs)';" +
-                "  this.style.background = 'var(--lumo-contrast-5pct)';" +
-                "});"
-        );
+        // Hover-Effekt mit ausgelagerter JavaScript-Funktion
+        details.getElement().executeJs("window.addSidebarHoverEffects(this)");
 
         return details;
     }
@@ -392,19 +372,8 @@ public class MainLayout extends AppLayout {
     private SideNavItem createDebouncedSideNavItem(String label, Class<? extends com.vaadin.flow.component.Component> navigationTarget, Icon icon) {
         SideNavItem item = new SideNavItem(label, navigationTarget, icon);
 
-        // Füge JavaScript-basiertes Debouncing hinzu
-        item.getElement().executeJs(
-            "let lastClick = 0;" +
-            "this.addEventListener('click', function(e) {" +
-            "  const now = Date.now();" +
-            "  if (now - lastClick < 500) {" +
-            "    e.preventDefault();" +
-            "    e.stopPropagation();" +
-            "    return false;" +
-            "  }" +
-            "  lastClick = now;" +
-            "}, true);"
-        );
+        // Füge JavaScript-basiertes Debouncing mit ausgelagerter Funktion hinzu
+        item.getElement().executeJs("window.addNavigationDebounce(this, 500)");
 
         return item;
     }

@@ -8,6 +8,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.EqualsAndHashCode;
 
+import lombok.EqualsAndHashCode;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -62,9 +64,6 @@ public class Benutzer {
     @Column(name = "aktualisiert_am")
     private LocalDateTime aktualisiertAm;
 
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean aktiv = true;
 
     @Column(name = "reset_token")
     private String resetToken;
@@ -93,55 +92,6 @@ public class Benutzer {
         aktualisiertAm = LocalDateTime.now();
     }
 
-    /**
-     * Gibt den vollständigen Namen zurück.
-     *
-     * @return Vollständiger Name
-     */
-    public String getVollstaendigerName() {
-        return vorname + " " + nachname;
-    }
-
-    /**
-     * Prüft, ob der Benutzer ein Aufseher ist.
-     *
-     * @return true wenn Aufseher
-     */
-    public boolean istAufseher() {
-        return rolle == BenutzerRolle.AUFSEHER || rolle == BenutzerRolle.SCHIESSSTAND_AUFSEHER;
-    }
-
-    /**
-     * Prüft, ob der Benutzer ein Schießstandaufseher ist.
-     *
-     * @return true wenn Schießstandaufseher
-     */
-    public boolean istSchiesstandAufseher() {
-        return rolle == BenutzerRolle.SCHIESSSTAND_AUFSEHER;
-    }
-
-    /**
-     * Prüft, ob der Benutzer ein Admin ist.
-     *
-     * @return true wenn Admin
-     */
-    public boolean istAdmin() {
-        return rolle == BenutzerRolle.ADMIN;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Benutzer benutzer = (Benutzer) o;
-        return id != null && id.equals(benutzer.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
-
     @Override
     public String toString() {
         return "Benutzer{" +
@@ -151,5 +101,9 @@ public class Benutzer {
                 ", nachname='" + nachname + '\'' +
                 ", rolle=" + rolle +
                 '}';
+    }
+
+    public String getVollstaendigerName() {
+        return vorname + " " + nachname;
     }
 }

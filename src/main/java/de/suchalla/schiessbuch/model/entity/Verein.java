@@ -34,7 +34,8 @@ public class Verein {
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "vereins_nummer")
+    @NotBlank(message = "Vereinsnummer darf nicht leer sein")
+    @Column(name = "vereins_nummer", nullable = false)
     private String vereinsNummer;
 
     @Column(length = 500)
@@ -63,10 +64,9 @@ public class Verein {
     @ToString.Exclude
     private Set<Vereinsmitgliedschaft> mitgliedschaften = new HashSet<>();
 
-    @OneToMany(mappedBy = "verein", cascade = CascadeType.ALL)
-    @Builder.Default
+    @OneToOne(mappedBy = "verein", cascade = CascadeType.ALL)
     @ToString.Exclude
-    private Set<Schiesstand> schiesstaende = new HashSet<>();
+    private Schiesstand schiesstand;
 
     @PrePersist
     protected void onCreate() {

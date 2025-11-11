@@ -191,7 +191,7 @@ public class PdfExportService {
                         String zertInfo = String.format("SN: %s | Aufseher: %s | Gültig: %s - %s",
                                 eintrag.getZertifikat().getSeriennummer(),
                                 eintrag.getAufseher() != null ? eintrag.getAufseher().getVollstaendigerName() : "N/A",
-                                eintrag.getZertifikat().getGueltigAb() != null ? eintrag.getZertifikat().getGueltigAb().format(DATE_FORMATTER) : "N/A",
+                                eintrag.getZertifikat().getGueltigSeit() != null ? eintrag.getZertifikat().getGueltigSeit().format(DATE_FORMATTER) : "N/A",
                                 eintrag.getZertifikat().getGueltigBis() != null ? eintrag.getZertifikat().getGueltigBis().format(DATE_FORMATTER) : "N/A"
                         );
                         zertifikate.add(zertInfo);

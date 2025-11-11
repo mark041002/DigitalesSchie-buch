@@ -27,23 +27,6 @@ public interface DisziplinRepository extends JpaRepository<Disziplin, Long> {
     List<Disziplin> findByVerband(Verband verband);
 
     /**
-     * Findet eine Disziplin anhand des Namens und Verbands.
-     *
-     * @param name Der Disziplinname
-     * @param verband Der Verband
-     * @return Optional mit Disziplin
-     */
-    Optional<Disziplin> findByNameAndVerband(String name, Verband verband);
-
-    /**
-     * Findet Disziplinen nach Namen (Teilstring-Suche).
-     *
-     * @param name Suchbegriff
-     * @return Liste der Disziplinen
-     */
-    List<Disziplin> findByNameContainingIgnoreCase(String name);
-
-    /**
      * Findet alle Disziplinen mit eager loading des Verbands.
      *
      * @return Liste aller Disziplinen mit Verband

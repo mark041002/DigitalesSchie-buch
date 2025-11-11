@@ -26,58 +26,38 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class DigitalesZertifikat {
 
+    @Getter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
     private Long id;
 
-    /**
-     * Typ: ROOT, VEREIN, AUFSEHER, SCHIESSTANDAUFSEHER
-     */
     @NotBlank(message = "Zertifikatstyp darf nicht leer sein")
     @Column(name = "zertifikats_typ", nullable = false)
     private String zertifikatsTyp;
 
-    /**
-     * Seriennummer des Zertifikats (eindeutig)
-     */
     @NotBlank(message = "Seriennummer darf nicht leer sein")
     @Column(nullable = false, unique = true)
     private String seriennummer;
 
-    /**
-     * Subject Distinguished Name
-     */
     @NotBlank(message = "Subject DN darf nicht leer sein")
     @Column(name = "subject_dn", nullable = false, length = 500)
     private String subjectDN;
 
-    /**
-     * Issuer Distinguished Name
-     */
     @NotBlank(message = "Issuer DN darf nicht leer sein")
     @Column(name = "issuer_dn", nullable = false, length = 500)
     private String issuerDN;
 
-    /**
-     * Zertifikat im PEM-Format
-     */
     @NotBlank(message = "Zertifikat PEM darf nicht leer sein")
     @Column(name = "zertifikat_pem", nullable = false, columnDefinition = "TEXT")
     private String zertifikatPEM;
 
-    /**
-     * Private Key im PEM-Format (verschlüsselt gespeichert)
-     */
     @Column(name = "private_key_pem", columnDefinition = "TEXT")
     private String privateKeyPEM;
 
-    /**
-     * Gültig ab
-     */
     @NotNull(message = "Gültig ab darf nicht leer sein")
     @Column(name = "gueltig_ab", nullable = false)
-    private LocalDateTime gueltigAb;
+    private LocalDateTime gueltigSeit;
 
     /**
      * Gültig bis (null = unbegrenzt gültig)
@@ -85,49 +65,28 @@ public class DigitalesZertifikat {
     @Column(name = "gueltig_bis")
     private LocalDateTime gueltigBis;
 
-    /**
-     * Wurde das Zertifikat widerrufen?
-     */
     @Column(nullable = false)
     @Builder.Default
     private Boolean widerrufen = false;
 
-    /**
-     * Zeitpunkt des Widerrufs
-     */
     @Column(name = "widerrufen_am")
     private LocalDateTime widerrufenAm;
 
-    /**
-     * Grund für Widerruf
-     */
     @Column(name = "widerrufs_grund", length = 1000)
     private String widerrufsGrund;
 
-    /**
-     * Referenz zum Benutzer (für Aufseher-Zertifikate)
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "benutzer_id")
     private Benutzer benutzer;
 
-    /**
-     * Referenz zum Verein (für Vereins- und Aufseher-Zertifikate)
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verein_id")
     private Verein verein;
 
-    /**
-     * Referenz zum Schießstand (für Schießstandaufseher-Zertifikate)
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schiesstand_id")
     private Schiesstand schiesstand;
 
-    /**
-     * Parent-Zertifikat in der Hierarchie
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_zertifikat_id")
     private DigitalesZertifikat parentZertifikat;
@@ -149,42 +108,6 @@ public class DigitalesZertifikat {
         aktualisiertAm = LocalDateTime.now();
     }
 
-    /**
-     * Prüft, ob das Zertifikat aktuell gültig ist
-     */
-    public boolean istGueltig() {
-        if (widerrufen) {
-            return false;
-        }
-        LocalDateTime now = LocalDateTime.now();
-        // Wenn gueltigBis null ist, ist das Zertifikat unbegrenzt gültig
-        return now.isAfter(gueltigAb) && (gueltigBis == null || now.isBefore(gueltigBis));
-    }
-
-    /**
-     * Prüft, ob das Zertifikat zu einem bestimmten Zeitpunkt gültig war
-     * (wichtig für historische Signaturprüfung)
-     */
-    public boolean warGueltigAm(LocalDateTime zeitpunkt) {
-        if (widerrufen && widerrufenAm != null && zeitpunkt.isAfter(widerrufenAm)) {
-            return false;
-        }
-        // Wenn gueltigBis null ist, ist das Zertifikat unbegrenzt gültig
-        return zeitpunkt.isAfter(gueltigAb) && (gueltigBis == null || zeitpunkt.isBefore(gueltigBis));
-    }
-
-    /**
-     * Widerruft das Zertifikat
-     */
-    public void widerrufen(String grund) {
-        this.widerrufen = true;
-        this.widerrufenAm = LocalDateTime.now();
-        this.widerrufsGrund = grund;
-    }
-
-    public Long getId() {
-        return id;
-    }
 
     @Override
     public String toString() {
@@ -192,7 +115,12 @@ public class DigitalesZertifikat {
                 "id=" + id +
                 ", typ='" + zertifikatsTyp + '\'' +
                 ", seriennummer='" + seriennummer + '\'' +
-                ", gueltig=" + istGueltig() +
                 '}';
+    }
+
+    public boolean istGueltig() {
+        return !widerrufen &&
+                (gueltigSeit.isBefore(LocalDateTime.now())) &&
+                (gueltigBis == null || gueltigBis.isAfter(LocalDateTime.now()));
     }
 }
