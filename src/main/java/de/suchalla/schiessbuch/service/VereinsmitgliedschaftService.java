@@ -376,4 +376,20 @@ public class VereinsmitgliedschaftService {
                 .distinct()
                 .collect(java.util.stream.Collectors.toList());
     }
+
+    /**
+     * Setzt den Vereinschef für einen Verein. Alle anderen werden als nicht-Vereinschef markiert.
+     * @param neueChef Die Mitgliedschaft, die Vereinschef werden soll
+     * @param alleMitglieder Alle Mitgliedschaften des Vereins
+     */
+    public void setzeVereinschef(Vereinsmitgliedschaft neueChef, List<Vereinsmitgliedschaft> alleMitglieder) {
+        for (Vereinsmitgliedschaft mi : alleMitglieder) {
+            if (Boolean.TRUE.equals(mi.getIstVereinschef())) {
+                mi.setIstVereinschef(false);
+                mitgliedschaftRepository.save(mi);
+            }
+        }
+        neueChef.setIstVereinschef(true);
+        mitgliedschaftRepository.save(neueChef);
+    }
 }

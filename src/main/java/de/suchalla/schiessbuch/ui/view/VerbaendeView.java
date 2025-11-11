@@ -82,12 +82,16 @@ public class VerbaendeView extends VerticalLayout {
             icon.getElement().setProperty("title", istMitglied ? "Beigetreten" : "Nicht beigetreten");
             return icon;
         }).setHeader("Beigetreten");
-        grid.addComponentColumn(this::createActionButtons).setHeader("Aktionen");
+        grid.addComponentColumn(this::createActionButtons)
+            .setHeader("Aktionen")
+            .setWidth("260px")
+            .setFlexGrow(0)
+            .setClassNameGenerator(item -> "actions-cell-padding");
 
         // CSS für rechtsbündige Ausrichtung
         grid.getElement().executeJs(
                 "const style = document.createElement('style');" +
-                "style.textContent = '.align-right { text-align: right; }';" +
+                "style.textContent = '.align-right { text-align: right; } .actions-cell-padding { padding-right: 24px !important; }';" +
                 "document.head.appendChild(style);"
         );
 
@@ -118,6 +122,7 @@ public class VerbaendeView extends VerticalLayout {
                     updateGrid();
                 });
                 austrittButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+                austrittButton.addClassName("table-delete-btn");
                 layout.add(austrittButton);
             } else {
                 Button beitretenButton = new Button("Beitreten", e -> {

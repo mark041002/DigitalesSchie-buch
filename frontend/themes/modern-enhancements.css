@@ -3,9 +3,9 @@
 /* Einheitlicher Container für Views */
 .view-container {
     background: linear-gradient(135deg,
-        var(--lumo-contrast-5pct) 0%,
-        var(--lumo-contrast-10pct) 50%,
-        var(--lumo-contrast-5pct) 100%);
+    var(--lumo-contrast-5pct) 0%,
+    var(--lumo-contrast-10pct) 50%,
+    var(--lumo-contrast-5pct) 100%);
     min-height: calc(100vh - 60px);
     padding: var(--lumo-space-m);
 }
@@ -89,9 +89,9 @@ vaadin-button:hover:not([disabled]) {
 /* Loading Skeleton */
 .skeleton {
     background: linear-gradient(90deg,
-        var(--lumo-contrast-10pct) 25%,
-        var(--lumo-contrast-5pct) 50%,
-        var(--lumo-contrast-10pct) 75%);
+    var(--lumo-contrast-10pct) 25%,
+    var(--lumo-contrast-5pct) 50%,
+    var(--lumo-contrast-10pct) 75%);
     background-size: 200% 100%;
     animation: loading 1.5s infinite;
 }
@@ -149,23 +149,31 @@ vaadin-button:hover:not([disabled]) {
         grid-template-columns: 1fr !important;
     }
 
-    /* Grid-Container: Touch-freundliche Scrollbar */
+    /* Grid-Container: Verbessertes horizontales Scrollen für Mobile */
     .grid-container {
-        overflow-x: auto;
+        overflow-x: auto !important;
+        overflow-y: visible !important;
         -webkit-overflow-scrolling: touch;
+        width: 100% !important;
+        max-width: calc(100vw - var(--lumo-space-m) * 2);
+        padding: var(--lumo-space-s) !important;
+        margin: 0 auto;
     }
 
-    /* Tabellen-Hinweis für Mobile Nutzer */
-    .grid-container::before {
-        content: "→ Wischen Sie zum Scrollen →";
-        display: block;
-        text-align: center;
-        font-size: var(--lumo-font-size-xs);
-        color: var(--lumo-secondary-text-color);
-        padding: var(--lumo-space-xs);
-        background: var(--lumo-warning-color-10pct);
-        border-radius: var(--lumo-border-radius-s);
-        margin-bottom: var(--lumo-space-xs);
+    /* Grid selbst muss auf Mobile seine volle Breite haben */
+    .grid-container vaadin-grid {
+        min-width: 900px; /* Mindestbreite damit alle Spalten inkl. Action-Buttons sichtbar sind */
+        width: auto;
+    }
+
+    /* View Container auf Mobile anpassen */
+    .view-container {
+        padding: var(--lumo-space-s);
+    }
+
+    /* Content Wrapper auf Mobile */
+    .content-wrapper {
+        padding: 0;
     }
 }
 
@@ -184,6 +192,11 @@ vaadin-button:hover:not([disabled]) {
 
     .gradient-header h2 {
         font-size: var(--lumo-font-size-l) !important;
+    }
+
+    /* Grid noch breiter auf sehr kleinen Screens */
+    .grid-container vaadin-grid {
+        min-width: 1000px;
     }
 }
 
@@ -235,9 +248,9 @@ vaadin-badge {
 .divider {
     height: 1px;
     background: linear-gradient(90deg,
-        transparent,
-        var(--lumo-contrast-20pct),
-        transparent);
+    transparent,
+    var(--lumo-contrast-20pct),
+    transparent);
     margin: var(--lumo-space-m) 0;
 }
 
@@ -283,4 +296,3 @@ vaadin-badge {
         box-shadow: none !important;
     }
 }
-

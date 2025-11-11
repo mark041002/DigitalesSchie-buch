@@ -17,9 +17,16 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.textfield.TextArea;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Verband;
+import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
+import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
 import de.suchalla.schiessbuch.service.VerbandService;
+import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
 import jakarta.annotation.security.RolesAllowed;
 
 import java.util.HashMap;
@@ -38,6 +45,7 @@ import java.util.Map;
 public class VereineVerwaltungView extends VerticalLayout {
 
     private final VerbandService verbandService;
+    private final VereinsmitgliedschaftService mitgliedschaftService;
     private final Grid<Verein> grid = new Grid<>(Verein.class, false);
     private Div emptyStateMessage;
 
@@ -46,8 +54,9 @@ public class VereineVerwaltungView extends VerticalLayout {
     private final TextField vereinsNummerField = new TextField("Vereinsnummer");
     private final ComboBox<Verband> verbandComboBox = new ComboBox<>("Verband");
 
-    public VereineVerwaltungView(VerbandService verbandService) {
+    public VereineVerwaltungView(VerbandService verbandService, VereinsmitgliedschaftService mitgliedschaftService) {
         this.verbandService = verbandService;
+        this.mitgliedschaftService = mitgliedschaftService;
 
         setSpacing(false);
         setPadding(false);
@@ -73,14 +82,14 @@ public class VereineVerwaltungView extends VerticalLayout {
         com.vaadin.flow.component.html.H2 title = new com.vaadin.flow.component.html.H2("Vereinsverwaltung");
         title.getStyle().set("margin", "0");
 
-        com.vaadin.flow.component.html.Span subtitle = new com.vaadin.flow.component.html.Span("Verwaltung aller Vereine und deren Mitglieder");
-        subtitle.addClassName("subtitle");
 
-        header.add(title, subtitle);
+        header.add(title);
         contentWrapper.add(header);
 
-        // Info-Box mit modernem Styling
+        // Info-Box mit modernem Styling und 100% Breite
         Div infoBox = new Div();
+        infoBox.addClassName("info-box");
+        infoBox.setWidthFull();
         infoBox.getStyle()
                 .set("background", "var(--lumo-primary-color-10pct)")
                 .set("border-left", "4px solid var(--lumo-primary-color)")
@@ -88,15 +97,15 @@ public class VereineVerwaltungView extends VerticalLayout {
                 .set("padding", "var(--lumo-space-m)")
                 .set("margin-bottom", "var(--lumo-space-l)")
                 .set("box-shadow", "var(--lumo-box-shadow-xs)");
-
+        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
+        infoIcon.setSize("20px");
         com.vaadin.flow.component.html.Paragraph beschreibung = new com.vaadin.flow.component.html.Paragraph(
                 "Erstellen und verwalten Sie Vereine im System. Jeder Verein muss einem Verband zugeordnet sein."
         );
         beschreibung.getStyle()
                 .set("color", "var(--lumo-primary-text-color)")
                 .set("margin", "0");
-
-        infoBox.add(beschreibung);
+        infoBox.add(infoIcon, beschreibung);
         contentWrapper.add(infoBox);
 
         // Formular-Container
@@ -129,20 +138,45 @@ public class VereineVerwaltungView extends VerticalLayout {
         Div gridContainer = new Div();
         gridContainer.addClassName("grid-container");
         gridContainer.setWidthFull();
+        gridContainer.getStyle()
+                .set("flex", "1 1 auto") // Grid-Container wächst mit View
+                .set("display", "flex")
+                .set("flex-direction", "column")
+                .set("min-height", "0") // Für flexibles Scrollen
+                .set("overflow-x", "auto") // horizontales Scrollen explizit aktivieren
+                .set("overflow-y", "auto"); // vertikales Scrollen
 
         // Grid
-        grid.setHeight("600px");
+        grid.setHeight("100%"); // Grid nimmt volle Höhe des Containers
+        grid.setWidthFull();
+        grid.getStyle()
+                .remove("min-width") // min-width entfernen, damit Grid flexibel bleibt
+                .set("min-height", "400px") // Mindesthöhe für Lesbarkeit
+                .remove("overflow"); // Grid selbst nicht scrollbar
         grid.addClassName("rounded-grid");
         grid.addColumn(Verein::getId)
                 .setHeader("ID")
                 .setWidth("80px")
+                .setAutoWidth(true)
+                .setFlexGrow(0)
                 .setClassNameGenerator(item -> "align-right");
-        grid.addColumn(Verein::getName).setHeader("Name");
-        grid.addColumn(Verein::getVereinsNummer).setHeader("Vereinsnummer");
-        grid.addColumn(Verein::getAdresse).setHeader("Adresse");
+        grid.addColumn(Verein::getName)
+                .setHeader("Name")
+                .setAutoWidth(true)
+                .setFlexGrow(1);
+        grid.addColumn(Verein::getVereinsNummer)
+                .setHeader("Vereinsnummer")
+                .setAutoWidth(true)
+                .setFlexGrow(1);
+        grid.addColumn(Verein::getAdresse)
+                .setHeader("Adresse")
+                .setAutoWidth(true)
+                .setFlexGrow(1);
         grid.addColumn(verein -> verein.getMitgliedschaften().size())
                 .setHeader("Mitglieder")
                 .setWidth("120px")
+                .setAutoWidth(true)
+                .setFlexGrow(0)
                 .setClassNameGenerator(item -> "align-right");
         grid.addColumn(verein -> {
             // Vereinschef finden
@@ -151,30 +185,34 @@ public class VereineVerwaltungView extends VerticalLayout {
                     .findFirst()
                     .map(m -> m.getBenutzer().getVollstaendigerName())
                     .orElse("-");
-        }).setHeader("Vereinschef");
+        }).setHeader("Vereinschef")
+          .setAutoWidth(true)
+          .setFlexGrow(1);
 
         // Aktionen-Spalte mit Mitglieder und Löschen Buttons
         grid.addComponentColumn(verein -> {
-            Button mitgliederButton = new Button("Mitglieder");
+            Button mitgliederButton = new Button("Mitglieder", VaadinIcon.USERS.create());
             mitgliederButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
-            mitgliederButton.addClickListener(e -> navigiereZuMitgliederverwaltung(verein));
+            mitgliederButton.addClickListener(e -> zeigeMitgliederDialog(verein));
 
-            Button loeschenButton = new Button("Löschen");
+            Button detailButton = new Button("Details", VaadinIcon.FILE_TEXT.create());
+            detailButton.addThemeVariants(ButtonVariant.LUMO_SMALL); // Design wie Mitglieder-Button
+            detailButton.addClickListener(e -> zeigeVereinDetailsDialog(verein));
+
+            Button loeschenButton = new Button("Löschen", VaadinIcon.TRASH.create());
             loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
             loeschenButton.addClickListener(e -> zeigeLoeschDialog(verein));
 
-            HorizontalLayout actions = new HorizontalLayout(mitgliederButton, loeschenButton);
+            HorizontalLayout actions = new HorizontalLayout(mitgliederButton, detailButton, loeschenButton);
             actions.setSpacing(true);
             actions.setPadding(false);
+            actions.setWidthFull();
             return actions;
-        }).setHeader("Aktionen").setWidth("200px").setFlexGrow(0);
+        }).setHeader("Aktionen")
+          .setAutoWidth(true)
+          .setFlexGrow(0)
+          .setClassNameGenerator(item -> "actions-cell-padding");
 
-        // CSS für rechtsbündige Ausrichtung
-        grid.getElement().executeJs(
-                "const style = document.createElement('style');" +
-                        "style.textContent = '.align-right { text-align: right; }';" +
-                        "document.head.appendChild(style);"
-        );
 
         // Empty State Message erstellen
         emptyStateMessage = new Div();
@@ -280,5 +318,71 @@ public class VereineVerwaltungView extends VerticalLayout {
         } catch (Exception e) {
             Notification.show("Fehler: " + e.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
+    }
+
+    private void zeigeMitgliederDialog(Verein verein) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Mitglieder von " + verein.getName());
+        dialog.setWidth("600px");
+        List<Vereinsmitgliedschaft> mitglieder = mitgliedschaftService.findeAlleMitgliedschaften(verein);
+        VerticalLayout layout = new VerticalLayout();
+        layout.setSpacing(true);
+        layout.setPadding(false);
+        for (Vereinsmitgliedschaft m : mitglieder) {
+            HorizontalLayout row = new HorizontalLayout();
+            row.setWidthFull();
+            String name = m.getBenutzer().getVollstaendigerName();
+            String rolle = Boolean.TRUE.equals(m.getIstVereinschef()) ? "Vereinschef" : (Boolean.TRUE.equals(m.getIstAufseher()) ? "Aufseher" : "Mitglied");
+            com.vaadin.flow.component.html.Span nameSpan = new com.vaadin.flow.component.html.Span(name + " (" + rolle + ")");
+            Button entfernenBtn = new Button("Entfernen", ev -> {
+                mitgliedschaftService.mitgliedEntfernen(m.getId());
+                Notification.show("Mitglied entfernt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                dialog.close();
+            });
+            entfernenBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+            Button aufseherBtn = new Button(Boolean.TRUE.equals(m.getIstAufseher()) ? "Aufseher entziehen" : "Zu Aufseher ernennen", ev -> {
+                mitgliedschaftService.setzeAufseherStatus(m.getId(), !Boolean.TRUE.equals(m.getIstAufseher()));
+                Notification.show(Boolean.TRUE.equals(m.getIstAufseher()) ? "Aufseher entzogen" : "Zum Aufseher ernannt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                dialog.close();
+            });
+            aufseherBtn.addThemeVariants(ButtonVariant.LUMO_SMALL);
+            Button chefBtn = new Button("Zum Vereinschef ernennen", ev -> {
+                mitgliedschaftService.setzeVereinschef(m, mitglieder);
+                Notification.show("Vereinschef geändert").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                dialog.close();
+            });
+            chefBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+            row.add(nameSpan, entfernenBtn, aufseherBtn, chefBtn);
+            layout.add(row);
+        }
+        Button closeBtn = new Button("Schließen", e -> dialog.close());
+        closeBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        dialog.add(layout);
+        dialog.getFooter().add(closeBtn);
+        dialog.open();
+    }
+
+    private void zeigeVereinDetailsDialog(Verein verein) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Vereinsdetails bearbeiten");
+        dialog.setWidth("500px");
+        TextField nameField = new TextField("Name", verein.getName());
+        TextField nummerField = new TextField("Vereinsnummer", verein.getVereinsNummer());
+        TextArea adresseField = new TextArea("Adresse", verein.getAdresse());
+        adresseField.setWidthFull();
+        Button speichernBtn = new Button("Speichern", e -> {
+            verein.setName(nameField.getValue());
+            verein.setVereinsNummer(nummerField.getValue());
+            verein.setAdresse(adresseField.getValue());
+            verbandService.erstelleVerein(verein);
+            Notification.show("Verein aktualisiert").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            dialog.close();
+            updateGrid();
+        });
+        speichernBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        Button abbrechenBtn = new Button("Abbrechen", e -> dialog.close());
+        dialog.add(new VerticalLayout(nameField, nummerField, adresseField));
+        dialog.getFooter().add(abbrechenBtn, speichernBtn);
+        dialog.open();
     }
 }
