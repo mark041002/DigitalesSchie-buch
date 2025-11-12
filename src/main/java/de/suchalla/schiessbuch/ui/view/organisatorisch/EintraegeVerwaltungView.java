@@ -72,8 +72,6 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     private final DatePicker vonDatum = new DatePicker("Von");
     private final DatePicker bisDatum = new DatePicker("Bis");
     private final Button filterButton = new Button("Filtern");
-    private Div filterContainer;
-    private Anchor pdfDownload;
 
     private final Benutzer currentUser;
     private Schiesstand aktuellerSchiesstand;
@@ -272,7 +270,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         contentWrapper.add(tabsContainer);
 
         // Filter-Container
-        filterContainer = new Div();
+        Div filterContainer = new Div();
         filterContainer.addClassName("filter-box");
         filterContainer.setWidthFull();
         filterContainer.getStyle()
@@ -327,7 +325,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         filterButton.setIcon(new Icon(VaadinIcon.FILTER));
 
         // PDF-Download mit SUCCESS Theme (grüner Button)
-        pdfDownload = new Anchor(createPdfResource(), "");
+        Anchor pdfDownload = new Anchor(createPdfResource(), "");
         pdfDownload.getElement().setAttribute("download", true);
         Button pdfButton = new Button("PDF exportieren", new Icon(VaadinIcon.DOWNLOAD));
         pdfButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
@@ -367,7 +365,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         if (aktuellerStatus != null) {
             alleEintraege = alleEintraege.stream()
                     .filter(e -> e.getStatus() == aktuellerStatus)
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         // Extrahiere eindeutige Schützennamen

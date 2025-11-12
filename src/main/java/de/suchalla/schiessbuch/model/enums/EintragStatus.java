@@ -13,7 +13,6 @@ public enum EintragStatus {
     OFFEN("Offen"),
     UNSIGNIERT("Unsigniert"),
     SIGNIERT("Signiert"),
-
     ABGELEHNT("Abgelehnt");
 
     private final String bezeichnung;

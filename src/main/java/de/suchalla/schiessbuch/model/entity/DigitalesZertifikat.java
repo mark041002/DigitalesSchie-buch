@@ -49,19 +49,17 @@ public class DigitalesZertifikat {
     private String issuerDN;
 
     @NotBlank(message = "Zertifikat PEM darf nicht leer sein")
-    @Column(name = "zertifikat_pem", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "zertifikat_pem", nullable = false)
     private String zertifikatPEM;
 
-    @Column(name = "private_key_pem", columnDefinition = "TEXT")
+    @Column(name = "private_key_pem")
     private String privateKeyPEM;
 
     @NotNull(message = "Gültig ab darf nicht leer sein")
     @Column(name = "gueltig_ab", nullable = false)
     private LocalDateTime gueltigSeit;
 
-    /**
-     * Gültig bis (null = unbegrenzt gültig)
-     */
+    //Gültig bis (null = unbegrenzt gültig)
     @Column(name = "gueltig_bis")
     private LocalDateTime gueltigBis;
 

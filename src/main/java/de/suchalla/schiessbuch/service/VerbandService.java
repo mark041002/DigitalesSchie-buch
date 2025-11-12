@@ -129,16 +129,6 @@ public class VerbandService {
     }
 
     /**
-     * Aktualisiert einen Verband.
-     *
-     * @param verband Der zu aktualisierende Verband
-     * @return Der aktualisierte Verband
-     */
-    public Verband aktualisiereVerband(Verband verband) {
-        return verbandRepository.save(verband);
-    }
-
-    /**
      * Löscht einen Verband.
      *
      * @param verbandId Die Verbands-ID
@@ -212,16 +202,6 @@ public class VerbandService {
     @Transactional(readOnly = true)
     public List<Verein> sucheVereine(String name) {
         return vereinRepository.findByNameContainingIgnoreCase(name);
-    }
-
-    /**
-     * Aktualisiert einen Verein.
-     *
-     * @param verein Der zu aktualisierende Verein
-     * @return Der aktualisierte Verein
-     */
-    public Verein aktualisiereVerein(Verein verein) {
-        return vereinRepository.save(verein);
     }
 
     /**

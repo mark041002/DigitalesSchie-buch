@@ -19,7 +19,7 @@ import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
-import de.suchalla.schiessbuch.repository.VereinRepository;
+import de.suchalla.schiessbuch.service.VereinService;
 import de.suchalla.schiessbuch.service.AktiveBenutzerService;
 import de.suchalla.schiessbuch.service.VerbandService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
@@ -42,22 +42,16 @@ import java.util.Map;
 @Slf4j
 public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlParameter<String> {
 
-    private final VerbandService verbandService;
     private final VereinsmitgliedschaftService mitgliedschaftService;
-    private final VereinRepository vereinRepository;
+    private final VereinService vereinService;
     private final AktiveBenutzerService aktiveBenutzerService;
     private final Grid<Vereinsmitgliedschaft> grid = new Grid<>(Vereinsmitgliedschaft.class, false);
     private Div emptyStateMessage;
-    private Long vereinId;
     private Verein aktuellerVerein;
 
-    public MitgliederVerwaltungView(VerbandService verbandService,
-                                    VereinsmitgliedschaftService mitgliedschaftService,
-                                    VereinRepository vereinRepository,
-                                    AktiveBenutzerService aktiveBenutzerService) {
-        this.verbandService = verbandService;
+    public MitgliederVerwaltungView(VereinsmitgliedschaftService mitgliedschaftService, VereinService vereinService, AktiveBenutzerService aktiveBenutzerService) {
         this.mitgliedschaftService = mitgliedschaftService;
-        this.vereinRepository = vereinRepository;
+        this.vereinService = vereinService;
         this.aktiveBenutzerService = aktiveBenutzerService;
 
         setSpacing(false);
@@ -72,8 +66,8 @@ public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlPa
 
         if (params.containsKey("vereinId")) {
             try {
-                vereinId = Long.parseLong(params.get("vereinId").get(0));
-                aktuellerVerein = vereinRepository.findById(vereinId).orElse(null);
+                Long vereinId = Long.parseLong(params.get("vereinId").get(0));
+                aktuellerVerein = vereinService.findById(vereinId);
             } catch (NumberFormatException e) {
                 createErrorContent("Ungültige Vereins-ID");
                 return;

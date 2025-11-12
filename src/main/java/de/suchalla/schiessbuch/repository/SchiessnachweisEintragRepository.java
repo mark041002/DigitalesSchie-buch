@@ -25,53 +25,53 @@ import java.util.Optional;
 public interface SchiessnachweisEintragRepository extends JpaRepository<SchiessnachweisEintrag, Long> {
 
     /**
-     * Findet alle EintrÃ¤ge eines SchÃ¼tzen in einem Zeitraum.
+     * Findet alle Einträge eines Schützen in einem Zeitraum.
      *
-     * @param schuetze Der SchÃ¼tze
+     * @param schuetze Der Schütze
      * @param von Start-Datum
      * @param bis End-Datum
-     * @return Liste der EintrÃ¤ge
+     * @return Liste der Einträge
      */
     @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
     List<SchiessnachweisEintrag> findBySchuetzeAndDatumBetween(Benutzer schuetze, LocalDate von, LocalDate bis);
 
     /**
-     * Findet alle signierten EintrÃ¤ge eines SchÃ¼tzen in einem Zeitraum.
+     * Findet alle signierten Einträge eines Schützen in einem Zeitraum.
      *
-     * @param schuetze Der SchÃ¼tze
+     * @param schuetze Der Schütze
      * @param von Start-Datum
      * @param bis End-Datum
      * @param status Der Status
-     * @return Liste der EintrÃ¤ge
+     * @return Liste der Eintrage
      */
     @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
     List<SchiessnachweisEintrag> findBySchuetzeAndDatumBetweenAndStatus(
             Benutzer schuetze, LocalDate von, LocalDate bis, EintragStatus status);
 
     /**
-     * Findet alle EintrÃ¤ge an einem SchieÃŸstand.
+     * Findet alle Einträge an einem Schießstand.
      *
-     * @param schiesstand Der SchieÃŸstand
-     * @return Liste der EintrÃ¤ge
+     * @param schiesstand Der Schießstand
+     * @return Liste der Eintrage
      */
     @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
     List<SchiessnachweisEintrag> findBySchiesstand(Schiesstand schiesstand);
 
     /**
-     * Findet alle EintrÃ¤ge an einem SchieÃŸstand mit bestimmtem Status.
+     * Findet alle Einträge an einem Schießstand mit bestimmtem Status.
      *
-     * @param schiesstand Der SchieÃŸstand
+     * @param schiesstand Der Schießstand
      * @param status Der Status
-     * @return Liste der EintrÃ¤ge
+     * @return Liste der Eintrage
      */
     @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
     List<SchiessnachweisEintrag> findBySchiesstandAndStatus(Schiesstand schiesstand, EintragStatus status);
 
     /**
-     * Findet alle EintrÃ¤ge eines SchÃ¼tzen mit eager loading aller Beziehungen.
+     * Findet alle Eintrage eines Schützen mit eager loading aller Beziehungen.
      *
-     * @param schuetze Der SchÃ¼tze
-     * @return Liste der EintrÃ¤ge
+     * @param schuetze Der Schütze
+     * @return Liste der Eintrage
      */
     @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
             "LEFT JOIN FETCH e.schuetze " +
@@ -83,13 +83,13 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
     List<SchiessnachweisEintrag> findBySchuetzeWithDetails(@Param("schuetze") Benutzer schuetze);
 
     /**
-     * Findet alle EintrÃ¤ge eines SchieÃŸstands fÃ¼r einen bestimmten SchÃ¼tzen.
+     * Findet alle Eintrage eines Schießstands für einen bestimmten Schützen.
      *
-     * @param schiesstand Der SchieÃŸstand
-     * @param schuetze Der SchÃ¼tze
+     * @param schiesstand Der Schießstand
+     * @param schuetze Der Schütze
      * @param von Start-Datum
      * @param bis End-Datum
-     * @return Liste der EintrÃ¤ge
+     * @return Liste der Eintrage
      */
     @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
             "LEFT JOIN FETCH e.schuetze " +
@@ -106,11 +106,11 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
             @Param("bis") LocalDate bis);
 
     /**
-     * ZÃ¤hlt EintrÃ¤ge eines SchÃ¼tzen mit bestimmtem Status.
+     * Zahlt Eintrage eines Schützen mit bestimmtem Status.
      *
-     * @param schuetze Der SchÃ¼tze
+     * @param schuetze Der Schütze
      * @param status Der Status
-     * @return Anzahl der EintrÃ¤ge
+     * @return Anzahl der Eintrage
      */
     long countBySchuetzeAndStatus(Benutzer schuetze, EintragStatus status);
 
@@ -147,10 +147,10 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
     Optional<SchiessnachweisEintrag> findByIdWithVerein(@Param("id") Long id);
 
     /**
-     * Findet alle unsignierten EintrÃ¤ge (OFFEN oder UNSIGNIERT) fÃ¼r eine Liste von SchieÃŸstÃ¤nden.
+     * Findet alle unsignierten Eintrage (OFFEN oder UNSIGNIERT) für eine Liste von Schießstanden.
      *
-     * @param schiesstaende Liste der SchieÃŸstÃ¤nde
-     * @return Liste der unsignierten EintrÃ¤ge
+     * @param schiesstaende Liste der Schießstande
+     * @return Liste der unsignierten Eintrage
      */
     @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
             "LEFT JOIN FETCH e.schuetze " +

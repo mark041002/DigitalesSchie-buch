@@ -26,7 +26,7 @@ public interface VerbandRepository extends JpaRepository<Verband, Long> {
     boolean existsByName(String name);
 
     /**
-     * Findet alle Verbände mit eager loading der Vereine.
+     * Findet alle Verbände mit  Vereinen.
      *
      * @return Liste aller Verbände mit Vereinen
      */

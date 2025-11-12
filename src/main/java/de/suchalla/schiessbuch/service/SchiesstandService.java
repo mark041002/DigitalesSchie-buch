@@ -53,34 +53,10 @@ public class SchiesstandService {
         return saved;
     }
 
-    @Transactional
-    public void deleteById(Long id) {
-        schiesstandRepository.deleteById(id);
-    }
-
-    public boolean existsById(Long id) {
-        return schiesstandRepository.existsById(id);
-    }
-
-    public long count() {
-        return schiesstandRepository.count();
-    }
-
-    public List<Schiesstand> findByVerein(Verein verein) {
-        return schiesstandRepository.findByVerein(verein);
-    }
-
     public List<Schiesstand> findByTyp(SchiesstandTyp typ) {
         return schiesstandRepository.findByTyp(typ);
     }
 
-    public List<Schiesstand> findByNameContainingIgnoreCase(String name) {
-        return schiesstandRepository.findByNameContainingIgnoreCase(name);
-    }
-
-    public List<Schiesstand> findAllWithVerein() {
-        return schiesstandRepository.findAllWithVerein();
-    }
 
     /**
      * Erstellt Zertifikate für alle gewerblichen Schießstände, die noch keines haben.

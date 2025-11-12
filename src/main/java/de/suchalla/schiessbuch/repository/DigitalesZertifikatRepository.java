@@ -32,7 +32,7 @@ public interface DigitalesZertifikatRepository extends JpaRepository<DigitalesZe
     Optional<DigitalesZertifikat> findBySeriennummer(String seriennummer);
 
     /**
-     * Findet Zertifikat nach Seriennummer mit EAGER loading aller Details
+     * Findet Zertifikat nach Seriennummer mit Details
      * (für öffentliche Verifizierung)
      */
     @Query("SELECT z FROM DigitalesZertifikat z LEFT JOIN FETCH z.benutzer LEFT JOIN FETCH z.verein LEFT JOIN FETCH z.schiesstand LEFT JOIN FETCH z.parentZertifikat WHERE z.seriennummer = :seriennummer")
@@ -49,7 +49,7 @@ public interface DigitalesZertifikatRepository extends JpaRepository<DigitalesZe
     Optional<DigitalesZertifikat> findByVereinAndZertifikatsTyp(Verein verein, String zertifikatsTyp);
 
     /**
-     * Findet alle Zertifikate mit EAGER loading von Benutzer, Verein und Schießstand
+     * Findet alle Zertifikate von Benutzer, Verein und Schießstand
      */
     @Query("SELECT z FROM DigitalesZertifikat z LEFT JOIN FETCH z.benutzer LEFT JOIN FETCH z.verein LEFT JOIN FETCH z.schiesstand LEFT JOIN FETCH z.parentZertifikat")
     List<DigitalesZertifikat> findAllWithDetails();

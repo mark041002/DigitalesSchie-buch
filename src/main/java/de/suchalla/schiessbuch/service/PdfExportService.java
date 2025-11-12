@@ -108,10 +108,9 @@ public class PdfExportService {
 
             // Zentrierte Tabelle erstellen - schmalere Breite für Zentrierung
             float tableWidth = pageWidth - (2 * margin);
-            float tableMargin = margin;
 
             BaseTable table = new BaseTable(yPosition, yPosition - margin,
-                    tableMargin, tableMargin + tableWidth, margin, document, page, true, true);
+                    margin, margin + tableWidth, margin, document, page, true, true);
 
             // Header
             Row<PDPage> headerRow = table.createRow(20);

@@ -39,51 +39,8 @@ public class ZertifikatVerifizierungsService {
 
         log.info("Verifiziere Zertifikat mit Seriennummer: {}", seriennummer);
 
-        // Zertifikat mit allen Details laden (EAGER loading von Benutzer und Verein)
+        // Zertifikat mit allen Details laden
         return zertifikatRepository.findBySeriennummerWithDetails(seriennummer)
                 .orElse(null);
-    }
-
-    /**
-     * Prüft, ob ein Zertifikat existiert und gültig ist.
-     *
-     * @param seriennummer Die zu prüfende Seriennummer
-     * @return true wenn das Zertifikat existiert und gültig ist
-     */
-    @Transactional(readOnly = true)
-    public boolean istZertifikatGueltig(String seriennummer) {
-        return zertifikatRepository.findBySeriennummer(seriennummer)
-                .map(DigitalesZertifikat::istGueltig)
-                .orElse(false);
-    }
-
-    /**
-     * Gibt die Anzahl der Verifizierungen eines bestimmten Zertifikats zurück.
-     * Dies könnte für Audit-Zwecke erweitert werden.
-     *
-     * @param seriennummer Die Seriennummer
-     * @return true wenn das Zertifikat existiert
-     */
-    @Transactional(readOnly = true)
-    public boolean existiert(String seriennummer) {
-        return zertifikatRepository.findBySeriennummer(seriennummer).isPresent();
-    }
-
-    /**
-     * Prüft, ob ein Zertifikat zu einem bestimmten Zeitpunkt gültig war.
-     *
-     * @param zertifikat Das Zertifikat
-     * @param zeitpunkt Der zu prüfende Zeitpunkt
-     * @return true, wenn das Zertifikat zu diesem Zeitpunkt gültig war
-     */
-    @Transactional(readOnly = true)
-    public boolean warZertifikatGueltigAm(DigitalesZertifikat zertifikat, LocalDateTime zeitpunkt) {
-        if (zertifikat == null || zeitpunkt == null) {
-            return false;
-        }
-        return zertifikat.getGueltigSeit() != null && zertifikat.getGueltigBis() != null
-                && !zeitpunkt.isBefore(zertifikat.getGueltigSeit())
-                && !zeitpunkt.isAfter(zertifikat.getGueltigBis())
-                && zertifikat.istGueltig();
     }
 }

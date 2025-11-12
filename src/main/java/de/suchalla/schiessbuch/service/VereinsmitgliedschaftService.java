@@ -100,42 +100,39 @@ public class VereinsmitgliedschaftService {
      * Genehmigt eine Beitrittsanfrage.
      *
      * @param mitgliedschaftId Die Mitgliedschafts-ID
-     * @return Die aktualisierte Mitgliedschaft
      */
-    public Vereinsmitgliedschaft genehmigeAnfrage(Long mitgliedschaftId) {
+    public void genehmigeAnfrage(Long mitgliedschaftId) {
         Vereinsmitgliedschaft mitgliedschaft = mitgliedschaftRepository.findById(mitgliedschaftId)
                 .orElseThrow(() -> new IllegalArgumentException("Mitgliedschaft nicht gefunden"));
 
         mitgliedschaft.setStatus(MitgliedschaftStatus.AKTIV);
         mitgliedschaft.setAktiv(true);
 
-        return mitgliedschaftRepository.save(mitgliedschaft);
+        mitgliedschaftRepository.save(mitgliedschaft);
     }
 
     /**
      * Lehnt eine Beitrittsanfrage ab.
      *
      * @param mitgliedschaftId Die Mitgliedschafts-ID
-     * @return Die aktualisierte Mitgliedschaft
      */
-    public Vereinsmitgliedschaft lehneAnfrageAb(Long mitgliedschaftId) {
+    public void lehneAnfrageAb(Long mitgliedschaftId) {
         Vereinsmitgliedschaft mitgliedschaft = mitgliedschaftRepository.findById(mitgliedschaftId)
                 .orElseThrow(() -> new IllegalArgumentException("Mitgliedschaft nicht gefunden"));
 
         mitgliedschaft.setStatus(MitgliedschaftStatus.ABGELEHNT);
         mitgliedschaft.setAktiv(false);
 
-        return mitgliedschaftRepository.save(mitgliedschaft);
+        mitgliedschaftRepository.save(mitgliedschaft);
     }
 
     /**
      * Lehnt eine Beitrittsanfrage mit Begründung ab.
      *
      * @param mitgliedschaftId Die Mitgliedschafts-ID
-     * @param grund Der Ablehnungsgrund
-     * @return Die aktualisierte Mitgliedschaft
+     * @param grund            Der Ablehnungsgrund
      */
-    public Vereinsmitgliedschaft lehneAnfrageAbMitGrund(Long mitgliedschaftId, String grund) {
+    public void lehneAnfrageAbMitGrund(Long mitgliedschaftId, String grund) {
         Vereinsmitgliedschaft mitgliedschaft = mitgliedschaftRepository.findById(mitgliedschaftId)
                 .orElseThrow(() -> new IllegalArgumentException("Mitgliedschaft nicht gefunden"));
 
@@ -143,7 +140,7 @@ public class VereinsmitgliedschaftService {
         mitgliedschaft.setAktiv(false);
         mitgliedschaft.setAblehnungsgrund(grund);
 
-        return mitgliedschaftRepository.save(mitgliedschaft);
+        mitgliedschaftRepository.save(mitgliedschaft);
     }
 
     /**
@@ -262,10 +259,9 @@ public class VereinsmitgliedschaftService {
      * Wenn der Aufseher-Status entzogen wird, wird das gueltigBis-Datum des Zertifikats auf jetzt gesetzt.
      *
      * @param mitgliedschaftId Die Mitgliedschafts-ID
-     * @param istAufseher Der neue Aufseher-Status
-     * @return Die aktualisierte Mitgliedschaft
+     * @param istAufseher      Der neue Aufseher-Status
      */
-    public Vereinsmitgliedschaft setzeAufseherStatus(Long mitgliedschaftId, boolean istAufseher) {
+    public void setzeAufseherStatus(Long mitgliedschaftId, boolean istAufseher) {
         Vereinsmitgliedschaft mitgliedschaft = mitgliedschaftRepository.findById(mitgliedschaftId)
                 .orElseThrow(() -> new IllegalArgumentException("Mitgliedschaft nicht gefunden"));
 
@@ -287,7 +283,7 @@ public class VereinsmitgliedschaftService {
             }
         }
 
-        return mitgliedschaftRepository.save(mitgliedschaft);
+        mitgliedschaftRepository.save(mitgliedschaft);
     }
 
     /**
@@ -343,38 +339,6 @@ public class VereinsmitgliedschaftService {
     @Transactional(readOnly = true)
     public List<Vereinsmitgliedschaft> findeMitgliedschaftenNachStatus(Verein verein, MitgliedschaftStatus status) {
         return mitgliedschaftRepository.findByVereinAndStatusWithDetails(verein, status);
-    }
-
-    /**
-     * Gibt alle Vereine zurück, in denen der Benutzer Vereinschef ist.
-     *
-     * @param benutzer Der Benutzer
-     * @return Liste der Vereine
-     */
-    @Transactional(readOnly = true)
-    public List<Verein> getVereineWhereUserIsChef(Benutzer benutzer) {
-        return mitgliedschaftRepository.findByBenutzer(benutzer).stream()
-                .filter(m -> m.getStatus() == MitgliedschaftStatus.AKTIV && m.getAktiv())
-                .filter(Vereinsmitgliedschaft::getIstVereinschef)
-                .map(Vereinsmitgliedschaft::getVerein)
-                .distinct()
-                .collect(java.util.stream.Collectors.toList());
-    }
-
-    /**
-     * Gibt alle Vereine zurück, in denen der Benutzer Aufseher ist.
-     *
-     * @param benutzer Der Benutzer
-     * @return Liste der Vereine
-     */
-    @Transactional(readOnly = true)
-    public List<Verein> getVereineWhereUserIsAufseher(Benutzer benutzer) {
-        return mitgliedschaftRepository.findByBenutzer(benutzer).stream()
-                .filter(m -> m.getStatus() == MitgliedschaftStatus.AKTIV && m.getAktiv())
-                .filter(Vereinsmitgliedschaft::getIstAufseher)
-                .map(Vereinsmitgliedschaft::getVerein)
-                .distinct()
-                .collect(java.util.stream.Collectors.toList());
     }
 
     /**

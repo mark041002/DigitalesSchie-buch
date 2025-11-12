@@ -99,10 +99,9 @@ public class DisziplinService {
      * Aktualisiert einen Schießstand.
      *
      * @param schiesstand Der zu aktualisierende Schießstand
-     * @return Der aktualisierte Schießstand
      */
-    public Schiesstand aktualisiereSchiesstand(Schiesstand schiesstand) {
-        return schiesstandRepository.save(schiesstand);
+    public void aktualisiereSchiesstand(Schiesstand schiesstand) {
+        schiesstandRepository.save(schiesstand);
     }
 
     /**

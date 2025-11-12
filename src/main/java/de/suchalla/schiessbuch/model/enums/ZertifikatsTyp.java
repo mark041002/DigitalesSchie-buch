@@ -9,7 +9,6 @@ package de.suchalla.schiessbuch.model.enums;
 public enum ZertifikatsTyp {
     ROOT("Root CA"),
     VEREIN("Vereinszertifikat"),
-
     AUFSEHER("Aufseher-Zertifikat"),
     SCHIESSTANDAUFSEHER("Schießstandaufseher-Zertifikat");
 
@@ -17,10 +16,6 @@ public enum ZertifikatsTyp {
 
     ZertifikatsTyp(String bezeichnung) {
         this.bezeichnung = bezeichnung;
-    }
-
-    public String getBezeichnung() {
-        return bezeichnung;
     }
 
     @Override

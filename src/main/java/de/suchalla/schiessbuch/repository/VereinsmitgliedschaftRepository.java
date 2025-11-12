@@ -40,7 +40,7 @@ public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmi
     List<Vereinsmitgliedschaft> findAllByBenutzerAndVerein(Benutzer benutzer, Verein verein);
 
     /**
-     * Findet alle Mitgliedschaften eines Vereins mit eager loading.
+     * Findet alle Mitgliedschaften eines Vereins.
      *
      * @param verein Der Verein
      * @param status Der Status
@@ -55,7 +55,8 @@ public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmi
             @Param("status") MitgliedschaftStatus status);
 
     /**
-     * Findet alle Mitgliedschaften eines Vereins mit eager loading (alle Status).
+     * Findet alle Mitgliedschaften eines Vereins mit allen Statussen.
+     * @TODO KANN MAN DAS ÄNDERN?
      *
      * @param verein Der Verein
      * @return Liste der Mitgliedschaften

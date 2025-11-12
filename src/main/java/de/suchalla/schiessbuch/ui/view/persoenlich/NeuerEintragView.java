@@ -47,7 +47,6 @@ import java.util.stream.Collectors;
 @PermitAll
 public class NeuerEintragView extends VerticalLayout {
 
-    private final SecurityService securityService;
     private final SchiessnachweisService schiessnachweisService;
     private final DisziplinService disziplinService;
     private final VereinsmitgliedschaftService vereinsmitgliedschaftService;
@@ -68,7 +67,6 @@ public class NeuerEintragView extends VerticalLayout {
                             SchiessnachweisService schiessnachweisService,
                             DisziplinService disziplinService,
                             VereinsmitgliedschaftService vereinsmitgliedschaftService) {
-        this.securityService = securityService;
         this.schiessnachweisService = schiessnachweisService;
         this.disziplinService = disziplinService;
         this.vereinsmitgliedschaftService = vereinsmitgliedschaftService;

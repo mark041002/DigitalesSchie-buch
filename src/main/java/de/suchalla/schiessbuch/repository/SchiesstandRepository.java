@@ -43,7 +43,7 @@ public interface SchiesstandRepository extends JpaRepository<Schiesstand, Long> 
     List<Schiesstand> findByNameContainingIgnoreCase(String name);
 
     /**
-     * Findet alle Schießstände mit eager loading des Vereins und des Aufseher.
+     * Findet alle Schießstände mit Verein und Aufseher.
      *
      * @return Liste aller Schießstände mit Verein und Aufseher
      */

@@ -56,16 +56,6 @@ public class BenutzerService {
     }
 
     /**
-     * Findet alle Benutzer mit einer bestimmten Rolle.
-     *
-     * @param rolle Die Benutzerrolle
-     * @return Liste der Benutzer mit dieser Rolle
-     */
-    @Transactional(readOnly = true)
-    public List<Benutzer> findByRolle(BenutzerRolle rolle) {
-        return benutzerRepository.findByRolle(rolle);
-    }
-    /**
      * Aktualisiert einen Benutzer.
      *
      * @param benutzer Der zu aktualisierende Benutzer
