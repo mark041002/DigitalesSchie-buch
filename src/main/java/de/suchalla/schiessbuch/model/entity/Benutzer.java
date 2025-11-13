@@ -64,7 +64,6 @@ public class Benutzer {
     @Column(name = "aktualisiert_am")
     private LocalDateTime aktualisiertAm;
 
-
     @Column(name = "reset_token")
     private String resetToken;
 

@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Service fÃ¼r SchieÃŸnachweis-EintrÃ¤ge.
+ * Service für Schießnachweis-Einträge.
  *
  * @author Markus Suchalla
  * @version 1.0.0
@@ -28,7 +28,7 @@ public class SchiessnachweisService {
     private final SchiessnachweisEintragRepository eintragRepository;
 
     /**
-     * Erstellt einen neuen SchieÃŸnachweis-Eintrag.
+     * Erstellt einen neuen Schießnachweis-Eintrag.
      *
      * @param eintrag Der zu erstellende Eintrag
      */
@@ -51,12 +51,12 @@ public class SchiessnachweisService {
     }
 
     /**
-     * Findet alle EintrÃ¤ge eines SchÃ¼tzen in einem Zeitraum.
+     * Findet alle Einträge eines Schützen in einem Zeitraum.
      *
-     * @param schuetze Der SchÃ¼tze
+     * @param schuetze Der Schütze
      * @param von Start-Datum
      * @param bis End-Datum
-     * @return Liste der EintrÃ¤ge
+     * @return Liste der Einträge
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintrag> findeEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
@@ -64,12 +64,12 @@ public class SchiessnachweisService {
     }
 
     /**
-     * Findet alle signierten EintrÃ¤ge eines SchÃ¼tzen in einem Zeitraum.
+     * Findet alle signierten Einträge eines Schützen in einem Zeitraum.
      *
-     * @param schuetze Der SchÃ¼tze
+     * @param schuetze Der Schütze
      * @param von Start-Datum
      * @param bis End-Datum
-     * @return Liste der signierten EintrÃ¤ge
+     * @return Liste der signierten Einträge
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintrag> findeSignierteEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
@@ -78,10 +78,10 @@ public class SchiessnachweisService {
     }
 
     /**
-     * Findet alle unsignierten EintrÃ¤ge an einem SchieÃŸstand.
+     * Findet alle unsignierten Einträge an einem Schießstand.
      *
-     * @param schiesstand Der SchieÃŸstand
-     * @return Liste der unsignierten EintrÃ¤ge
+     * @param schiesstand Der Schießstand
+     * @return Liste der unsignierten Einträge
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintrag> findeUnsignierteEintraege(Schiesstand schiesstand) {
@@ -89,10 +89,10 @@ public class SchiessnachweisService {
     }
 
     /**
-     * Findet alle EintrÃ¤ge an einem SchieÃŸstand.
+     * Findet alle Einträge an einem Schießstand.
      *
-     * @param schiesstand Der SchieÃŸstand
-     * @return Liste der EintrÃ¤ge
+     * @param schiesstand Der Schießstand
+     * @return Liste der Einträge
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintrag> findeEintraegeAnSchiesstand(Schiesstand schiesstand) {
@@ -151,7 +151,7 @@ public class SchiessnachweisService {
 
 
     /**
-     * LÃ¶scht einen unsignierten Eintrag.
+     * Löscht einen unsignierten Eintrag.
      *
      * @param eintragId Die Eintrags-ID
      * @throws IllegalStateException wenn Eintrag bereits signiert
@@ -162,7 +162,7 @@ public class SchiessnachweisService {
                 .orElseThrow(() -> new IllegalArgumentException("Eintrag nicht gefunden"));
 
         if (eintrag.getStatus() == EintragStatus.SIGNIERT) {
-            throw new IllegalStateException("Signierte EintrÃ¤ge kÃ¶nnen nicht gelÃ¶scht werden");
+            throw new IllegalStateException("Signierte Einträge können nicht gelöscht werden");
         }
 
         eintragRepository.delete(eintrag);
@@ -171,10 +171,10 @@ public class SchiessnachweisService {
 
 
     /**
-     * ZÃ¤hlt unsignierte EintrÃ¤ge eines SchÃ¼tzen.
+     * Zählt unsignierte Einträge eines Schützen.
      *
-     * @param schuetze Der SchÃ¼tze
-     * @return Anzahl unsignierter EintrÃ¤ge
+     * @param schuetze Der Schütze
+     * @return Anzahl unsignierter Einträge
      */
     @Transactional(readOnly = true)
     public long zaehleUnsignierteEintraege(Benutzer schuetze) {

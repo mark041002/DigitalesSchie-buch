@@ -52,7 +52,6 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
     private final TextField nameField = new TextField("Name");
     private final TextArea beschreibungField = new TextArea("Beschreibung");
     private Verband aktuellerVerband;
-    private Long verbandId;
 
     public DisziplinenVerwaltungView(DisziplinService disziplinService, VerbandService verbandService) {
         this.disziplinService = disziplinService;
@@ -72,7 +71,7 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
         }
         if (idStr != null) {
             try {
-                verbandId = Long.parseLong(idStr);
+                Long verbandId = Long.parseLong(idStr);
                 aktuellerVerband = verbandService.findeVerband(verbandId);
             } catch (Exception e) {
                 Notification.show("Ungültige Verband-ID").addThemeVariants(NotificationVariant.LUMO_ERROR);

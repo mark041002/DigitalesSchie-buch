@@ -43,7 +43,7 @@ public interface VereinRepository extends JpaRepository<Verein, Long> {
     List<Verein> findByNameContainingIgnoreCase(String name);
 
     /**
-     * Findet alle Vereine mit eager loading des Verbands und Mitgliedschaften.
+     * Findet alle Vereine mit Verband und Mitgliedschaften.
      *
      * @return Liste aller Vereine
      */

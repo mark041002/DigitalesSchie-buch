@@ -19,10 +19,6 @@ public enum MitgliedschaftStatus {
         this.bezeichnung = bezeichnung;
     }
 
-    public String getBezeichnung() {
-        return bezeichnung;
-    }
-
     @Override
     public String toString() {
         return bezeichnung;

@@ -123,22 +123,4 @@ public class SignaturService {
                 eintrag.getWaffenart() != null ? eintrag.getWaffenart() : ""
         );
     }
-
-    /**
-     * Erstellt automatisch Zertifikate für einen neuen Aufseher.
-     */
-    @Transactional
-    public DigitalesZertifikat ensureAufseherCertificate(Benutzer aufseher, Verein verein) {
-        return zertifikatRepository.findByBenutzer(aufseher)
-                .orElseGet(() -> pkiService.createAufseherCertificate(aufseher, verein));
-    }
-
-    /**
-     * Erstellt automatisch ein Vereinszertifikat.
-     */
-    @Transactional
-    public DigitalesZertifikat ensureVereinCertificate(Verein verein) {
-        return zertifikatRepository.findByVereinAndZertifikatsTyp(verein, "VEREIN")
-                .orElseGet(() -> pkiService.createVereinCertificate(verein));
-    }
 }
