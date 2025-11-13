@@ -351,55 +351,6 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
         }
     }
 
-    private void zeigeAufseherDialog(Schiesstand schiesstand) {
-        Dialog dialog = new Dialog();
-
-        // Unterschiedliche Titel je nach Schießstand-Typ
-        String titel = schiesstand.getTyp() == SchiesstandTyp.GEWERBLICH ?
-                "Schießstandaufseher zuweisen für: " : "Vereinschef zuweisen für: ";
-        dialog.setHeaderTitle(titel + schiesstand.getName());
-        dialog.setWidth("500px");
-
-        VerticalLayout layout = new VerticalLayout();
-        layout.setSpacing(true);
-        layout.setPadding(false);
-
-        // Unterschiedliches Label je nach Schießstand-Typ
-        String label = schiesstand.getTyp() == SchiesstandTyp.GEWERBLICH ?
-                "Schießstandaufseher auswählen" : "Vereinschef auswählen";
-        ComboBox<Benutzer> benutzerComboBox = new ComboBox<>(label);
-        benutzerComboBox.setItems(benutzerService.findAlleBenutzer());
-        benutzerComboBox.setItemLabelGenerator(Benutzer::getVollstaendigerName);
-        benutzerComboBox.setPlaceholder("Namen suchen...");
-        benutzerComboBox.setWidthFull();
-        benutzerComboBox.setValue(schiesstand.getAufseher());
-
-        Button speichernButton = new Button("Speichern", e -> {
-            schiesstand.setAufseher(benutzerComboBox.getValue());
-            try {
-                disziplinService.aktualisiereSchiesstand(schiesstand);
-
-                // Unterschiedliche Erfolgsmeldung je nach Schießstand-Typ
-                String successMessage = schiesstand.getTyp() == SchiesstandTyp.GEWERBLICH ?
-                        "Schießstandaufseher erfolgreich zugewiesen" : "Vereinschef erfolgreich zugewiesen";
-                Notification.show(successMessage).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-
-                updateGrid();
-                dialog.close();
-            } catch (Exception ex) {
-                Notification.show("Fehler: " + ex.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
-            }
-        });
-        speichernButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-        Button abbrechenButton = new Button("Abbrechen", e -> dialog.close());
-
-        layout.add(benutzerComboBox);
-        dialog.add(layout);
-        dialog.getFooter().add(abbrechenButton, speichernButton);
-        dialog.open();
-    }
-
     private void zeigeBearbeitungsDialog(Schiesstand schiesstand) {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Schießstand bearbeiten: " + schiesstand.getName());
@@ -497,11 +448,6 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
 
     private String getTypText(SchiesstandTyp typ) {
         return switch (typ) {
-            case LUFTGEWEHR_10M -> "10m Luftgewehr/Luftpistole";
-            case PISTOLE_25M -> "25m Pistole";
-            case GEWEHR_50M -> "50m Gewehr";
-            case GEWEHR_100M -> "100m Gewehr";
-            case TRAP_SKEET -> "Trap/Skeet";
             case VEREINSGEBUNDEN -> "Vereinsgebunden";
             case GEWERBLICH -> "Gewerblich";
             case SONSTIGES -> "Sonstiges";

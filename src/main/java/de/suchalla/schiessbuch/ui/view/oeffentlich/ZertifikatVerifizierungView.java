@@ -232,7 +232,6 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
                     .set("padding", "var(--lumo-space-l)")
                     .set("box-shadow", "var(--lumo-box-shadow-s)");
 
-            String statusIcon = gueltigZumZeitpunkt ? "✅" : "⚠️";
             String statusText;
 
             if (gueltigZumZeitpunkt) {
@@ -243,7 +242,7 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
                 statusText = "Zertifikat war zum Prüfzeitpunkt noch nicht gültig";
             }
 
-            H3 statusTitel = new H3(statusIcon + " " + statusText);
+            H3 statusTitel = new H3(statusText);
             statusTitel.getStyle()
                     .set("margin-top", "0")
                     .set("color", gueltigZumZeitpunkt ? "var(--lumo-success-text-color)" : "var(--lumo-error-text-color)");

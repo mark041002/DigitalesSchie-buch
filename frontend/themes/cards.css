@@ -47,6 +47,17 @@
     box-shadow: var(--lumo-box-shadow-m);
 }
 
+/* Card Hover-Effekte */
+.card-hover {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--lumo-box-shadow-m);
+}
+
 /* Cards Container - für Karten-Layout */
 .cards-container {
     display: grid;
@@ -122,3 +133,7 @@
     justify-content: flex-start;
 }
 
+/* Grid Row Hover */
+vaadin-grid::part(row):hover {
+    background-color: var(--lumo-primary-color-10pct);
+}

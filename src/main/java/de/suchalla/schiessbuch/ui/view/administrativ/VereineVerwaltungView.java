@@ -16,8 +16,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.QueryParameters;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -30,13 +28,10 @@ import de.suchalla.schiessbuch.service.BenutzerService;
 import de.suchalla.schiessbuch.service.VerbandService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
-import de.suchalla.schiessbuch.ui.view.organisatorisch.*;
 import jakarta.annotation.security.RolesAllowed;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -314,23 +309,6 @@ public class VereineVerwaltungView extends VerticalLayout {
         grid.setVisible(!isEmpty);
         emptyStateMessage.setVisible(isEmpty);
     }
-
-    private void navigiereZuVereinDetails(Verein verein) {
-        Map<String, List<String>> parametersMap = new HashMap<>();
-        parametersMap.put("vereinId", List.of(String.valueOf(verein.getId())));
-        QueryParameters queryParameters = new QueryParameters(parametersMap);
-
-        UI.getCurrent().navigate(VereinDetailsView.class, queryParameters);
-    }
-
-    private void navigiereZuMitgliederverwaltung(Verein verein) {
-        Map<String, List<String>> parametersMap = new HashMap<>();
-        parametersMap.put("vereinId", List.of(String.valueOf(verein.getId())));
-        QueryParameters queryParameters = new QueryParameters(parametersMap);
-
-        UI.getCurrent().navigate(MitgliederVerwaltungView.class, queryParameters);
-    }
-
     private void zeigeLoeschDialog(Verein verein) {
         ConfirmDialog dialog = new ConfirmDialog();
         dialog.setHeader("Verein löschen");
@@ -341,7 +319,6 @@ public class VereineVerwaltungView extends VerticalLayout {
         dialog.addConfirmListener(e -> loescheVerein(verein));
         dialog.open();
     }
-
     private void loescheVerein(Verein verein) {
         try {
             verbandService.loescheVerein(verein.getId());

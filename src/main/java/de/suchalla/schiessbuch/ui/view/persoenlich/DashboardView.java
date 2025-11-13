@@ -154,7 +154,7 @@ public class DashboardView extends VerticalLayout {
             }
 
             // Karten basierend auf Rolle
-            if (user.getRolle() == BenutzerRolle.AUFSEHER || user.getRolle() == BenutzerRolle.SCHIESSSTAND_AUFSEHER || user.getRolle() == BenutzerRolle.ADMIN) {
+            if (user.getRolle() == BenutzerRolle.AUFSEHER || user.getRolle() == BenutzerRolle.SCHIESSSTAND_AUFSEHER) {
                 grid.add(
                         createStatCard("Meine unsignierten Einträge", String.valueOf(unsignierteEintraege),
                                 VaadinIcon.EDIT, "var(--lumo-warning-color)", "meine-eintraege"),
@@ -277,7 +277,7 @@ public class DashboardView extends VerticalLayout {
         // Buttons: flexible Karten, nebeneinander; min-width sorgt für Umbruch auf Mobile
         actionsGrid.add(
                 createActionButton("Neuer Eintrag", VaadinIcon.PLUS, "neuer-eintrag"),
-                createActionButton("Eintragsverwaltung", VaadinIcon.BOOK, "eintraege-verwaltung"),
+                createActionButton("Meine Einträge", VaadinIcon.BOOK, "meine-eintraege"),
                 createActionButton("Zertifikat verifizieren", VaadinIcon.DIPLOMA, "zertifikat-verifizierung"),
                 createActionButton("Profil", VaadinIcon.USER, "profil")
         );
@@ -289,7 +289,7 @@ public class DashboardView extends VerticalLayout {
         }
 
         // Eintragsverwaltung-Button für Aufseher und Admin
-        if (user.getRolle() == BenutzerRolle.AUFSEHER || user.getRolle() == BenutzerRolle.ADMIN) {
+        if (user.getRolle() == BenutzerRolle.AUFSEHER || user.getRolle() == BenutzerRolle.SCHIESSSTAND_AUFSEHER) {
             actionsGrid.add(createActionButton("Eintragsverwaltung", VaadinIcon.RECORDS, "eintraege-verwaltung"));
         }
 
@@ -397,7 +397,6 @@ public class DashboardView extends VerticalLayout {
             case AUFSEHER -> "Aufseher";
             case SCHIESSSTAND_AUFSEHER -> "Schießstandaufseher";
             case SCHUETZE -> "Schütze";
-            default -> rolle.getBezeichnung();
         };
     }
 }

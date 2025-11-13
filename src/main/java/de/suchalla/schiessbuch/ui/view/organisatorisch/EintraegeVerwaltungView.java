@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
  * @version 1.0.1
  */
 @Route(value = "eintraege-verwaltung", layout = MainLayout.class)
-@PageTitle("Einträgsverwaltung | Digitales Schießbuch")
+@PageTitle("Eintragsverwaltung | Digitales Schießbuch")
 @RolesAllowed({"AUFSEHER", "SCHIESSSTAND_AUFSEHER", "VEREINS_CHEF", "ADMIN"})
 @PreserveOnRefresh
 @Slf4j
@@ -302,7 +302,6 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         layout.setSpacing(true);
         layout.setPadding(false);
 
-        // ComboBoxen für Schützen und Aufseher
         schuetzenComboBox.setPlaceholder("Alle Schützen");
         schuetzenComboBox.setWidth("250px");
         schuetzenComboBox.setClearButtonVisible(true);
@@ -313,7 +312,6 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         aufseherComboBox.setClearButtonVisible(true);
         aufseherComboBox.addValueChangeListener(e -> updateGrid());
 
-        // Datums-Filter
         vonDatum.setValue(LocalDate.now().minusMonths(3));
         vonDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
         vonDatum.setWidth("200px");
@@ -326,29 +324,23 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         filterButton.setIcon(new Icon(VaadinIcon.FILTER));
 
-        // PDF-Download mit SUCCESS Theme (grüner Button)
         pdfDownload = new Anchor(createPdfResource(), "");
         pdfDownload.getElement().setAttribute("download", true);
         Button pdfButton = new Button("PDF exportieren", new Icon(VaadinIcon.DOWNLOAD));
-        pdfButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+        pdfButton.addClassName("pdf-export-btn");
         pdfDownload.add(pdfButton);
 
-        // Filter-Zeilen
-        HorizontalLayout row1 = new HorizontalLayout(schuetzenComboBox, aufseherComboBox);
-        row1.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.END);
-        row1.setSpacing(true);
-        row1.getStyle().set("flex-wrap", "wrap");
+        // Alle Filter nebeneinander, responsive mit flex-wrap
+        HorizontalLayout filterRow = new HorizontalLayout(
+            schuetzenComboBox, aufseherComboBox, vonDatum, bisDatum, filterButton, pdfDownload
+        );
+        filterRow.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.END);
+        filterRow.setSpacing(true);
+        filterRow.setWidthFull();
+        filterRow.getStyle().set("flex-wrap", "wrap");
 
-        HorizontalLayout row2 = new HorizontalLayout(vonDatum, bisDatum, filterButton, pdfDownload);
-        row2.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.END);
-        row2.setSpacing(true);
-        row2.getStyle().set("flex-wrap", "wrap");
-
-        layout.add(row1, row2);
-
-        // Initial die Optionen laden
+        layout.add(filterRow);
         aktualisiereFilterOptionen();
-
         return layout;
     }
 
@@ -367,7 +359,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         if (aktuellerStatus != null) {
             alleEintraege = alleEintraege.stream()
                     .filter(e -> e.getStatus() == aktuellerStatus)
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         // Extrahiere eindeutige Schützennamen
@@ -375,7 +367,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                 .map(e -> e.getSchuetze().getVollstaendigerName())
                 .distinct()
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
         schuetzenComboBox.setItems(schuetzenNamen);
 
         // Extrahiere eindeutige Aufsehernamen (nur signierte/abgelehnte Einträge)
@@ -384,7 +376,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                 .map(e -> e.getAufseher().getVollstaendigerName())
                 .distinct()
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
         aufseherComboBox.setItems(aufseherNamen);
     }
 
@@ -466,7 +458,39 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
             layout.add(signierenButton, ablehnenButton);
         }
 
+        // Löschen-Button für alle Einträge
+        Button loeschenButton = new Button("Löschen", VaadinIcon.TRASH.create());
+        loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+        loeschenButton.addClickListener(e -> zeigeLoeschDialog(eintrag));
+        layout.add(loeschenButton);
+
         return layout;
+    }
+
+    private void zeigeLoeschDialog(SchiessnachweisEintrag eintrag) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Eintrag löschen");
+        dialog.add(new Paragraph("Möchten Sie diesen Eintrag wirklich löschen?"));
+        Button loeschenButton = new Button("Löschen", event -> {
+            deleteEintrag(eintrag);
+            dialog.close();
+        });
+        loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        Button abbrechenButton = new Button("Abbrechen", event -> dialog.close());
+        HorizontalLayout buttons = new HorizontalLayout(loeschenButton, abbrechenButton);
+        dialog.add(buttons);
+        dialog.open();
+    }
+
+    private void deleteEintrag(SchiessnachweisEintrag eintrag) {
+        try {
+            schiessnachweisService.loescheEintrag(eintrag.getId());
+            Notification.show("Eintrag erfolgreich gelöscht").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            updateGrid();
+        } catch (Exception e) {
+            Notification.show("Fehler beim Löschen: " + e.getMessage())
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
     }
 
     /**

@@ -7,7 +7,6 @@ import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.model.entity.Verein;
-import de.suchalla.schiessbuch.model.enums.EintragStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -108,10 +107,9 @@ public class PdfExportService {
 
             // Zentrierte Tabelle erstellen - schmalere Breite für Zentrierung
             float tableWidth = pageWidth - (2 * margin);
-            float tableMargin = margin;
 
             BaseTable table = new BaseTable(yPosition, yPosition - margin,
-                    tableMargin, tableMargin + tableWidth, margin, document, page, true, true);
+                    margin, margin + tableWidth, margin, document, page, true, true);
 
             // Header
             Row<PDPage> headerRow = table.createRow(20);
@@ -231,108 +229,6 @@ public class PdfExportService {
     }
 
     /**
-     * Exportiert Schießstand-Nachweise als PDF.
-     *
-     * @param schiesstandName Name des Schießstands
-     * @param schuetzeName Name des Schützen
-     * @param eintraege Liste der Einträge
-     * @param von Start-Datum
-     * @param bis End-Datum
-     * @return PDF als Byte-Array
-     * @throws IOException bei Fehlern
-     */
-    public byte[] exportiereSchiesstandNachweise(String schiesstandName, String schuetzeName,
-                                                  List<SchiessnachweisEintrag> eintraege,
-                                                  LocalDate von, LocalDate bis) throws IOException {
-        try (PDDocument document = new PDDocument()) {
-            PDPage page = new PDPage(PDRectangle.A4);
-            document.addPage(page);
-
-            float margin = 50;
-            float yPosition = page.getMediaBox().getHeight() - margin;
-
-            // Kopfzeile
-            try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
-                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 16);
-                contentStream.beginText();
-                contentStream.newLineAtOffset(margin, yPosition);
-                contentStream.showText("Schießstand-Nachweis");
-                contentStream.endText();
-
-                yPosition -= 30;
-                contentStream.setFont(PDType1Font.HELVETICA, 12);
-                contentStream.beginText();
-                contentStream.newLineAtOffset(margin, yPosition);
-                contentStream.showText("Schießstand: " + schiesstandName);
-                contentStream.endText();
-
-                yPosition -= 20;
-                contentStream.beginText();
-                contentStream.newLineAtOffset(margin, yPosition);
-                contentStream.showText("Schütze: " + schuetzeName);
-                contentStream.endText();
-
-                yPosition -= 20;
-                contentStream.beginText();
-                contentStream.newLineAtOffset(margin, yPosition);
-                contentStream.showText("Zeitraum: " + von.format(DATE_FORMATTER) + " - " + bis.format(DATE_FORMATTER));
-                contentStream.endText();
-
-                yPosition -= 30;
-            }
-
-            // Tabelle
-            BaseTable table = new BaseTable(yPosition, yPosition - margin,
-                    margin, page.getMediaBox().getWidth() - margin, margin, document, page, true, true);
-
-            // Header
-            Row<PDPage> headerRow = table.createRow(20);
-            Cell<PDPage> cell1 = headerRow.createCell(15, "Datum");
-            cell1.setFont(PDType1Font.HELVETICA_BOLD);
-            cell1.setFontSize(10);
-
-            Cell<PDPage> cell2 = headerRow.createCell(25, "Disziplin");
-            cell2.setFont(PDType1Font.HELVETICA_BOLD);
-            cell2.setFontSize(10);
-
-            Cell<PDPage> cell3 = headerRow.createCell(15, "Kaliber");
-            cell3.setFont(PDType1Font.HELVETICA_BOLD);
-            cell3.setFontSize(10);
-
-            Cell<PDPage> cell4 = headerRow.createCell(15, "Waffenart");
-            cell4.setFont(PDType1Font.HELVETICA_BOLD);
-            cell4.setFontSize(10);
-
-            Cell<PDPage> cell5 = headerRow.createCell(10, "Schüsse");
-            cell5.setFont(PDType1Font.HELVETICA_BOLD);
-            cell5.setFontSize(10);
-
-            Cell<PDPage> cell6 = headerRow.createCell(20, "Status");
-            cell6.setFont(PDType1Font.HELVETICA_BOLD);
-            cell6.setFontSize(10);
-
-            // Datenzeilen
-            for (SchiessnachweisEintrag eintrag : eintraege) {
-                Row<PDPage> row = table.createRow(15);
-                row.createCell(15, eintrag.getDatum().format(DATE_FORMATTER)).setFontSize(9);
-                row.createCell(25, eintrag.getDisziplin().getName()).setFontSize(9);
-                row.createCell(15, eintrag.getKaliber()).setFontSize(9);
-                row.createCell(15, eintrag.getWaffenart()).setFontSize(9);
-                row.createCell(10, eintrag.getAnzahlSchuesse() != null ?
-                        eintrag.getAnzahlSchuesse().toString() : "-").setFontSize(9);
-                row.createCell(20, getStatusText(eintrag.getStatus())).setFontSize(9);
-            }
-
-            table.draw();
-
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            document.save(outputStream);
-            log.info("Schießstand-PDF erstellt mit {} Einträgen", eintraege.size());
-            return outputStream.toByteArray();
-        }
-    }
-
-    /**
      * Exportiert Vereinsmitgliedschaften als PDF.
      *
      * @param verein Der Verein
@@ -441,14 +337,5 @@ public class PdfExportService {
             log.info("Mitgliedschafts-PDF erstellt für Verein {}", verein.getName());
             return outputStream.toByteArray();
         }
-    }
-
-    private String getStatusText(EintragStatus status) {
-        return switch (status) {
-            case SIGNIERT -> "Signiert";
-            case OFFEN -> "Offen";
-            case UNSIGNIERT -> "Unsigniert";
-            case ABGELEHNT -> "Abgelehnt";
-        };
     }
 }

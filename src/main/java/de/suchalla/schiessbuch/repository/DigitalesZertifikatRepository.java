@@ -55,6 +55,12 @@ public interface DigitalesZertifikatRepository extends JpaRepository<DigitalesZe
     List<DigitalesZertifikat> findAllWithDetails();
 
     /**
+     * Findet alle Zertifikate mit EAGER loading von Benutzer, Verein, Schießstand und Vereinsmitgliedschaften des Benutzers
+     */
+    @Query("SELECT z FROM DigitalesZertifikat z LEFT JOIN FETCH z.benutzer b LEFT JOIN FETCH b.vereinsmitgliedschaften LEFT JOIN FETCH z.verein LEFT JOIN FETCH z.schiesstand LEFT JOIN FETCH z.parentZertifikat")
+    List<DigitalesZertifikat> findAllWithDetailsAndMitgliedschaften();
+
+    /**
      * Prüft, ob ein Benutzer bereits ein Zertifikat hat
      */
     boolean existsByBenutzer(Benutzer benutzer);

@@ -13,98 +13,42 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextArea;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
-import de.suchalla.schiessbuch.model.entity.Verein;
-import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
-import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
-import de.suchalla.schiessbuch.repository.VereinRepository;
-import de.suchalla.schiessbuch.service.AktiveBenutzerService;
-import de.suchalla.schiessbuch.service.VerbandService;
-import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
+import de.suchalla.schiessbuch.service.BenutzerService;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * View für Mitgliederverwaltung eines Vereins (Admin-Ansicht).
+ * View für Benutzerverwaltung - zeigt alle Benutzer im System.
  *
  * @author Markus Suchalla
- * @version 1.0.4
+ * @version 1.1.0
  */
-@Route(value = "vereins/mitglieder", layout = MainLayout.class)
-@PageTitle("Mitglieder | Digitales Schießbuch")
-@RolesAllowed({"VEREINS_CHEF", "AUFSEHER", "SCHIESSSTAND_AUFSEHER", "ADMIN"})
+@Route(value = "admin/benutzer", layout = MainLayout.class)
+@PageTitle("Benutzerverwaltung | Digitales Schießbuch")
+@RolesAllowed({"ADMIN"})
 @Slf4j
-public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlParameter<String> {
+public class MitgliederVerwaltungView extends VerticalLayout {
 
-    private final VerbandService verbandService;
-    private final VereinsmitgliedschaftService mitgliedschaftService;
-    private final VereinRepository vereinRepository;
-    private final AktiveBenutzerService aktiveBenutzerService;
-    private final Grid<Vereinsmitgliedschaft> grid = new Grid<>(Vereinsmitgliedschaft.class, false);
+    private final BenutzerService benutzerService;
+    private final Grid<Benutzer> grid = new Grid<>(Benutzer.class, false);
     private Div emptyStateMessage;
-    private Long vereinId;
-    private Verein aktuellerVerein;
 
-    public MitgliederVerwaltungView(VerbandService verbandService,
-                                    VereinsmitgliedschaftService mitgliedschaftService,
-                                    VereinRepository vereinRepository,
-                                    AktiveBenutzerService aktiveBenutzerService) {
-        this.verbandService = verbandService;
-        this.mitgliedschaftService = mitgliedschaftService;
-        this.vereinRepository = vereinRepository;
-        this.aktiveBenutzerService = aktiveBenutzerService;
+    public MitgliederVerwaltungView(BenutzerService benutzerService) {
+        this.benutzerService = benutzerService;
 
         setSpacing(false);
         setPadding(false);
         setSizeFull();
         addClassName("view-container");
-    }
-
-    @Override
-    public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
-        Map<String, List<String>> params = event.getLocation().getQueryParameters().getParameters();
-
-        if (params.containsKey("vereinId")) {
-            try {
-                vereinId = Long.parseLong(params.get("vereinId").get(0));
-                aktuellerVerein = vereinRepository.findById(vereinId).orElse(null);
-            } catch (NumberFormatException e) {
-                createErrorContent("Ungültige Vereins-ID");
-                return;
-            }
-        }
-
-        if (aktuellerVerein == null) {
-            createErrorContent("Verein nicht gefunden.");
-            return;
-        }
 
         createContent();
         updateGrid();
-    }
-
-    private void createErrorContent(String errorMessage) {
-        VerticalLayout contentWrapper = new VerticalLayout();
-        contentWrapper.setSpacing(false);
-        contentWrapper.setPadding(false);
-        contentWrapper.addClassName("content-wrapper");
-
-        Div errorBox = new Div();
-        errorBox.addClassName("error-box");
-        errorBox.setWidthFull();
-
-        H2 errorTitle = new H2("Fehler");
-        Paragraph errorText = new Paragraph(errorMessage);
-
-        errorBox.add(errorTitle, errorText);
-        contentWrapper.add(errorBox);
-        add(contentWrapper);
     }
 
     private void createContent() {
@@ -119,7 +63,7 @@ public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlPa
         header.addClassName("gradient-header");
         header.setWidthFull();
 
-        H2 title = new H2("Mitgliederverwaltung - " + aktuellerVerein.getName());
+        H2 title = new H2("Benutzerverwaltung");
         title.getStyle().set("margin", "0");
 
         header.add(title);
@@ -134,7 +78,7 @@ public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlPa
         infoIcon.setSize("20px");
 
         Paragraph beschreibung = new Paragraph(
-                "Verwalten Sie die Mitglieder des Vereins. Genehmigen Sie Beitrittsanfragen, ernennen Sie Aufseher oder entfernen Sie Mitglieder."
+                "Verwalten Sie alle Benutzer im System. Sie können Passwörter ändern und Benutzer löschen."
         );
         beschreibung.getStyle()
                 .set("color", "var(--lumo-primary-text-color)")
@@ -142,27 +86,6 @@ public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlPa
 
         infoBox.add(infoIcon, beschreibung);
         contentWrapper.add(infoBox);
-
-        // Übersicht eingeloggte Mitglieder
-        VerticalLayout eingeloggteMitgliederLayout = new VerticalLayout();
-        eingeloggteMitgliederLayout.setSpacing(false);
-        eingeloggteMitgliederLayout.setPadding(false);
-        eingeloggteMitgliederLayout.addClassName("eingeloggte-mitglieder-wrapper");
-
-        H2 eingeloggteTitle = new H2("Aktuell eingeloggte Mitglieder");
-        eingeloggteTitle.getStyle().set("margin", "0");
-        eingeloggteMitgliederLayout.add(eingeloggteTitle);
-
-        Grid<Benutzer> eingeloggteGrid = new Grid<>(Benutzer.class, false);
-        eingeloggteGrid.setWidthFull();
-        eingeloggteGrid.addColumn(Benutzer::getId).setHeader("ID").setWidth("80px").setAutoWidth(true);
-        eingeloggteGrid.addColumn(b -> b.getVorname() + " " + b.getNachname()).setHeader("Name").setAutoWidth(true);
-        eingeloggteGrid.addColumn(Benutzer::getEmail).setHeader("E-Mail").setAutoWidth(true);
-        eingeloggteGrid.addColumn(b -> b.getRolle() != null ? b.getRolle().name() : "-").setHeader("Rolle").setAutoWidth(true);
-        eingeloggteGrid.setItems(aktiveBenutzerService.getEingeloggteBenutzer());
-
-        eingeloggteMitgliederLayout.add(eingeloggteGrid);
-        contentWrapper.add(eingeloggteMitgliederLayout);
 
         // Grid-Container mit weißem Hintergrund
         Div gridContainer = new Div();
@@ -189,7 +112,7 @@ public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlPa
         emptyIcon.setSize("48px");
         emptyIcon.getStyle().set("margin-bottom", "var(--lumo-space-m)");
 
-        Paragraph emptyText = new Paragraph("Noch keine Mitglieder vorhanden.");
+        Paragraph emptyText = new Paragraph("Keine Benutzer vorhanden.");
         emptyText.getStyle().set("margin", "0");
 
         emptyStateMessage.add(emptyIcon, emptyText);
@@ -211,7 +134,7 @@ public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlPa
         grid.addClassName("rounded-grid");
         grid.setColumnReorderingAllowed(true);
 
-        grid.addColumn(mitgliedschaft -> mitgliedschaft.getBenutzer().getId())
+        grid.addColumn(Benutzer::getId)
                 .setHeader("ID")
                 .setWidth("80px")
                 .setAutoWidth(true)
@@ -219,36 +142,26 @@ public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlPa
                 .setResizable(true)
                 .setClassNameGenerator(item -> "align-right");
 
-        grid.addColumn(mitgliedschaft -> mitgliedschaft.getBenutzer().getVollstaendigerName())
+        grid.addColumn(Benutzer::getVollstaendigerName)
                 .setHeader("Name")
                 .setAutoWidth(true)
                 .setFlexGrow(1)
                 .setResizable(true);
 
-        grid.addColumn(mitgliedschaft -> mitgliedschaft.getBenutzer().getEmail())
+        grid.addColumn(Benutzer::getEmail)
                 .setHeader("E-Mail")
                 .setAutoWidth(true)
                 .setFlexGrow(1)
                 .setResizable(true);
 
-        grid.addColumn(this::getRolleText)
+        grid.addColumn(b -> b.getRolle() != null ? b.getRolle().name() : "-")
                 .setHeader("Rolle")
                 .setAutoWidth(true)
                 .setFlexGrow(0)
                 .setResizable(true);
 
-        grid.addColumn(mitgliedschaft ->
-                        mitgliedschaft.getBeitrittDatum() != null ?
-                                mitgliedschaft.getBeitrittDatum().toString() : "-")
-                .setHeader("Beitrittsdatum")
-                .setWidth("140px")
-                .setAutoWidth(true)
-                .setFlexGrow(0)
-                .setResizable(true);
-
-        grid.addColumn(this::getStatusText)
-                .setHeader("Status")
-                .setWidth("120px")
+        grid.addColumn(b -> b.getErstelltAm() != null ? b.getErstelltAm().toLocalDate().toString() : "-")
+                .setHeader("Erstellt")
                 .setAutoWidth(true)
                 .setFlexGrow(0)
                 .setResizable(true);
@@ -256,7 +169,7 @@ public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlPa
         // Aktionen-Spalte
         grid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen")
-                .setWidth("280px")
+                .setWidth("240px")
                 .setAutoWidth(true)
                 .setFlexGrow(0)
                 .setResizable(false);
@@ -268,144 +181,58 @@ public class MitgliederVerwaltungView extends VerticalLayout implements HasUrlPa
         );
     }
 
-    private HorizontalLayout createActionButtons(Vereinsmitgliedschaft mitgliedschaft) {
+    private HorizontalLayout createActionButtons(Benutzer benutzer) {
         HorizontalLayout layout = new HorizontalLayout();
         layout.setSpacing(true);
         layout.getStyle().set("flex-wrap", "nowrap");
 
-        if (mitgliedschaft.getStatus() == MitgliedschaftStatus.BEANTRAGT) {
-            Button genehmigerButton = new Button("Genehmigen", VaadinIcon.CHECK.create());
-            genehmigerButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_SUCCESS);
-            genehmigerButton.addClickListener(e -> genehmigen(mitgliedschaft));
+        // Entferne Passwort-Ändern-Button
+        Button loeschenButton = new Button("Löschen", VaadinIcon.TRASH.create());
+        loeschenButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ERROR);
+        loeschenButton.addClickListener(e -> bestaetigeLoesch(benutzer));
 
-            Button ablehnenButton = new Button("Ablehnen", VaadinIcon.CLOSE.create());
-            ablehnenButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ERROR);
-            ablehnenButton.addClickListener(e -> zeigeAblehnungsDialog(mitgliedschaft));
-
-            layout.add(genehmigerButton, ablehnenButton);
-        } else if (mitgliedschaft.getStatus() == MitgliedschaftStatus.AKTIV) {
-            Button aufseherButton = new Button(
-                    Boolean.TRUE.equals(mitgliedschaft.getIstAufseher()) ? "Aufseher entfernen" : "Zu Aufseher ernennen");
-            aufseherButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
-            aufseherButton.addClickListener(e ->
-                    setzeAufseherStatus(mitgliedschaft, !Boolean.TRUE.equals(mitgliedschaft.getIstAufseher())));
-
-            Button entfernenButton = new Button("Entfernen", VaadinIcon.TRASH.create());
-            entfernenButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ERROR);
-            entfernenButton.addClickListener(e -> mitgliedEntfernen(mitgliedschaft));
-
-            layout.add(aufseherButton, entfernenButton);
-        }
-
+        layout.add(loeschenButton);
         return layout;
     }
 
-    private void genehmigen(Vereinsmitgliedschaft mitgliedschaft) {
-        try {
-            mitgliedschaftService.genehmigeAnfrage(mitgliedschaft.getId());
-            Notification.show("Beitrittsanfrage genehmigt")
-                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            updateGrid();
-        } catch (Exception e) {
-            log.error("Fehler beim Genehmigen", e);
-            Notification.show("Fehler: " + e.getMessage())
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-        }
-    }
+    private void bestaetigeLoesch(Benutzer benutzer) {
+        Dialog confirmDialog = new Dialog();
+        confirmDialog.setHeaderTitle("Benutzer löschen?");
 
-    private void zeigeAblehnungsDialog(Vereinsmitgliedschaft mitgliedschaft) {
-        Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Beitrittsanfrage ablehnen");
+        VerticalLayout layout = new VerticalLayout();
+        layout.add(new Paragraph("Möchten Sie den Benutzer " + benutzer.getVollstaendigerName() + " wirklich löschen?"));
+        layout.add(new Paragraph("Die Daten werden anonymisiert."));
 
-        VerticalLayout dialogLayout = new VerticalLayout();
-        TextArea grundField = new TextArea("Ablehnungsgrund");
-        grundField.setWidthFull();
-        grundField.setHeight("150px");
-
-        Button ablehnenButton = new Button("Ablehnen", e -> {
-            String grund = grundField.getValue();
+        Button loeschenButton = new Button("Ja, löschen", e -> {
             try {
-                if (grund != null && !grund.trim().isEmpty()) {
-                    mitgliedschaftService.lehneAnfrageAbMitGrund(mitgliedschaft.getId(), grund);
-                } else {
-                    mitgliedschaftService.lehneAnfrageAb(mitgliedschaft.getId());
-                }
-                Notification.show("Beitrittsanfrage abgelehnt")
+                benutzerService.loescheBenutzer(benutzer);
+                Notification.show("Benutzer gelöscht")
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                dialog.close();
+                confirmDialog.close();
                 updateGrid();
             } catch (Exception ex) {
-                log.error("Fehler beim Ablehnen", ex);
+                log.error("Fehler beim Löschen", ex);
                 Notification.show("Fehler: " + ex.getMessage())
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         });
-        ablehnenButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
 
-        Button abbrechenButton = new Button("Abbrechen", e -> dialog.close());
+        Button abbrechenButton = new Button("Abbrechen", e -> confirmDialog.close());
 
-        dialogLayout.add(grundField);
-        dialog.add(dialogLayout);
-        dialog.getFooter().add(abbrechenButton, ablehnenButton);
-        dialog.open();
-    }
-
-    private void setzeAufseherStatus(Vereinsmitgliedschaft mitgliedschaft, boolean istAufseher) {
-        try {
-            mitgliedschaftService.setzeAufseherStatus(mitgliedschaft.getId(), istAufseher);
-            String nachricht = istAufseher ? "Mitglied zu Aufseher ernannt" : "Aufseher-Status entzogen";
-            Notification.show(nachricht).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            updateGrid();
-        } catch (Exception e) {
-            log.error("Fehler beim Ändern des Aufseher-Status", e);
-            Notification.show("Fehler: " + e.getMessage())
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-        }
-    }
-
-    private void mitgliedEntfernen(Vereinsmitgliedschaft mitgliedschaft) {
-        try {
-            mitgliedschaftService.mitgliedEntfernen(mitgliedschaft.getId());
-            Notification.show("Mitglied aus Verein entfernt")
-                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            updateGrid();
-        } catch (Exception e) {
-            log.error("Fehler beim Entfernen", e);
-            Notification.show("Fehler: " + e.getMessage())
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-        }
+        confirmDialog.add(layout);
+        confirmDialog.getFooter().add(abbrechenButton, loeschenButton);
+        confirmDialog.open();
     }
 
     private void updateGrid() {
-        if (aktuellerVerein != null) {
-            List<Vereinsmitgliedschaft> mitglieder = mitgliedschaftService.findeAlleMitgliedschaften(aktuellerVerein);
-            grid.setItems(mitglieder);
-            grid.getDataProvider().refreshAll();
+        List<Benutzer> alleBenutzzer = benutzerService.findAlleBenutzer();
+        grid.setItems(alleBenutzzer);
+        grid.getDataProvider().refreshAll();
 
-            // Zeige/Verstecke Empty State Message
-            boolean isEmpty = mitglieder.isEmpty();
-            grid.setVisible(!isEmpty);
-            emptyStateMessage.setVisible(isEmpty);
-        }
-    }
-
-    private String getRolleText(Vereinsmitgliedschaft mitgliedschaft) {
-        if (Boolean.TRUE.equals(mitgliedschaft.getIstVereinschef())) {
-            return "Vereinschef ernennen";
-        } else if (Boolean.TRUE.equals(mitgliedschaft.getIstAufseher())) {
-            return "Aufseher ernennen";
-        }
-        return "Mitglied";
-    }
-
-    private String getStatusText(Vereinsmitgliedschaft mitgliedschaft) {
-        return switch (mitgliedschaft.getStatus()) {
-            case AKTIV -> "Aktiv";
-            case BEANTRAGT -> "Beantragt";
-            case ABGELEHNT -> "Abgelehnt";
-            case BEENDET -> "Beendet";
-            default -> "Unbekannt";
-        };
+        // Zeige/Verstecke Empty State Message
+        boolean isEmpty = alleBenutzzer.isEmpty();
+        grid.setVisible(!isEmpty);
+        emptyStateMessage.setVisible(isEmpty);
     }
 }
-

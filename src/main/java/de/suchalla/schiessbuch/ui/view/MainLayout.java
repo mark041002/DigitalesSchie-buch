@@ -38,7 +38,7 @@ import com.vaadin.flow.component.html.Span;
 @CssImport("./themes/buttons.css")
 @CssImport("./themes/animations.css")
 @CssImport("./themes/responsive.css")
-@CssImport("./themes/sidebar-fix.css")
+@CssImport("./themes/sidebar.css")
 @JsModule("./js/MainLayout-interactions.js")
 public class MainLayout extends AppLayout {
 
@@ -194,7 +194,7 @@ public class MainLayout extends AppLayout {
                         .set("word-wrap", "break-word");
 
                 // Eintragsverwaltung für Aufseher, Vereinschefs und Admins
-                vereinNav.addItem(createDebouncedSideNavItem("Eintragsverwaltung", EintraegeVerwaltungView.class,
+                vereinNav.addItem(createDebouncedSideNavItem(
                         VaadinIcon.RECORDS.create()));
 
                 if (currentUser.getVereinsmitgliedschaften().stream()
@@ -243,7 +243,7 @@ public class MainLayout extends AppLayout {
                         .set("word-wrap", "break-word");
 
                 // Eintragsverwaltung für Schießstandaufseher
-                schiesstandNav.addItem(createDebouncedSideNavItem("Eintragsverwaltung", EintraegeVerwaltungView.class,
+                schiesstandNav.addItem(createDebouncedSideNavItem(
                         VaadinIcon.RECORDS.create()));
 
                 // Schießstanddetails
@@ -369,8 +369,8 @@ public class MainLayout extends AppLayout {
     /**
      * Erstellt ein SideNavItem mit Debouncing-Schutz gegen mehrfaches Klicken.
      */
-    private SideNavItem createDebouncedSideNavItem(String label, Class<? extends com.vaadin.flow.component.Component> navigationTarget, Icon icon) {
-        SideNavItem item = new SideNavItem(label, navigationTarget, icon);
+    private SideNavItem createDebouncedSideNavItem(Icon icon) {
+        SideNavItem item = new SideNavItem("Eintragsverwaltung", EintraegeVerwaltungView.class, icon);
 
         // Füge JavaScript-basiertes Debouncing mit ausgelagerter Funktion hinzu
         item.getElement().executeJs("window.addNavigationDebounce(this, 500)");

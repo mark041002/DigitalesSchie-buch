@@ -38,10 +38,6 @@ public class Verband {
     @Column(length = 1000)
     private String beschreibung;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vereinschef_id")
-    private Benutzer vereinschef;
-
     @Column(name = "erstellt_am", nullable = false, updatable = false)
     private LocalDateTime erstelltAm;
 

@@ -256,20 +256,5 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
         }
     }
 
-    /**
-     * Gibt den deutschen Text für einen Schießstandtyp zurück.
-     */
-    private String getTypText(SchiesstandTyp typ) {
-        return switch (typ) {
-            case LUFTGEWEHR_10M -> "10m Luftgewehr/Luftpistole";
-            case PISTOLE_25M -> "25m Pistole";
-            case GEWEHR_50M -> "50m Gewehr";
-            case GEWEHR_100M -> "100m Gewehr";
-            case TRAP_SKEET -> "Trap/Skeet";
-            case VEREINSGEBUNDEN -> "Vereinsgebunden";
-            case GEWERBLICH -> "Gewerblich";
-            case SONSTIGES -> "Sonstiges";
-        };
-    }
 }
 

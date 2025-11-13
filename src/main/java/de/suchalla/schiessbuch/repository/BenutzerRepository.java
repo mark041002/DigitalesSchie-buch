@@ -28,14 +28,6 @@ public interface BenutzerRepository extends JpaRepository<Benutzer, Long> {
     Optional<Benutzer> findByEmail(String email);
 
     /**
-     * Findet einen Benutzer anhand des Reset-Tokens.
-     *
-     * @param token Das Reset-Token
-     * @return Optional mit Benutzer
-     */
-    Optional<Benutzer> findByResetToken(String token);
-
-    /**
      * Findet alle Benutzer mit einer bestimmten Rolle.
      *
      * @param rolle Die Benutzerrolle

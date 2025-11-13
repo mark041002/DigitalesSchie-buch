@@ -94,18 +94,6 @@ public class SignaturService {
             log.info("Rufe signiereEintrag() Service-Methode auf...");
             schiessnachweisService.signiereEintrag(eintrag.getId(), aufseher, signature);
 
-            log.info("Eintrag-Status nach signiereEintrag(): {}", eintrag.getStatus());
-            log.info("Eintrag.istSigniert: {}", eintrag.getIstSigniert());
-            log.info("Eintrag.zertifikat != null: {}", eintrag.getZertifikat() != null);
-
-            log.info("Speichere Eintrag in Datenbank...");
-            SchiessnachweisEintrag gespeicherterEintrag = eintragRepository.save(eintrag);
-
-            log.info("Eintrag gespeichert - ID: {}", gespeicherterEintrag.getId());
-            log.info("Gespeicherter Eintrag - Status: {}", gespeicherterEintrag.getStatus());
-            log.info("Gespeicherter Eintrag - Zertifikat ID: {}",
-                    gespeicherterEintrag.getZertifikat() != null ? gespeicherterEintrag.getZertifikat().getId() : "NULL");
-
             log.info("=== SIGNIERUNG ERFOLGREICH ===");
             log.info("Eintrag {} erfolgreich signiert mit Zertifikat-SN: {}", eintrag.getId(), aufseherZertifikat.getSeriennummer());
 
@@ -113,43 +101,6 @@ public class SignaturService {
             log.error("=== SIGNIERUNG FEHLGESCHLAGEN ===");
             log.error("Fehler beim Signieren des Eintrags", e);
             throw new RuntimeException("Eintrag konnte nicht signiert werden: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Verifiziert die Signatur eines Eintrags.
-     * Prüft, ob das Zertifikat zum Zeitpunkt der Signierung gültig war.
-     */
-    public boolean verifyEintrag(SchiessnachweisEintrag eintrag) {
-        try {
-            if (!eintrag.getIstSigniert() || eintrag.getDigitaleSignatur() == null || eintrag.getZertifikat() == null) {
-                log.warn("Eintrag {} ist nicht signiert", eintrag.getId());
-                return false;
-            }
-
-            // Prüfe, ob das Zertifikat zum Zeitpunkt der Signierung gültig war
-            LocalDateTime signiertAm = eintrag.getSigniertAm();
-            if (signiertAm != null && !zertifikatVerifizierungsService.warZertifikatGueltigAm(eintrag.getZertifikat(), signiertAm)) {
-                log.warn("Zertifikat war zum Signaturzeitpunkt {} nicht gültig", signiertAm);
-                return false;
-            }
-
-            // Daten rekonstruieren
-            String dataToVerify = buildSignatureData(eintrag);
-
-            // Signatur verifizieren
-            boolean valid = pkiService.verifySignature(
-                    dataToVerify,
-                    eintrag.getDigitaleSignatur(),
-                    eintrag.getZertifikat()
-            );
-
-            log.info("Signaturverifizierung für Eintrag {}: {}", eintrag.getId(), valid ? "GÜLTIG" : "UNGÜLTIG");
-            return valid;
-
-        } catch (Exception e) {
-            log.error("Fehler bei der Signaturverifizierung", e);
-            return false;
         }
     }
 

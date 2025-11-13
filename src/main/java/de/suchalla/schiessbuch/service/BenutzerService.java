@@ -8,10 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Service für Benutzer-Verwaltung.
@@ -31,10 +28,9 @@ public class BenutzerService {
      * Registriert einen neuen Benutzer.
      *
      * @param benutzer Der zu registrierende Benutzer
-     * @return Der gespeicherte Benutzer
      * @throws IllegalArgumentException wenn E-Mail bereits existiert
      */
-    public Benutzer registriereBenutzer(Benutzer benutzer) {
+    public void registriereBenutzer(Benutzer benutzer) {
         if (benutzerRepository.existsByEmail(benutzer.getEmail())) {
             throw new IllegalArgumentException("E-Mail bereits registriert");
         }
@@ -42,7 +38,7 @@ public class BenutzerService {
         benutzer.setPasswort(passwordEncoder.encode(benutzer.getPasswort()));
         benutzer.setRolle(BenutzerRolle.SCHUETZE);
 
-        return benutzerRepository.save(benutzer);
+        benutzerRepository.save(benutzer);
     }
 
     /**
@@ -55,16 +51,6 @@ public class BenutzerService {
         return benutzerRepository.findAll();
     }
 
-    /**
-     * Findet alle Benutzer mit einer bestimmten Rolle.
-     *
-     * @param rolle Die Benutzerrolle
-     * @return Liste der Benutzer mit dieser Rolle
-     */
-    @Transactional(readOnly = true)
-    public List<Benutzer> findByRolle(BenutzerRolle rolle) {
-        return benutzerRepository.findByRolle(rolle);
-    }
     /**
      * Aktualisiert einen Benutzer.
      *
@@ -91,16 +77,9 @@ public class BenutzerService {
     /**
      * Löscht einen Benutzer und alle personenbezogenen Daten.
      *
-     * @param benutzerId Die Benutzer-ID
+     * @param benutzer Der Benutzer
      */
-    public void loescheBenutzer(Long benutzerId) {
-        Benutzer benutzer = benutzerRepository.findById(benutzerId)
-                .orElseThrow(() -> new IllegalArgumentException("Benutzer nicht gefunden"));
-
-        // Alle persönlichen Daten anonymisieren statt komplett zu löschen
-        benutzer.setVorname("Gelöscht");
-        benutzer.setNachname("Gelöscht");
-        benutzer.setEmail("geloescht_" + benutzerId + "@deleted.local");
-        benutzerRepository.save(benutzer);
+    public void loescheBenutzer(Benutzer benutzer) {
+        benutzerRepository.delete(benutzer);
     }
 }

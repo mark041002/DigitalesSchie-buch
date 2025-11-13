@@ -2,25 +2,71 @@
    Digitales Schießbuch - Zentrale Styles
    ========================================================================== */
 
-/* View Container */
+/* Einheitlicher Container für Views */
 .view-container {
-    overflow-y: auto;
-    overflow-x: hidden;
+    background: linear-gradient(135deg,
+    var(--lumo-contrast-5pct) 0%,
+    var(--lumo-contrast-10pct) 50%,
+    var(--lumo-contrast-5pct) 100%);
+    min-height: calc(100vh - 60px);
+    padding: var(--lumo-space-m);
 }
 
-/* Content Wrapper - zentrierte Inhalte */
+/* Content-Wrapper für zentrierte Inhalte */
 .content-wrapper {
     max-width: 1400px;
     margin: 0 auto;
-    padding: var(--lumo-space-l);
-    box-sizing: border-box;
     width: 100%;
 }
 
-@media (max-width: 768px) {
-    .content-wrapper {
-        padding: var(--lumo-space-m);
-    }
+/* Grid/Table Container mit grauem Hintergrund */
+.table-container {
+    background-color: var(--lumo-base-color);
+    border-radius: var(--lumo-border-radius-l);
+    padding: var(--lumo-space-m);
+    box-shadow: var(--lumo-box-shadow-s);
+}
+
+/* Form Container mit grauem Hintergrund */
+.form-container {
+    background-color: var(--lumo-base-color);
+    border-radius: var(--lumo-border-radius-l);
+    padding: var(--lumo-space-l);
+    box-shadow: var(--lumo-box-shadow-s);
+}
+
+/* Glassmorphism-Effekt */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Moderne Divider */
+.divider {
+    height: 1px;
+    background: linear-gradient(90deg,
+    transparent,
+    var(--lumo-contrast-20pct),
+    transparent);
+    margin: var(--lumo-space-m) 0;
+}
+
+/* Zebra-Streifen für bessere Lesbarkeit */
+.striped-layout > *:nth-child(even) {
+    background-color: var(--lumo-contrast-5pct);
+}
+
+/* Tooltip-Style */
+[title] {
+    position: relative;
+}
+
+/* Focus-Ring für Accessibility */
+*:focus-visible {
+    outline: 2px solid var(--lumo-primary-color);
+    outline-offset: 2px;
+    border-radius: var(--lumo-border-radius-s);
 }
 
 /* Header mit Gradient */
@@ -130,18 +176,6 @@
 .success-box h3 {
     color: var(--lumo-success-text-color);
     margin-top: 0;
-}
-
-/* Form Container */
-.form-container {
-    width: 100%;
-    background: var(--lumo-base-color);
-    padding: var(--lumo-space-l);
-    border-radius: var(--lumo-border-radius-l);
-    box-shadow: var(--lumo-box-shadow-s);
-    border: 1px solid var(--lumo-contrast-10pct);
-    margin-bottom: var(--lumo-space-l);
-    box-sizing: border-box;
 }
 
 /* Grid Container */
@@ -543,5 +577,3 @@ vaadin-dialog-overlay::part(footer) {
     align-items: center;
     gap: 0.5em;
 }
-
-

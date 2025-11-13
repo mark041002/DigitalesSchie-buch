@@ -10,19 +10,14 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
-/**
- * Repository für Vereinsmitgliedschaft-Entitäten.
- *
- * @author Markus Suchalla
- * @version 1.0.0
- */
 @Repository
 public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmitgliedschaft, Long> {
 
     /**
-     * Findet alle Mitgliedschaften eines Benutzers.
+     * Findet die (optionale) Mitgliedschaft eines Benutzers.
+     *
+     * Hinweis: Ein Benutzer kann mehrere Mitgliedschaften haben. Diese Methode gibt alle Mitgliedschaften zurück.
      *
      * @param benutzer Der Benutzer
      * @return Liste der Mitgliedschaften
@@ -66,5 +61,3 @@ public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmi
            "WHERE m.verein = :verein")
     List<Vereinsmitgliedschaft> findByVereinWithDetails(@Param("verein") Verein verein);
 }
-
-

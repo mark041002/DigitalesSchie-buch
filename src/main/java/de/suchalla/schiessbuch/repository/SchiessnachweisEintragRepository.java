@@ -67,43 +67,6 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
     @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "aufseher", "zertifikat"})
     List<SchiessnachweisEintrag> findBySchiesstandAndStatus(Schiesstand schiesstand, EintragStatus status);
 
-    /**
-     * Findet alle EintrÃ¤ge eines SchÃ¼tzen mit eager loading aller Beziehungen.
-     *
-     * @param schuetze Der SchÃ¼tze
-     * @return Liste der EintrÃ¤ge
-     */
-    @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
-            "LEFT JOIN FETCH e.schuetze " +
-            "LEFT JOIN FETCH e.disziplin d " +
-            "LEFT JOIN FETCH e.schiesstand s " +
-            "LEFT JOIN FETCH e.aufseher " +
-            "LEFT JOIN FETCH e.zertifikat " +
-            "WHERE e.schuetze = :schuetze")
-    List<SchiessnachweisEintrag> findBySchuetzeWithDetails(@Param("schuetze") Benutzer schuetze);
-
-    /**
-     * Findet alle EintrÃ¤ge eines SchieÃŸstands fÃ¼r einen bestimmten SchÃ¼tzen.
-     *
-     * @param schiesstand Der SchieÃŸstand
-     * @param schuetze Der SchÃ¼tze
-     * @param von Start-Datum
-     * @param bis End-Datum
-     * @return Liste der EintrÃ¤ge
-     */
-    @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
-            "LEFT JOIN FETCH e.schuetze " +
-            "LEFT JOIN FETCH e.disziplin " +
-            "LEFT JOIN FETCH e.schiesstand " +
-            "LEFT JOIN FETCH e.aufseher " +
-            "LEFT JOIN FETCH e.zertifikat " +
-            "WHERE e.schiesstand = :schiesstand " +
-            "AND e.schuetze = :schuetze AND e.datum BETWEEN :von AND :bis ORDER BY e.datum DESC")
-    List<SchiessnachweisEintrag> findBySchiesstandUndSchuetzeImZeitraum(
-            @Param("schiesstand") Schiesstand schiesstand,
-            @Param("schuetze") Benutzer schuetze,
-            @Param("von") LocalDate von,
-            @Param("bis") LocalDate bis);
 
     /**
      * ZÃ¤hlt EintrÃ¤ge eines SchÃ¼tzen mit bestimmtem Status.
@@ -145,22 +108,5 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
             "LEFT JOIN FETCH e.zertifikat " +
             "WHERE e.id = :id")
     Optional<SchiessnachweisEintrag> findByIdWithVerein(@Param("id") Long id);
-
-    /**
-     * Findet alle unsignierten EintrÃ¤ge (OFFEN oder UNSIGNIERT) fÃ¼r eine Liste von SchieÃŸstÃ¤nden.
-     *
-     * @param schiesstaende Liste der SchieÃŸstÃ¤nde
-     * @return Liste der unsignierten EintrÃ¤ge
-     */
-    @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
-            "LEFT JOIN FETCH e.schuetze " +
-            "LEFT JOIN FETCH e.disziplin " +
-            "LEFT JOIN FETCH e.schiesstand s " +
-            "LEFT JOIN FETCH e.aufseher " +
-            "LEFT JOIN FETCH e.zertifikat " +
-            "WHERE s IN :schiesstaende " +
-            "AND (e.status = 'OFFEN' OR e.status = 'UNSIGNIERT') " +
-            "ORDER BY e.datum DESC")
-    List<SchiessnachweisEintrag> findUnsignierteEintraegeForSchiesstaende(@Param("schiesstaende") List<Schiesstand> schiesstaende);
 
 }

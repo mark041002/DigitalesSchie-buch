@@ -2,7 +2,6 @@ package de.suchalla.schiessbuch.service;
 
 import de.suchalla.schiessbuch.model.entity.Disziplin;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
-import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.repository.DisziplinRepository;
 import de.suchalla.schiessbuch.repository.SchiesstandRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,25 +34,16 @@ public class DisziplinService {
         disziplinRepository.save(disziplin);
     }
 
-    /**
-     * Findet alle Disziplinen.
-     *
-     * @return Liste aller Disziplinen
-     */
-    @Transactional(readOnly = true)
-    public List<Disziplin> findeAlleDisziplinen() {
-        return disziplinRepository.findAllWithVerband();
-    }
 
     /**
      * Findet alle Disziplinen eines Verbands.
      *
-     * @param verband Der Verband
+     * @param verbandid Die Verband-ID
      * @return Liste der Disziplinen
      */
     @Transactional(readOnly = true)
-    public List<Disziplin> findeDisziplinenVonVerband(Verband verband) {
-        return disziplinRepository.findByVerband(verband);
+    public List<Disziplin> findeDisziplinenVonVerband(Long verbandid) {
+        return disziplinRepository.findByVerbandId(verbandid);
     }
 
     /**
@@ -99,10 +89,9 @@ public class DisziplinService {
      * Aktualisiert einen Schießstand.
      *
      * @param schiesstand Der zu aktualisierende Schießstand
-     * @return Der aktualisierte Schießstand
      */
-    public Schiesstand aktualisiereSchiesstand(Schiesstand schiesstand) {
-        return schiesstandRepository.save(schiesstand);
+    public void aktualisiereSchiesstand(Schiesstand schiesstand) {
+        schiesstandRepository.save(schiesstand);
     }
 
     /**

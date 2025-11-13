@@ -69,3 +69,15 @@ vaadin-grid::part(row):hover {
     background-color: var(--lumo-primary-color-10pct);
 }
 
+/* PDF-Export-Button: dunkelgrün mit weißer Schrift */
+.pdf-export-btn {
+  background: #218838 !important;
+  color: white !important;
+  border-radius: var(--lumo-border-radius-m, 8px);
+  border: none;
+}
+
+.pdf-export-btn:hover {
+  background: #17692c !important;
+  color: white !important;
+}

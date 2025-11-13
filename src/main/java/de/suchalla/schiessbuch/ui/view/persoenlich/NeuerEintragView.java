@@ -34,7 +34,6 @@ import jakarta.annotation.security.PermitAll;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * View zum Erstellen neuer Schießnachweis-Einträge.
@@ -47,7 +46,6 @@ import java.util.stream.Collectors;
 @PermitAll
 public class NeuerEintragView extends VerticalLayout {
 
-    private final SecurityService securityService;
     private final SchiessnachweisService schiessnachweisService;
     private final DisziplinService disziplinService;
     private final VereinsmitgliedschaftService vereinsmitgliedschaftService;
@@ -64,11 +62,10 @@ public class NeuerEintragView extends VerticalLayout {
 
     private final Benutzer currentUser;
 
-    public NeuerEintragView(SecurityService securityService,
-                            SchiessnachweisService schiessnachweisService,
+    public NeuerEintragView(SchiessnachweisService schiessnachweisService,
                             DisziplinService disziplinService,
-                            VereinsmitgliedschaftService vereinsmitgliedschaftService) {
-        this.securityService = securityService;
+                            VereinsmitgliedschaftService vereinsmitgliedschaftService,
+                            SecurityService securityService) {
         this.schiessnachweisService = schiessnachweisService;
         this.disziplinService = disziplinService;
         this.vereinsmitgliedschaftService = vereinsmitgliedschaftService;
@@ -233,10 +230,8 @@ public class NeuerEintragView extends VerticalLayout {
             // Aktiviere Disziplin und lade passende Disziplinen
             disziplin.setEnabled(true);
 
-            // Filtere Disziplinen nach ausgewähltem Verband
-            List<Disziplin> verfuegbareDisziplinen = disziplinService.findeAlleDisziplinen().stream()
-                    .filter(d -> d.getVerband() != null && d.getVerband().getId().equals(verband.getValue().getId()))
-                    .collect(Collectors.toList());
+            // Lade Disziplinen direkt für den ausgewählten Verband
+            List<Disziplin> verfuegbareDisziplinen = disziplinService.findeDisziplinenVonVerband(verband.getValue().getId());
 
             disziplin.setItems(verfuegbareDisziplinen);
             disziplin.setPlaceholder("Disziplin auswählen");

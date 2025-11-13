@@ -407,7 +407,7 @@ public class ProfilView extends VerticalLayout {
         dialog.setConfirmButtonTheme("error primary");
         dialog.addConfirmListener(event -> {
             try {
-                benutzerService.loescheBenutzer(currentUser.getId());
+                benutzerService.loescheBenutzer(currentUser);
                 Notification.show("Account wurde gelöscht. Sie werden abgemeldet.")
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 securityService.logout();

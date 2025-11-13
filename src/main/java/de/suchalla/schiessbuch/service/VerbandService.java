@@ -32,14 +32,13 @@ public class VerbandService {
      * Erstellt einen neuen Verband.
      *
      * @param verband Der zu erstellende Verband
-     * @return Der gespeicherte Verband
      * @throws IllegalArgumentException wenn Verbandsname bereits existiert
      */
-    public Verband erstelleVerband(Verband verband) {
+    public void erstelleVerband(Verband verband) {
         if (verbandRepository.existsByName(verband.getName())) {
             throw new IllegalArgumentException("Verband mit diesem Namen existiert bereits");
         }
-        return verbandRepository.save(verband);
+        verbandRepository.save(verband);
     }
 
     /**
@@ -128,15 +127,6 @@ public class VerbandService {
                 .forEach(m -> vereinsmitgliedschaftService.mitgliedEntfernen(m.getId()));
     }
 
-    /**
-     * Aktualisiert einen Verband.
-     *
-     * @param verband Der zu aktualisierende Verband
-     * @return Der aktualisierte Verband
-     */
-    public Verband aktualisiereVerband(Verband verband) {
-        return verbandRepository.save(verband);
-    }
 
     /**
      * Löscht einen Verband.
@@ -201,27 +191,6 @@ public class VerbandService {
     @Transactional(readOnly = true)
     public List<Verein> findeVereineVonVerband(Verband verband) {
         return vereinRepository.findByVerbaendeContaining(verband);
-    }
-
-    /**
-     * Findet Vereine nach Namen.
-     *
-     * @param name Suchbegriff
-     * @return Liste der Vereine
-     */
-    @Transactional(readOnly = true)
-    public List<Verein> sucheVereine(String name) {
-        return vereinRepository.findByNameContainingIgnoreCase(name);
-    }
-
-    /**
-     * Aktualisiert einen Verein.
-     *
-     * @param verein Der zu aktualisierende Verein
-     * @return Der aktualisierte Verein
-     */
-    public Verein aktualisiereVerein(Verein verein) {
-        return vereinRepository.save(verein);
     }
 
     /**

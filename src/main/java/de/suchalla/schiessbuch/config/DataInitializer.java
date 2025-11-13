@@ -47,8 +47,8 @@ public class DataInitializer implements CommandLineRunner {
         try {
             // Admin-Benutzer erstellen
             Benutzer admin = Benutzer.builder()
-                    .email("admin@schiessbuch.de")
-                    .passwort(passwordEncoder.encode("admin123"))
+                    .email("admin@test.de")
+                    .passwort(passwordEncoder.encode("test123"))
                     .vorname("System")
                     .nachname("Administrator")
                     .rolle(BenutzerRolle.ADMIN)

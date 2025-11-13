@@ -57,6 +57,13 @@ public class ZertifikateView extends VerticalLayout {
     }
 
     private void createContent() {
+        // Content-Wrapper für zentrierte Inhalte
+        VerticalLayout contentWrapper = new VerticalLayout();
+        contentWrapper.setSpacing(false);
+        contentWrapper.setPadding(false);
+        contentWrapper.setSizeFull();
+        contentWrapper.addClassName("content-wrapper");
+
         // Header-Bereich
         Div header = new Div();
         header.addClassName("gradient-header");
@@ -66,7 +73,7 @@ public class ZertifikateView extends VerticalLayout {
         title.getStyle().set("margin", "0");
 
         header.add(title);
-        add(header);
+        contentWrapper.add(header);
 
         // Info-Box mit modernem Styling
         Div infoBox = new Div();
@@ -84,7 +91,7 @@ public class ZertifikateView extends VerticalLayout {
                 .set("margin", "0");
 
         infoBox.add(infoIcon, beschreibung);
-        add(infoBox);
+        contentWrapper.add(infoBox);
 
         // Grid-Container mit weißem Hintergrund
         Div gridContainer = new Div();
@@ -123,13 +130,6 @@ public class ZertifikateView extends VerticalLayout {
         grid.setColumnReorderingAllowed(true);
         // Höhe wird dynamisch in updateGrid() gesetzt
 
-        // Entfernte Spalten: ID, Widerrufen am, Widerrufsgrund
-        // grid.addColumn(DigitalesZertifikat::getId)
-        //         .setHeader("ID")
-        //         .setWidth("80px")
-        //         .setAutoWidth(true)
-        //         .setFlexGrow(0)
-        //         .setClassNameGenerator(item -> "align-right");
         grid.addColumn(zertifikat -> {
             if (zertifikat.getBenutzer() != null) {
                 return zertifikat.getBenutzer().getVollstaendigerName();
@@ -177,15 +177,7 @@ public class ZertifikateView extends VerticalLayout {
                 .setFlexGrow(0);
 
         grid.addColumn(zertifikat -> zertifikat.getWiderrufenAm() != null ? formatDatum(zertifikat.getWiderrufenAm()) : "-");
-        // Entfernte Spalten:
-        // grid.addColumn(zertifikat -> zertifikat.getWiderrufenAm() != null ? formatDatum(zertifikat.getWiderrufenAm()) : "-")
-        //         .setHeader("Widerrufen am")
-        //         .setAutoWidth(true)
-        //         .setFlexGrow(0);
-        // grid.addColumn(zertifikat -> zertifikat.getWiderrufsGrund() != null ? zertifikat.getWiderrufsGrund() : "-")
-        //         .setHeader("Widerrufsgrund")
-        //         .setAutoWidth(true)
-        //         .setFlexGrow(1);
+
         grid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen")
                 .setWidth("120px")
@@ -199,8 +191,9 @@ public class ZertifikateView extends VerticalLayout {
                         "document.head.appendChild(style);"
         );
 
-        gridContainer.add(emptyStateMessage, grid);
-        add(gridContainer);
+        gridContainer.add(grid, emptyStateMessage);
+        contentWrapper.add(gridContainer);
+        add(contentWrapper);
     }
 
     private HorizontalLayout createActionButtons(DigitalesZertifikat zertifikat) {
@@ -350,7 +343,7 @@ public class ZertifikateView extends VerticalLayout {
             return;
         }
 
-        Benutzer aktuellerBenutzer = benutzerRepository.findByEmail(username).orElse(null);
+        Benutzer aktuellerBenutzer = benutzerRepository.findByEmailWithMitgliedschaften(username).orElse(null);
         if (aktuellerBenutzer == null) {
             grid.setItems(List.of());
             grid.setVisible(false);
@@ -370,14 +363,14 @@ public class ZertifikateView extends VerticalLayout {
         List<DigitalesZertifikat> zertifikate = new ArrayList<>();
 
         if (isAdmin) {
-            zertifikate = zertifikatRepository.findAllWithDetails();
+            zertifikate = zertifikatRepository.findAllWithDetailsAndMitgliedschaften();
         } else if (isVereinschef) {
             List<Long> vereinsIds = aktuellerBenutzer.getVereinsmitgliedschaften().stream()
                     .filter(vm -> Boolean.TRUE.equals(vm.getIstVereinschef()))
                     .map(vm -> vm.getVerein().getId())
                     .toList();
             if (!vereinsIds.isEmpty()) {
-                List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetails();
+                List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetailsAndMitgliedschaften();
                 for (DigitalesZertifikat z : alleZertifikate) {
                     if (z.getVerein() != null && vereinsIds.contains(z.getVerein().getId())
                         && "VEREIN".equals(z.getZertifikatsTyp())) {
@@ -392,7 +385,7 @@ public class ZertifikateView extends VerticalLayout {
                 }
             }
         } else if (isAufseher) {
-            List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetails();
+            List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetailsAndMitgliedschaften();
             for (DigitalesZertifikat z : alleZertifikate) {
                 if (z.getBenutzer() != null
                     && z.getBenutzer().getId().equals(aktuellerBenutzer.getId())
@@ -401,7 +394,7 @@ public class ZertifikateView extends VerticalLayout {
                 }
             }
         } else if (isSchiesstandAufseher) {
-            List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetails();
+            List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetailsAndMitgliedschaften();
             for (DigitalesZertifikat z : alleZertifikate) {
                 if (z.getBenutzer() != null
                     && z.getBenutzer().getId().equals(aktuellerBenutzer.getId())

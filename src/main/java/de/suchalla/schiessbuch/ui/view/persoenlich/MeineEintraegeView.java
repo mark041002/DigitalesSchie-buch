@@ -2,7 +2,6 @@ package de.suchalla.schiessbuch.ui.view.persoenlich;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.*;
@@ -13,17 +12,16 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
-import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.PdfExportService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
-import de.suchalla.schiessbuch.service.SchiesstandService;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.PermitAll;
 
@@ -44,25 +42,22 @@ public class MeineEintraegeView extends VerticalLayout {
 
     private final SchiessnachweisService schiessnachweisService;
     private final PdfExportService pdfExportService;
-    private final SchiesstandService schiesstandService;
 
     private final Grid<SchiessnachweisEintrag> grid = new Grid<>(SchiessnachweisEintrag.class, false);
     private final DatePicker vonDatum = new DatePicker("Von");
     private final DatePicker bisDatum = new DatePicker("Bis");
     private Div emptyStateMessage;
-
     private final Benutzer currentUser;
-
-    private final Select<String> statusFilter = new Select<>();
-    private final ComboBox<Schiesstand> schiessstandFilter = new ComboBox<>();
+    private Tab alleTab;
+    private Tab unsigniertAbgelehntTab;
+    private Tab signiertTab;
+    private Tab aktuellerTab;
 
     public MeineEintraegeView(SecurityService securityService,
                               SchiessnachweisService schiessnachweisService,
-                              PdfExportService pdfExportService,
-                              SchiesstandService schiesstandService) {
+                              PdfExportService pdfExportService) {
         this.schiessnachweisService = schiessnachweisService;
         this.pdfExportService = pdfExportService;
-        this.schiesstandService = schiesstandService;
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
         setSpacing(false);
@@ -122,7 +117,20 @@ public class MeineEintraegeView extends VerticalLayout {
         infoBox.add(infoIcon, beschreibung);
         contentWrapper.add(infoBox);
 
-        // Filter-Bereich mit modernem Styling - alles nebeneinander in einem Container
+        // Tabs für Status-Filter
+        alleTab = new Tab("Alle");
+        unsigniertAbgelehntTab = new Tab("Unsigniert/Abgelehnt");
+        signiertTab = new Tab("Signiert");
+        aktuellerTab = alleTab;
+        Tabs tabs = new Tabs(alleTab, unsigniertAbgelehntTab, signiertTab);
+        tabs.setWidthFull();
+        tabs.addSelectedChangeListener(event -> {
+            aktuellerTab = event.getSelectedTab();
+            updateGrid();
+        });
+        contentWrapper.add(tabs);
+
+        // Filter-Bereich
         Div filterBox = new Div();
         filterBox.addClassName("filter-box");
         filterBox.setWidthFull();
@@ -140,20 +148,6 @@ public class MeineEintraegeView extends VerticalLayout {
         bisDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
         bisDatum.setWidth("200px");
 
-        // Status-Filter
-        statusFilter.setLabel("Status");
-        statusFilter.setItems("Alle", "Signiert", "Unsigniert");
-        statusFilter.setValue("Alle");
-        statusFilter.setWidth("160px");
-
-        // Schießstand-Filter
-        schiessstandFilter.setLabel("Schießstand");
-        schiessstandFilter.setWidth("200px");
-        List<Schiesstand> schiessstaende = schiesstandService.findAll();
-        schiessstandFilter.setItems(schiessstaende);
-        schiessstandFilter.setItemLabelGenerator(Schiesstand::getName);
-        schiessstandFilter.setPlaceholder("Alle");
-
         // Filter-Button
         Button filterButton = new Button("Filtern", new Icon(VaadinIcon.FILTER));
         filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -163,11 +157,11 @@ public class MeineEintraegeView extends VerticalLayout {
         Anchor pdfDownload = new Anchor(createPdfResource(), "");
         pdfDownload.getElement().setAttribute("download", true);
         Button pdfButton = new Button("PDF exportieren", new Icon(VaadinIcon.DOWNLOAD));
-        pdfButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+        pdfButton.addClassName("pdf-export-btn");
         pdfDownload.add(pdfButton);
 
         // Alles in einem HorizontalLayout nebeneinander
-        HorizontalLayout filterLayout = new HorizontalLayout(vonDatum, bisDatum, statusFilter, schiessstandFilter, filterButton, pdfDownload);
+        HorizontalLayout filterLayout = new HorizontalLayout(vonDatum, bisDatum, filterButton, pdfDownload);
         filterLayout.setAlignItems(FlexComponent.Alignment.END);
         filterLayout.setSpacing(true);
         filterLayout.setWidthFull();
@@ -211,10 +205,6 @@ public class MeineEintraegeView extends VerticalLayout {
                 .setHeader("Ergebnis")
                 .setAutoWidth(true)
                 .setClassNameGenerator(item -> "align-right");
-
-        grid.addColumn(eintrag -> eintrag.getSchiesstand().getName())
-                .setHeader("Schießstand")
-                .setAutoWidth(true);
 
         grid.addComponentColumn(this::createStatusBadge)
                 .setHeader("Status")
@@ -298,27 +288,22 @@ public class MeineEintraegeView extends VerticalLayout {
         if (currentUser != null) {
             LocalDate von = vonDatum.getValue();
             LocalDate bis = bisDatum.getValue();
-            String status = statusFilter.getValue();
-            Schiesstand schiessstand = schiessstandFilter.getValue();
-
             List<SchiessnachweisEintrag> eintraege = schiessnachweisService
                     .findeEintraegeImZeitraum(currentUser, von, bis);
 
-            // Filteroptionen dynamisch aktualisieren
-            updateFilterOptions(eintraege);
-
-            // Status-Filter anwenden
-            if (status != null && !status.isEmpty()) {
+            // Tab-Filter anwenden
+            if (aktuellerTab == signiertTab) {
                 eintraege = eintraege.stream()
-                        .filter(e -> getStatusText(e.getStatus()).equals(status))
+                        .filter(e -> e.getStatus() == de.suchalla.schiessbuch.model.enums.EintragStatus.SIGNIERT)
+                        .toList();
+            } else if (aktuellerTab == unsigniertAbgelehntTab) {
+                eintraege = eintraege.stream()
+                        .filter(e -> e.getStatus() == de.suchalla.schiessbuch.model.enums.EintragStatus.UNSIGNIERT
+                                || e.getStatus() == de.suchalla.schiessbuch.model.enums.EintragStatus.ABGELEHNT
+                                || e.getStatus() == de.suchalla.schiessbuch.model.enums.EintragStatus.OFFEN)
                         .toList();
             }
-            // Schießstand-Filter anwenden
-            if (schiessstand != null) {
-                eintraege = eintraege.stream()
-                        .filter(e -> e.getSchiesstand().equals(schiessstand))
-                        .toList();
-            }
+            // Bei 'Alle' keine Statusfilterung
             grid.setItems(eintraege);
 
             // Zeige/Verstecke Empty State Message
@@ -334,27 +319,6 @@ public class MeineEintraegeView extends VerticalLayout {
      * @param eintraege Die Liste der Einträge
      */
     private void updateFilterOptions(List<SchiessnachweisEintrag> eintraege) {
-        // Status-Optionen
-        List<String> statusOptions = eintraege.stream()
-                .map(e -> getStatusText(e.getStatus()))
-                .distinct()
-                .sorted()
-                .toList();
-        statusFilter.setItems(statusOptions);
-        if (!statusOptions.contains(statusFilter.getValue())) {
-            statusFilter.setValue(statusOptions.isEmpty() ? null : statusOptions.get(0));
-        }
-
-        // Schießstand-Optionen
-        List<Schiesstand> schiesstandOptions = eintraege.stream()
-                .map(SchiessnachweisEintrag::getSchiesstand)
-                .distinct()
-                .sorted((a, b) -> a.getName().compareToIgnoreCase(b.getName()))
-                .toList();
-        schiessstandFilter.setItems(schiesstandOptions);
-        if (!schiesstandOptions.contains(schiessstandFilter.getValue())) {
-            schiessstandFilter.setValue(schiesstandOptions.isEmpty() ? null : schiesstandOptions.get(0));
-        }
     }
 
     /**

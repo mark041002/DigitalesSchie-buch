@@ -15,7 +15,7 @@
 
 /* Content Wrapper - zentrierte Inhalte */
 .content-wrapper {
-    max-width: 1400px;
+    max-width: 100%;
     margin: 0 auto;
     padding: var(--lumo-space-l);
     box-sizing: border-box;
@@ -35,7 +35,6 @@
     color: var(--lumo-primary-contrast-color);
     padding: var(--lumo-space-l);
     border-radius: var(--lumo-border-radius-l);
-    margin-bottom: var(--lumo-space-l);
     box-shadow: var(--lumo-box-shadow-m);
     box-sizing: border-box;
 }

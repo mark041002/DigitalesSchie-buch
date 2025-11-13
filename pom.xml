@@ -174,9 +174,6 @@
             </plugin>
         </plugins>
     </build>
-</project>
-
-
     <profiles>
         <profile>
             <id>production</id>
@@ -205,4 +202,8 @@
             </build>
         </profile>
     </profiles>
+</project>
+
+
+
 

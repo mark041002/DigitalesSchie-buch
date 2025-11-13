@@ -169,42 +169,7 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
             .set("margin-top", "0")
             .set("margin-bottom", "var(--lumo-space-m)");
 
-        MemoryBuffer buffer = new MemoryBuffer();
-        Upload upload = new Upload(buffer);
-        upload.setAcceptedFileTypes(".csv");
-        upload.setMaxFiles(1);
-        upload.setWidthFull();
-        upload.setDropLabel(new Paragraph("CSV-Datei hier ablegen oder auswählen"));
-        upload.addSucceededListener(event -> {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(buffer.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                int count = 0;
-                while ((line = reader.readLine()) != null) {
-                    if (line.trim().isEmpty() || line.toLowerCase().startsWith("name")) continue; // Überschrift oder leer
-                    String[] parts = line.split(",");
-                    if (parts.length < 1) continue;
-                    String name = parts[0].trim();
-                    String beschreibung = parts.length > 1 ? parts[1].trim() : "";
-                    if (!name.isEmpty()) {
-                        try {
-                            Disziplin disziplin = Disziplin.builder()
-                                    .name(name)
-                                    .beschreibung(beschreibung)
-                                    .verband(aktuellerVerband)
-                                    .build();
-                            disziplinService.erstelleDisziplin(disziplin);
-                            count++;
-                        } catch (Exception ex) {
-                            Notification.show("Fehler beim Import: " + ex.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
-                        }
-                    }
-                }
-                Notification.show(count + " Disziplin(en) importiert.").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                updateGrid();
-            } catch (Exception ex) {
-                Notification.show("Fehler beim Lesen der Datei: " + ex.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
-            }
-        });
+        Upload upload = getUpload();
 
         uploadContainer.add(csvTitle, csvInfo, upload);
         contentWrapper.add(uploadContainer);
@@ -265,6 +230,46 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
         gridContainer.add(emptyStateMessage, grid);
         contentWrapper.add(gridContainer);
         add(contentWrapper);
+    }
+
+    private Upload getUpload() {
+        MemoryBuffer buffer = new MemoryBuffer();
+        Upload upload = new Upload(buffer);
+        upload.setAcceptedFileTypes(".csv");
+        upload.setMaxFiles(1);
+        upload.setWidthFull();
+        upload.setDropLabel(new Paragraph("CSV-Datei hier ablegen oder auswählen"));
+        upload.addSucceededListener(event -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(buffer.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                int count = 0;
+                while ((line = reader.readLine()) != null) {
+                    if (line.trim().isEmpty() || line.toLowerCase().startsWith("name")) continue; // Überschrift oder leer
+                    String[] parts = line.split(",");
+                    if (parts.length < 1) continue;
+                    String name = parts[0].trim();
+                    String beschreibung = parts.length > 1 ? parts[1].trim() : "";
+                    if (!name.isEmpty()) {
+                        try {
+                            Disziplin disziplin = Disziplin.builder()
+                                    .name(name)
+                                    .beschreibung(beschreibung)
+                                    .verband(aktuellerVerband)
+                                    .build();
+                            disziplinService.erstelleDisziplin(disziplin);
+                            count++;
+                        } catch (Exception ex) {
+                            Notification.show("Fehler beim Import: " + ex.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        }
+                    }
+                }
+                Notification.show(count + " Disziplin(en) importiert.").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                updateGrid();
+            } catch (Exception ex) {
+                Notification.show("Fehler beim Lesen der Datei: " + ex.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+        });
+        return upload;
     }
 
     private HorizontalLayout createActionButtons(Disziplin disziplin) {
@@ -329,7 +334,7 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
     }
 
     private void updateGrid() {
-        List<Disziplin> disziplinen = disziplinService.findeAlleDisziplinen();
+        List<Disziplin> disziplinen = disziplinService.findeDisziplinenVonVerband(verbandId);
         grid.setItems(disziplinen);
         grid.getDataProvider().refreshAll();
 

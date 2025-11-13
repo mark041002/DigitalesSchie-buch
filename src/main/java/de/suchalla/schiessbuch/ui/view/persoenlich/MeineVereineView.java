@@ -315,7 +315,8 @@ public class MeineVereineView extends VerticalLayout {
             return verlassenButton;
         } else if (mitgliedschaft.getStatus() == de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus.VERLASSEN
                 || mitgliedschaft.getStatus() == de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus.ABGELEHNT
-                || mitgliedschaft.getStatus() == de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus.BEENDET) {
+                || mitgliedschaft.getStatus() == de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus.BEENDET
+                || mitgliedschaft.getStatus() == de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus.BEANTRAGT) {
             Button loeschenButton = new Button("Löschen", new Icon(VaadinIcon.TRASH));
             loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
             loeschenButton.getElement().setAttribute("title", "Eintrag endgültig löschen");
