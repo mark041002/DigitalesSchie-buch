@@ -2,36 +2,11 @@
    Digitales Schießbuch - Zentrale Styles
    ========================================================================== */
 
-/* Einheitlicher Container für Views */
-.view-container {
-    background: linear-gradient(135deg,
-    var(--lumo-contrast-5pct) 0%,
-    var(--lumo-contrast-10pct) 50%,
-    var(--lumo-contrast-5pct) 100%);
-    min-height: calc(100vh - 60px);
-    padding: var(--lumo-space-m);
-}
-
-/* Content-Wrapper für zentrierte Inhalte */
-.content-wrapper {
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
-}
-
 /* Grid/Table Container mit grauem Hintergrund */
 .table-container {
     background-color: var(--lumo-base-color);
     border-radius: var(--lumo-border-radius-l);
     padding: var(--lumo-space-m);
-    box-shadow: var(--lumo-box-shadow-s);
-}
-
-/* Form Container mit grauem Hintergrund */
-.form-container {
-    background-color: var(--lumo-base-color);
-    border-radius: var(--lumo-border-radius-l);
-    padding: var(--lumo-space-l);
     box-shadow: var(--lumo-box-shadow-s);
 }
 
@@ -178,23 +153,6 @@
     margin-top: 0;
 }
 
-/* Grid Container */
-.grid-container {
-    width: 100%;
-    background: var(--lumo-base-color);
-    padding: var(--lumo-space-l);
-    border-radius: var(--lumo-border-radius-l);
-    box-shadow: var(--lumo-box-shadow-s);
-    border: 1px solid var(--lumo-contrast-10pct);
-    box-sizing: border-box;
-}
-
-/* Rounded Grid */
-.rounded-grid {
-    border-radius: var(--lumo-border-radius-m);
-    overflow: hidden;
-}
-
 /* Stats Grid - für Dashboard */
 .stats-grid {
     display: grid;
@@ -307,19 +265,6 @@
 .card:hover {
     transform: translateY(-2px);
     box-shadow: var(--lumo-box-shadow-m);
-}
-
-/* Align Right - für Grid-Spalten */
-.align-right {
-    text-align: right;
-}
-
-/* Button Container */
-.button-container {
-    display: flex;
-    gap: var(--lumo-space-s);
-    flex-wrap: wrap;
-    margin-top: var(--lumo-space-m);
 }
 
 /* Button für neuen Eintrag - schlicht grün, Hover weiß */
@@ -545,15 +490,6 @@ vaadin-dialog-overlay::part(footer) {
 }
 
 /* Schnellzugriff-Buttons - Responsive Flexbox-Styles */
-.quick-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--lumo-space-m);
-    justify-content: center;
-    align-items: stretch;
-    width: 100%;
-    margin-bottom: var(--lumo-space-l);
-}
 
 /* Badge Farben für Status */
 .badge-success {

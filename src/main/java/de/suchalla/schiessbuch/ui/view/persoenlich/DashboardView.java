@@ -170,7 +170,7 @@ public class DashboardView extends VerticalLayout {
                         createStatCard("Einträge zum Signieren", String.valueOf(offeneEintraege),
                                 VaadinIcon.CLIPBOARD_CHECK, "var(--lumo-error-color)", "eintraege-verwaltung?tab=unsigniert"),
                         createStatCard("Beitrittsanfragen", String.valueOf(beitrittsanfragen),
-                                VaadinIcon.USERS, "var(--lumo-primary-color)", "vereinsmitglieder"),
+                                VaadinIcon.USERS, "var(--lumo-primary-color)", "mitgliedsverwaltung"),
                         createStatCard("Rolle", getRollenText(user.getRolle()),
                                 VaadinIcon.USER_STAR, "var(--lumo-success-color)", null)
                 );

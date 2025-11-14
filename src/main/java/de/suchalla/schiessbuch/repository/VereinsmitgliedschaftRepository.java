@@ -61,4 +61,18 @@ public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmi
            "LEFT JOIN FETCH m.verein " +
            "WHERE m.verein = :verein")
     List<Vereinsmitgliedschaft> findByVereinWithDetails(@Param("verein") Verein verein);
+
+    // Finde Vereinsmitgliedschaften, bei denen das Mitglied als Vereinschef markiert ist
+    @Query("SELECT DISTINCT m FROM Vereinsmitgliedschaft m " +
+           "LEFT JOIN FETCH m.benutzer " +
+           "LEFT JOIN FETCH m.verein " +
+           "WHERE m.verein = :verein AND m.istVereinschef = true")
+    List<Vereinsmitgliedschaft> findByVereinAndIstVereinschefTrue(@Param("verein") Verein verein);
+
+    // Finde Vereinsmitgliedschaften, bei denen das Mitglied als Aufseher markiert ist
+    @Query("SELECT DISTINCT m FROM Vereinsmitgliedschaft m " +
+           "LEFT JOIN FETCH m.benutzer " +
+           "LEFT JOIN FETCH m.verein " +
+           "WHERE m.verein = :verein AND m.istAufseher = true")
+    List<Vereinsmitgliedschaft> findByVereinAndIstAufseherTrue(@Param("verein") Verein verein);
 }

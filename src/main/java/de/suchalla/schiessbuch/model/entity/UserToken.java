@@ -1,0 +1,41 @@
+package de.suchalla.schiessbuch.model.entity;
+
+import de.suchalla.schiessbuch.model.enums.UserTokenTyp;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Setter
+@Getter
+@Table(name = "user_token")
+public class UserToken {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true, length = 128)
+    private String token;
+
+    @Column(name = "ablaufdatum", nullable = false)
+    private LocalDateTime ablaufdatum;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "typ", nullable = false)
+    private UserTokenTyp typ;
+
+    @OneToOne
+    @JoinColumn(name = "benutzer_id", nullable = false)
+    private Benutzer benutzer;
+
+    public UserToken() {}
+
+    public UserToken(String token, LocalDateTime ablaufdatum, UserTokenTyp typ, Benutzer benutzer) {
+        this.token = token;
+        this.ablaufdatum = ablaufdatum;
+        this.typ = typ;
+        this.benutzer = benutzer;
+    }
+}

@@ -49,10 +49,10 @@ public class DigitalesZertifikat {
     private String issuerDN;
 
     @NotBlank(message = "Zertifikat PEM darf nicht leer sein")
-    @Column(name = "zertifikat_pem", nullable = false)
+    @Column(name = "zertifikat_pem", nullable = false, columnDefinition = "text")
     private String zertifikatPEM;
 
-    @Column(name = "private_key_pem")
+    @Column(name = "private_key_pem", columnDefinition = "text")
     private String privateKeyPEM;
 
     @NotNull(message = "Gültig ab darf nicht leer sein")

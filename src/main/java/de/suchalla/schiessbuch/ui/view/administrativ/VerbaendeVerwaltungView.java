@@ -4,6 +4,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
@@ -161,7 +162,7 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
                 .setWidth("80px")
                 .setAutoWidth(true)
                 .setFlexGrow(0)
-                .setClassNameGenerator(item -> "align-right");
+                .setTextAlign(ColumnTextAlign.END);
 
         grid.addColumn(Verband::getName)
                 .setHeader("Name")
@@ -180,12 +181,6 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
                 .setAutoWidth(true)
                 .setFlexGrow(0);
 
-        // CSS für rechtsbündige Ausrichtung
-        grid.getElement().executeJs(
-                "const style = document.createElement('style');" +
-                        "style.textContent = '.align-right { text-align: right; }';" +
-                        "document.head.appendChild(style);"
-        );
 
         gridContainer.add(emptyStateMessage, grid);
         contentWrapper.add(gridContainer);

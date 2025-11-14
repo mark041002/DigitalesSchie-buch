@@ -1,8 +1,11 @@
 package de.suchalla.schiessbuch.service;
 
 import de.suchalla.schiessbuch.model.entity.Benutzer;
+import de.suchalla.schiessbuch.model.entity.UserToken;
 import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
+import de.suchalla.schiessbuch.model.enums.UserTokenTyp;
 import de.suchalla.schiessbuch.repository.BenutzerRepository;
+import de.suchalla.schiessbuch.repository.UserTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ public class BenutzerService {
 
     private final BenutzerRepository benutzerRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserTokenRepository userTokenRepository;
 
     /**
      * Registriert einen neuen Benutzer.
@@ -81,5 +85,63 @@ public class BenutzerService {
      */
     public void loescheBenutzer(Benutzer benutzer) {
         benutzerRepository.delete(benutzer);
+    }
+
+    /**
+     * Erstellt einen Token für die E-Mail-Bestätigung.
+     */
+    public String erstelleVerifizierungsToken(Benutzer benutzer) {
+        String token = java.util.UUID.randomUUID().toString();
+        UserToken userToken = new UserToken(token, java.time.LocalDateTime.now().plusDays(1), UserTokenTyp.VERIFICATION, benutzer);
+        userTokenRepository.save(userToken);
+        return token;
+    }
+
+    /**
+     * Bestätigt die E-Mail-Adresse anhand des Tokens.
+     */
+    public boolean bestaetigeEmail(String token) {
+        UserToken userToken = userTokenRepository.findByToken(token).orElse(null);
+        if (userToken != null && userToken.getTyp() == UserTokenTyp.VERIFICATION) {
+            if (userToken.getAblaufdatum().isAfter(java.time.LocalDateTime.now())) {
+                Benutzer benutzer = userToken.getBenutzer();
+                benutzer.setEmailVerifiziert(true);
+                userTokenRepository.delete(userToken);
+                benutzerRepository.save(benutzer);
+                return true;
+            } else {
+                userTokenRepository.delete(userToken);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Erstellt einen Token für Passwort-Reset.
+     */
+    public String erstellePasswortResetToken(Benutzer benutzer) {
+        String token = java.util.UUID.randomUUID().toString();
+        UserToken userToken = new UserToken(token, java.time.LocalDateTime.now().plusHours(2), UserTokenTyp.PASSWORD_RESET, benutzer);
+        userTokenRepository.save(userToken);
+        return token;
+    }
+
+    /**
+     * Setzt das Passwort anhand eines gültigen Reset-Tokens zurück.
+     */
+    public boolean resetPasswortMitToken(String token, String neuesPasswort) {
+        UserToken userToken = userTokenRepository.findByToken(token).orElse(null);
+        if (userToken != null && userToken.getTyp() == UserTokenTyp.PASSWORD_RESET) {
+            if (userToken.getAblaufdatum().isAfter(java.time.LocalDateTime.now())) {
+                Benutzer benutzer = userToken.getBenutzer();
+                benutzer.setPasswort(passwordEncoder.encode(neuesPasswort));
+                userTokenRepository.delete(userToken);
+                benutzerRepository.save(benutzer);
+                return true;
+            } else {
+                userTokenRepository.delete(userToken);
+            }
+        }
+        return false;
     }
 }

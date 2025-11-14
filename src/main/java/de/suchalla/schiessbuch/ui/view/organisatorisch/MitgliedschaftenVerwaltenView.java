@@ -289,7 +289,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     }
 
     /**
-     * Aktualisiert das Filter-Layout je nach ausgewÃ¤hltem Tab.
+     * Aktualisiert das Filter-Layout je nach ausgewähltem Tab.
      */
     private void updateFilterLayout(boolean showDateFilters) {
         if (filterLayout != null) {
@@ -398,7 +398,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     }
 
     /**
-     * Zeigt einen Dialog zur Ablehnung mit BegrÃ¼ndung.
+     * Zeigt einen Dialog zur Ablehnung mit Begründung.
      */
     private void zeigeAblehnungsDialog(Vereinsmitgliedschaft anfrage) {
         Dialog dialog = new Dialog();

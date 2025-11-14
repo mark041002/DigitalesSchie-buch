@@ -6,6 +6,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
@@ -170,7 +171,7 @@ public class VereineVerwaltungView extends VerticalLayout {
                 .setWidth("80px")
                 .setAutoWidth(true)
                 .setFlexGrow(0)
-                .setClassNameGenerator(item -> "align-right");
+                .setTextAlign(ColumnTextAlign.END);
         grid.addColumn(Verein::getName)
                 .setHeader("Name")
                 .setAutoWidth(true)
@@ -188,7 +189,7 @@ public class VereineVerwaltungView extends VerticalLayout {
                 .setWidth("120px")
                 .setAutoWidth(true)
                 .setFlexGrow(0)
-                .setClassNameGenerator(item -> "align-right");
+                .setTextAlign(ColumnTextAlign.END);
         grid.addColumn(verein -> verein.getVerbaende() != null && !verein.getVerbaende().isEmpty()
                 ? verein.getVerbaende().stream()
                     .map(Verband::getName)

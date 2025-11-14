@@ -4,6 +4,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
@@ -19,7 +20,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
-import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.VerbandService;
@@ -27,6 +27,8 @@ import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.PermitAll;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -42,6 +44,9 @@ public class MeineVereineView extends VerticalLayout {
 
     private final VereinsmitgliedschaftService mitgliedschaftService;
     private final VerbandService verbandService;
+
+    // Formatter für Beitrittsdatum
+    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private final Grid<Vereinsmitgliedschaft> grid = new Grid<>(Vereinsmitgliedschaft.class, false);
 
@@ -126,26 +131,43 @@ public class MeineVereineView extends VerticalLayout {
                 .setAutoWidth(true)
                 .setFlexGrow(1);
 
-        grid.addColumn(mitgliedschaft -> mitgliedschaft.getVerein().getVerbaende() != null && !mitgliedschaft.getVerein().getVerbaende().isEmpty()
-                ? mitgliedschaft.getVerein().getVerbaende().stream()
-                    .map(Verband::getName)
-                    .reduce((a, b) -> a + ", " + b)
-                    .orElse("")
-                : "")
-                .setHeader("Verbände")
-                .setAutoWidth(true);
+        // (Verbände-Spalte entfernt; ein Verein kann mehreren Verbänden angehören)
 
-        grid.addComponentColumn(this::createRolleBadge)
+        // Rolle als einfache Textspalte (nicht als ComponentColumn mit Div/Span)
+        grid.addColumn(mitgliedschaft -> {
+            if (mitgliedschaft == null) return "";
+            if (Boolean.TRUE.equals(mitgliedschaft.getIstVereinschef())) return "Vereinschef";
+            else if (Boolean.TRUE.equals(mitgliedschaft.getIstAufseher())) return "Aufseher";
+            else return "Schütze";
+        })
                 .setHeader("Rolle")
-                .setAutoWidth(true);
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.START);
 
-        grid.addColumn(Vereinsmitgliedschaft::getBeitrittDatum)
+        // Beitrittsdatum formatiert als dd.MM.yyyy
+        grid.addColumn(mitgliedschaft -> {
+            if (mitgliedschaft == null) return "Unbekannt";
+            LocalDate d = mitgliedschaft.getBeitrittDatum();
+            return d == null ? "Unbekannt" : d.format(dateFormatter);
+        })
                 .setHeader("Beitrittsdatum")
-                .setAutoWidth(true);
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.START);
 
-        grid.addComponentColumn(this::createStatusBadge)
+        // Status als einfache Textspalte (nicht als ComponentColumn mit Div/Span)
+        grid.addColumn(mitgliedschaft -> {
+            if (mitgliedschaft == null || mitgliedschaft.getStatus() == null) return "Unbekannt";
+            return switch (mitgliedschaft.getStatus()) {
+                case AKTIV -> "Aktiv";
+                case BEANTRAGT -> "Beantragt";
+                case ABGELEHNT -> "Abgelehnt";
+                case BEENDET -> "Beendet";
+                case VERLASSEN -> "Verlassen";
+            };
+        })
                 .setHeader("Status")
-                .setAutoWidth(true);
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.START);
 
         grid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen")
@@ -175,74 +197,6 @@ public class MeineVereineView extends VerticalLayout {
         add(contentWrapper);
     }
 
-    /**
-     * Erstellt ein Badge für die Rolle.
-     */
-    private Span createRolleBadge(Vereinsmitgliedschaft mitgliedschaft) {
-        Span badge = new Span();
-        String text;
-
-        if (mitgliedschaft.getIstVereinschef()) {
-            text = "Vereinschef";
-        } else if (mitgliedschaft.getIstAufseher()) {
-            text = "Aufseher";
-        } else {
-            text = "Schütze";
-        }
-
-        badge.setText(text);
-        badge.addClassName("badge");
-        badge.getStyle()
-                .set("display", "inline-flex")
-                .set("align-items", "center");
-
-        return badge;
-    }
-
-    /**
-     * Erstellt ein Badge für den Status.
-     */
-    private Span createStatusBadge(Vereinsmitgliedschaft mitgliedschaft) {
-        Span badge = new Span();
-        String text;
-        String cssClass;
-
-        switch (mitgliedschaft.getStatus()) {
-            case AKTIV -> {
-                text = "Aktiv";
-                cssClass = "badge-success";
-            }
-            case BEANTRAGT -> {
-                text = "Beantragt";
-                cssClass = "badge-warning";
-            }
-            case ABGELEHNT -> {
-                text = "Abgelehnt";
-                cssClass = "badge-error";
-            }
-            case BEENDET -> {
-                text = "Beendet";
-                cssClass = "badge-error";
-            }
-            case VERLASSEN -> {
-                text = "Verlassen";
-                cssClass = "badge-error";
-            }
-            default -> {
-                text = "Unbekannt";
-                cssClass = "badge";
-            }
-        }
-
-        badge.setText(text);
-        badge.addClassName("badge");
-        badge.addClassName(cssClass);
-        badge.getStyle()
-                .set("display", "inline-flex")
-                .set("align-items", "center");
-
-        return badge;
-    }
 
     /**
      * Zeigt den Dialog für den Vereinsbeitritt mit Verbandsauswahl.

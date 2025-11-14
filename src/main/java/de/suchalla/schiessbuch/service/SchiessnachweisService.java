@@ -60,7 +60,27 @@ public class SchiessnachweisService {
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintrag> findeEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
-        return eintragRepository.findBySchuetzeAndDatumBetween(schuetze, von, bis);
+        // Nutze die sichere Query mit JOIN FETCH, damit Schiesstand und Verein geladen werden
+        List<SchiessnachweisEintrag> result = eintragRepository.findBySchuetzeAndDatumBetweenWithVerein(schuetze, von, bis);
+        // Touch Verein-Name, um sicher zu gehen, dass die Proxy-Objekte initialisiert sind
+        result.forEach(e -> {
+            if (e.getSchiesstand() != null && e.getSchiesstand().getVerein() != null) {
+                e.getSchiesstand().getVerein().getName();
+            }
+        });
+        return result;
+    }
+
+    @Transactional(readOnly = true)
+    public List<SchiessnachweisEintrag> findeEintraegeFuerSchuetze(Benutzer schuetze) {
+        // EntityGraph für findBySchuetze wurde aktualisiert, das lädt ebenfalls Schiesstand.verein
+        List<SchiessnachweisEintrag> result = eintragRepository.findBySchuetze(schuetze);
+        result.forEach(e -> {
+            if (e.getSchiesstand() != null && e.getSchiesstand().getVerein() != null) {
+                e.getSchiesstand().getVerein().getName();
+            }
+        });
+        return result;
     }
 
     /**
@@ -73,8 +93,14 @@ public class SchiessnachweisService {
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintrag> findeSignierteEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
-        return eintragRepository.findBySchuetzeAndDatumBetweenAndStatus(
+        List<SchiessnachweisEintrag> result = eintragRepository.findBySchuetzeAndDatumBetweenAndStatusWithVerein(
                 schuetze, von, bis, EintragStatus.SIGNIERT);
+        result.forEach(e -> {
+            if (e.getSchiesstand() != null && e.getSchiesstand().getVerein() != null) {
+                e.getSchiesstand().getVerein().getName();
+            }
+        });
+        return result;
     }
 
     /**
@@ -85,7 +111,13 @@ public class SchiessnachweisService {
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintrag> findeUnsignierteEintraege(Schiesstand schiesstand) {
-        return eintragRepository.findBySchiesstandAndStatus(schiesstand, EintragStatus.UNSIGNIERT);
+        List<SchiessnachweisEintrag> result = eintragRepository.findBySchiesstandAndStatusWithVerein(schiesstand, EintragStatus.UNSIGNIERT);
+        result.forEach(e -> {
+            if (e.getSchiesstand() != null && e.getSchiesstand().getVerein() != null) {
+                e.getSchiesstand().getVerein().getName();
+            }
+        });
+        return result;
     }
 
     /**
@@ -96,7 +128,13 @@ public class SchiessnachweisService {
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintrag> findeEintraegeAnSchiesstand(Schiesstand schiesstand) {
-        return eintragRepository.findBySchiesstand(schiesstand);
+        List<SchiessnachweisEintrag> result = eintragRepository.findBySchiesstandWithVerein(schiesstand);
+        result.forEach(e -> {
+            if (e.getSchiesstand() != null && e.getSchiesstand().getVerein() != null) {
+                e.getSchiesstand().getVerein().getName();
+            }
+        });
+        return result;
     }
 
     /**

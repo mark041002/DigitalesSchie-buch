@@ -112,9 +112,12 @@
     min-height: 400px;
 }
 
-/* Align Right - für Grid-Spalten */
-.align-right {
-    text-align: right;
+
+/* Force Vaadin grid cells and header cells to be left-aligned by default */
+vaadin-grid::part(cell),
+vaadin-grid::part(header-cell),
+vaadin-grid::part(row):not([part~="details"]) ::slotted(*) {
+    text-align: left;
 }
 
 /* Button Container */
@@ -149,4 +152,3 @@
         max-width: 100%;
     }
 }
-

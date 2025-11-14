@@ -2,7 +2,9 @@ package de.suchalla.schiessbuch.ui.view.persoenlich;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
@@ -23,11 +25,16 @@ import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.PdfExportService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
+import de.suchalla.schiessbuch.service.VereinService;
 import jakarta.annotation.security.PermitAll;
 
 import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.TreeSet;
 
 /**
  * View für die Anzeige der eigenen Schießnachweis-Einträge.
@@ -42,6 +49,7 @@ public class MeineEintraegeView extends VerticalLayout {
 
     private final SchiessnachweisService schiessnachweisService;
     private final PdfExportService pdfExportService;
+    private final VereinService vereinService;
 
     private final Grid<SchiessnachweisEintrag> grid = new Grid<>(SchiessnachweisEintrag.class, false);
     private final DatePicker vonDatum = new DatePicker("Von");
@@ -52,12 +60,15 @@ public class MeineEintraegeView extends VerticalLayout {
     private Tab unsigniertAbgelehntTab;
     private Tab signiertTab;
     private Tab aktuellerTab;
+    private ComboBox<String> vereinFilter;
 
     public MeineEintraegeView(SecurityService securityService,
                               SchiessnachweisService schiessnachweisService,
-                              PdfExportService pdfExportService) {
+                              PdfExportService pdfExportService,
+                              VereinService vereinService) {
         this.schiessnachweisService = schiessnachweisService;
         this.pdfExportService = pdfExportService;
+        this.vereinService = vereinService;
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
         setSpacing(false);
@@ -140,13 +151,17 @@ public class MeineEintraegeView extends VerticalLayout {
                 .set("padding", "var(--lumo-space-m)")
                 .set("margin-bottom", "var(--lumo-space-m)");
 
-        vonDatum.setValue(LocalDate.now().minusMonths(3));
-        vonDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
+        // Datum-Filter standardmäßig leer
         vonDatum.setWidth("200px");
 
-        bisDatum.setValue(LocalDate.now());
-        bisDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
         bisDatum.setWidth("200px");
+
+        // Vereinsfilter (anfangs leer -> zeigt alle)
+        vereinFilter = new ComboBox<>("Verein");
+        vereinFilter.setWidth("250px");
+        vereinFilter.setPlaceholder(""); // leer anzeigen, damit alle selektiert werden
+        vereinFilter.setAllowCustomValue(false);
+        vereinFilter.addValueChangeListener(e -> updateGrid());
 
         // Filter-Button
         Button filterButton = new Button("Filtern", new Icon(VaadinIcon.FILTER));
@@ -157,11 +172,11 @@ public class MeineEintraegeView extends VerticalLayout {
         Anchor pdfDownload = new Anchor(createPdfResource(), "");
         pdfDownload.getElement().setAttribute("download", true);
         Button pdfButton = new Button("PDF exportieren", new Icon(VaadinIcon.DOWNLOAD));
-        pdfButton.addClassName("pdf-export-btn");
+        pdfButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
         pdfDownload.add(pdfButton);
 
         // Alles in einem HorizontalLayout nebeneinander
-        HorizontalLayout filterLayout = new HorizontalLayout(vonDatum, bisDatum, filterButton, pdfDownload);
+        HorizontalLayout filterLayout = new HorizontalLayout(vonDatum, bisDatum, vereinFilter, filterButton, pdfDownload);
         filterLayout.setAlignItems(FlexComponent.Alignment.END);
         filterLayout.setSpacing(true);
         filterLayout.setWidthFull();
@@ -188,6 +203,16 @@ public class MeineEintraegeView extends VerticalLayout {
                 .setAutoWidth(true)
                 .setFlexGrow(1);
 
+        // Vereinsspalte anzeigen (über Schießstand -> Verein)
+        grid.addColumn(eintrag -> {
+            if (eintrag.getSchiesstand() != null && eintrag.getSchiesstand().getVerein() != null) {
+                return eintrag.getSchiesstand().getVerein().getName();
+            }
+            return "-";
+        })
+                .setHeader("Verein")
+                .setAutoWidth(true);
+
         grid.addColumn(SchiessnachweisEintrag::getKaliber)
                 .setHeader("Kaliber")
                 .setAutoWidth(true);
@@ -199,12 +224,12 @@ public class MeineEintraegeView extends VerticalLayout {
         grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse)
                 .setHeader("Schüsse")
                 .setAutoWidth(true)
-                .setClassNameGenerator(item -> "align-right");
+                .setTextAlign(ColumnTextAlign.END);
 
         grid.addColumn(SchiessnachweisEintrag::getErgebnis)
                 .setHeader("Ergebnis")
                 .setAutoWidth(true)
-                .setClassNameGenerator(item -> "align-right");
+                .setTextAlign(ColumnTextAlign.END);
 
         grid.addComponentColumn(this::createStatusBadge)
                 .setHeader("Status")
@@ -242,9 +267,8 @@ public class MeineEintraegeView extends VerticalLayout {
         contentWrapper.add(gridContainer);
         add(contentWrapper);
 
-        // Initiale Einträge laden
-        List<SchiessnachweisEintrag> initialEintraege = schiessnachweisService.findeEintraegeImZeitraum(currentUser, vonDatum.getValue(), bisDatum.getValue());
-        updateFilterOptions(initialEintraege);
+        // Vereinsfilter und andere Optionen laden (über Service)
+        updateFilterOptions();
     }
 
 
@@ -288,8 +312,12 @@ public class MeineEintraegeView extends VerticalLayout {
         if (currentUser != null) {
             LocalDate von = vonDatum.getValue();
             LocalDate bis = bisDatum.getValue();
-            List<SchiessnachweisEintrag> eintraege = schiessnachweisService
-                    .findeEintraegeImZeitraum(currentUser, von, bis);
+            List<SchiessnachweisEintrag> eintraege;
+            if (von != null && bis != null) {
+                eintraege = schiessnachweisService.findeEintraegeImZeitraum(currentUser, von, bis);
+            } else {
+                eintraege = schiessnachweisService.findeEintraegeFuerSchuetze(currentUser);
+            }
 
             // Tab-Filter anwenden
             if (aktuellerTab == signiertTab) {
@@ -304,6 +332,16 @@ public class MeineEintraegeView extends VerticalLayout {
                         .toList();
             }
             // Bei 'Alle' keine Statusfilterung
+
+            // Vereinsfilter anwenden
+            String vereinFilterValue = vereinFilter.getValue();
+            if (vereinFilterValue != null && !vereinFilterValue.isEmpty()) {
+                eintraege = eintraege.stream()
+                        .filter(e -> e.getSchiesstand() != null && e.getSchiesstand().getVerein() != null
+                                && e.getSchiesstand().getVerein().getName().equals(vereinFilterValue))
+                        .toList();
+            }
+
             grid.setItems(eintraege);
 
             // Zeige/Verstecke Empty State Message
@@ -318,7 +356,14 @@ public class MeineEintraegeView extends VerticalLayout {
      *
      * @param eintraege Die Liste der Einträge
      */
-    private void updateFilterOptions(List<SchiessnachweisEintrag> eintraege) {
+    private void updateFilterOptions() {
+        // Lade Vereinsnamen sicher über den Service, um LazyInitializationExceptions zu vermeiden
+        Set<String> vereinNames = vereinService.findAllVereinsnamen().stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        // Setze Items; nicht vorauswählen (leer bleibt, zeigt alle)
+        vereinFilter.setItems(vereinNames);
     }
 
     /**
@@ -331,11 +376,13 @@ public class MeineEintraegeView extends VerticalLayout {
             try {
                 LocalDate von = vonDatum.getValue();
                 LocalDate bis = bisDatum.getValue();
+                LocalDate vonEff = von != null ? von : LocalDate.now().minusMonths(3);
+                LocalDate bisEff = bis != null ? bis : LocalDate.now();
 
                 List<SchiessnachweisEintrag> eintraege = schiessnachweisService
-                        .findeSignierteEintraegeImZeitraum(currentUser, von, bis);
+                        .findeSignierteEintraegeImZeitraum(currentUser, vonEff, bisEff);
 
-                byte[] pdfBytes = pdfExportService.exportiereSchiessnachweise(currentUser, eintraege, von, bis);
+                byte[] pdfBytes = pdfExportService.exportiereSchiessnachweise(currentUser, eintraege, vonEff, bisEff);
                 return new ByteArrayInputStream(pdfBytes);
             } catch (Exception e) {
                 Notification.show("Fehler beim PDF-Export: " + e.getMessage())

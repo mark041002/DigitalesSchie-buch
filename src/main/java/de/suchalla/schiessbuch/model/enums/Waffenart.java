@@ -1,11 +1,14 @@
 package de.suchalla.schiessbuch.model.enums;
 
+import lombok.Getter;
+
 /**
  * Enum für Waffenarten.
  *
  * @author Markus Suchalla
  * @version 1.0.0
  */
+@Getter
 public enum Waffenart {
     KURZWAFFE("Kurzwaffe"),
     LANGWAFFE("Langwaffe");
@@ -14,10 +17,6 @@ public enum Waffenart {
 
     Waffenart(String anzeigeText) {
         this.anzeigeText = anzeigeText;
-    }
-
-    public String getAnzeigeText() {
-        return anzeigeText;
     }
 
     @Override

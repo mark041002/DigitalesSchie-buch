@@ -50,4 +50,14 @@ public class VereinService {
         vereinRepository.save(existierend);
     }
 
+    /**
+     * Liefert alle Vereinsnamen als String-Liste. Wrapper um Repository-Methode.
+     *
+     * @return Liste aller Vereinsnamen
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<String> findAllVereinsnamen() {
+        return vereinRepository.findAllNames();
+    }
+
 }

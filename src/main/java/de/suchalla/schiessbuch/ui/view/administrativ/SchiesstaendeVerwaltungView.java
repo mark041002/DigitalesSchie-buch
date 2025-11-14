@@ -6,6 +6,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
@@ -211,7 +212,7 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
                 .setAutoWidth(true)
                 .setFlexGrow(0)
                 .setResizable(true)
-                .setClassNameGenerator(item -> "align-right");
+                .setTextAlign(ColumnTextAlign.END);
 
         grid.addColumn(Schiesstand::getName)
                 .setHeader("Name")
@@ -252,12 +253,6 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
                 .setFlexGrow(0)
                 .setResizable(false);
 
-        // CSS für rechtsbündige Ausrichtung
-        grid.getElement().executeJs(
-                "const style = document.createElement('style');" +
-                        "style.textContent = '.align-right { text-align: right; }';" +
-                        "document.head.appendChild(style);"
-        );
 
         gridContainer.add(emptyStateMessage, grid);
         contentWrapper.add(gridContainer);
@@ -454,4 +449,3 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
         };
     }
 }
-

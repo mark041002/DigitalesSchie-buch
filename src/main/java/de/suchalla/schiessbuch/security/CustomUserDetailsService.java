@@ -29,6 +29,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         Benutzer benutzer = benutzerRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Benutzer nicht gefunden: " + email));
 
+        // E-Mail-Verifizierung prüfen
+        if (!benutzer.isEmailVerifiziert()) {
+            throw new UsernameNotFoundException("E-Mail-Adresse nicht verifiziert. Bitte bestätigen Sie Ihre E-Mail.");
+        }
+
         return User.builder()
                 .username(benutzer.getEmail())  // E-Mail als Username verwenden
                 .password(benutzer.getPasswort())

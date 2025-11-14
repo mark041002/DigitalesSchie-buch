@@ -29,9 +29,11 @@ import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.DisziplinService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
+import de.suchalla.schiessbuch.service.email.NotificationService;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
-import jakarta.annotation.security.PermitAll;
+import lombok.extern.slf4j.Slf4j;
 
+import jakarta.annotation.security.PermitAll;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -44,11 +46,13 @@ import java.util.List;
 @Route(value = "neuer-eintrag", layout = MainLayout.class)
 @PageTitle("Neuer Eintrag | Digitales Schießbuch")
 @PermitAll
+@Slf4j
 public class NeuerEintragView extends VerticalLayout {
 
     private final SchiessnachweisService schiessnachweisService;
     private final DisziplinService disziplinService;
     private final VereinsmitgliedschaftService vereinsmitgliedschaftService;
+    private final NotificationService notificationService;
 
     private final DatePicker datum = new DatePicker("Datum");
     private final ComboBox<Schiesstand> schiesstand = new ComboBox<>("Schießstand");
@@ -65,10 +69,12 @@ public class NeuerEintragView extends VerticalLayout {
     public NeuerEintragView(SchiessnachweisService schiessnachweisService,
                             DisziplinService disziplinService,
                             VereinsmitgliedschaftService vereinsmitgliedschaftService,
-                            SecurityService securityService) {
+                            SecurityService securityService,
+                            NotificationService notificationService) {
         this.schiessnachweisService = schiessnachweisService;
         this.disziplinService = disziplinService;
         this.vereinsmitgliedschaftService = vereinsmitgliedschaftService;
+        this.notificationService = notificationService;
 
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
@@ -119,7 +125,6 @@ public class NeuerEintragView extends VerticalLayout {
         // Formular konfigurieren - nur wichtige Felder mit Icons
         datum.setValue(LocalDate.now());
         datum.setRequired(true);
-        datum.setPrefixComponent(VaadinIcon.CALENDAR.create());
 
         // Schießstand: Mit Icon
         schiesstand.setItems(disziplinService.findeAlleSchiesstaende());
@@ -269,6 +274,13 @@ public class NeuerEintragView extends VerticalLayout {
                     .build();
 
             schiessnachweisService.erstelleEintrag(eintrag);
+
+            // Benachrichtigung: Informiere Vereinschefs/Aufseher über neuen Eintrag zur Signatur
+            try {
+                notificationService.notifySignatureRequest(eintrag);
+            } catch (Exception nEx) {
+                log.warn("Fehler beim Senden der Signatur-Benachrichtigung: {}", nEx.getMessage());
+            }
 
             Notification.show("Eintrag erfolgreich erstellt")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);

@@ -1,7 +1,7 @@
 package de.suchalla.schiessbuch.security;
 
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
-import de.suchalla.schiessbuch.ui.view.LoginView;
+import de.suchalla.schiessbuch.ui.view.persoenlich.LoginView;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

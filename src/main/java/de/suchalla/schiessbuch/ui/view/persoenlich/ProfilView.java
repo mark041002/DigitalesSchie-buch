@@ -22,6 +22,8 @@ import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.BenutzerService;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.PermitAll;
+import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.formlayout.FormLayout;
 
 /**
  * View für Benutzerprofil.
@@ -132,8 +134,19 @@ public class ProfilView extends VerticalLayout {
                 .set("color", "var(--lumo-header-text-color)")
                 .set("font-weight", "600");
 
+        // Name und E-Mail sowie die Benachrichtigungs-Div (unterhalb der E-Mail) werden in createEmailRow erzeugt
         card.add(cardTitle, createNameRow(card), createEmailRow(card));
         return card;
+    }
+
+    // Hilfsmethode: Info-Card erneuern (bekommt aktuellen nameEditMode/emailEditMode Zustand)
+    private void refreshInfoCard() {
+        int idx = getChildren().toList().indexOf(infoCard);
+        if (idx < 0) idx = 0;
+        remove(infoCard);
+        infoCard = createInfoCard();
+        infoCard.getStyle().set("margin-bottom", "var(--lumo-space-l)");
+        addComponentAtIndex(idx, infoCard);
     }
 
     private Div createNameRow(Div card) {
@@ -172,14 +185,7 @@ public class ProfilView extends VerticalLayout {
             bearbeiten.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
             bearbeiten.addClickListener(e -> {
                 nameEditMode = true;
-                card.removeAll();
-                H3 title = new H3("Benutzerinformationen");
-                title.getStyle()
-                        .set("margin-top", "0")
-                        .set("margin-bottom", "var(--lumo-space-m)")
-                        .set("color", "var(--lumo-header-text-color)")
-                        .set("font-weight", "600");
-                card.add(title, createNameRow(card), createEmailRow(card));
+                refreshInfoCard();
             });
 
             nameRow.add(nameContainer, bearbeiten);
@@ -204,11 +210,7 @@ public class ProfilView extends VerticalLayout {
                 Notification.show("Name erfolgreich geändert")
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 nameEditMode = false;
-                int idx = getChildren().toList().indexOf(infoCard);
-                remove(infoCard);
-                infoCard = createInfoCard();
-                infoCard.getStyle().set("margin-bottom", "var(--lumo-space-l)");
-                addComponentAtIndex(idx, infoCard);
+                refreshInfoCard();
             });
             speichern.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             speichern.getStyle().set("flex-shrink", "0");
@@ -219,6 +221,10 @@ public class ProfilView extends VerticalLayout {
     }
 
     private Div createEmailRow(Div card) {
+        // Container, der E-Mail-Zeile und die (nun) lokale Benachrichtigungs-Div enthält
+        Div container = new Div();
+        container.setWidthFull();
+
         Div emailRow = new Div();
         emailRow.getStyle()
                 .set("display", "flex")
@@ -253,14 +259,7 @@ public class ProfilView extends VerticalLayout {
             bearbeiten.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
             bearbeiten.addClickListener(e -> {
                 emailEditMode = true;
-                card.removeAll();
-                H3 title = new H3("Benutzerinformationen");
-                title.getStyle()
-                        .set("margin-top", "0")
-                        .set("margin-bottom", "var(--lumo-space-m)")
-                        .set("color", "var(--lumo-header-text-color)")
-                        .set("font-weight", "600");
-                card.add(title, createNameRow(card), createEmailRow(card));
+                refreshInfoCard();
             });
 
             emailRow.add(emailContainer, bearbeiten);
@@ -282,18 +281,54 @@ public class ProfilView extends VerticalLayout {
                 Notification.show("E-Mail erfolgreich geändert")
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 emailEditMode = false;
-                int idx = getChildren().toList().indexOf(infoCard);
-                remove(infoCard);
-                infoCard = createInfoCard();
-                infoCard.getStyle().set("margin-bottom", "var(--lumo-space-l)");
-                addComponentAtIndex(idx, infoCard);
+                refreshInfoCard();
             });
             speichern.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             speichern.getStyle().set("flex-shrink", "0");
 
             emailRow.add(emailField, speichern);
         }
-        return emailRow;
+
+        // --- Neue optisch getrennte Div für E-Mail-Benachrichtigungen (unterhalb der E-Mail-Zeile) ---
+        Div notifRow = new Div();
+        notifRow.getStyle()
+                .set("display", "flex")
+                .set("gap", "var(--lumo-space-m)")
+                .set("flex-direction", "column")
+                .set("padding", "var(--lumo-space-s)")
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("margin-top", "var(--lumo-space-s)");
+
+        H3 notifTitle = new H3("E-Mail-Benachrichtigungen");
+        notifTitle.getStyle().set("margin", "0");
+
+        Checkbox cbEmailNotifications = new Checkbox("E-Mail-Benachrichtigungen aktivieren");
+        try {
+            cbEmailNotifications.setValue(Boolean.TRUE.equals(currentUser.isEmailNotificationsEnabled()));
+        } catch (Exception ignored) { cbEmailNotifications.setValue(true); }
+
+        FormLayout form = new FormLayout();
+        form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
+        form.add(cbEmailNotifications);
+
+        Button savePrefs = new Button("Einstellungen speichern", e -> {
+            currentUser.setEmailNotificationsEnabled(cbEmailNotifications.getValue());
+            try {
+                benutzerService.aktualisiereBenutzer(currentUser);
+                Notification.show("Einstellungen gespeichert").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            } catch (Exception ex) {
+                Notification.show("Fehler beim Speichern: " + ex.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+            // nach dem Speichern Ansicht aktualisieren, damit Status reflektiert wird
+            refreshInfoCard();
+        });
+        savePrefs.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        notifRow.add(notifTitle, form, savePrefs);
+
+        container.add(emailRow, notifRow);
+        return container;
     }
 
     private Div createPasswortCard() {

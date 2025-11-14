@@ -4,6 +4,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
@@ -207,7 +208,7 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
                 .setWidth("80px")
                 .setAutoWidth(true)
                 .setFlexGrow(0)
-                .setClassNameGenerator(item -> "align-right");
+                .setTextAlign(ColumnTextAlign.END);
         grid.addColumn(Disziplin::getName)
                 .setHeader("Name")
                 .setAutoWidth(true)
@@ -221,11 +222,7 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
                 .setWidth("120px")
                 .setAutoWidth(true)
                 .setFlexGrow(0);
-        grid.getElement().executeJs(
-                "const style = document.createElement('style');" +
-                        "style.textContent = '.align-right { text-align: right; }';" +
-                        "document.head.appendChild(style);"
-        );
+
         gridContainer.add(emptyStateMessage, grid);
         contentWrapper.add(gridContainer);
         add(contentWrapper);
@@ -333,7 +330,9 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
     }
 
     private void updateGrid() {
-        List<Disziplin> disziplinen = disziplinService.findeDisziplinenVonVerband(verbandId);
+        List<Disziplin> disziplinen = aktuellerVerband != null
+            ? disziplinService.findeDisziplinenVonVerband(aktuellerVerband.getId())
+            : List.of();
         grid.setItems(disziplinen);
         grid.getDataProvider().refreshAll();
 

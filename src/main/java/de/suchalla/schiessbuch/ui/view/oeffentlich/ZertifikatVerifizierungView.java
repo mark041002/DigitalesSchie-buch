@@ -107,7 +107,6 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
         pruefDatumField.setPlaceholder("TT.MM.JJJJ");
         pruefDatumField.setWidthFull();
         pruefDatumField.setValue(LocalDate.now());
-        pruefDatumField.setPrefixComponent(VaadinIcon.CALENDAR.create());
         pruefDatumField.setHelperText("Datum, zu dem die Gültigkeit geprüft werden soll (Standard: heute)");
 
         // Verifizierungs-Button
@@ -171,11 +170,18 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
      * Prüft, ob das Zertifikat zu einem bestimmten Zeitpunkt gültig war.
      */
     private boolean istGueltigZuZeitpunkt(DigitalesZertifikat zertifikat, LocalDateTime zeitpunkt) {
-        // Prüfe ob Zeitpunkt im Gültigkeitszeitraum liegt
-        boolean imZeitraum = !zeitpunkt.isBefore(zertifikat.getGueltigSeit()) &&
-                             !zeitpunkt.isAfter(zertifikat.getGueltigBis());
+        if (zertifikat == null || zeitpunkt == null) {
+            return false;
+        }
 
-        // Prüfe ob nicht widerrufen oder erst nach dem Prüfzeitpunkt widerrufen wurde
+        LocalDateTime gueltigSeit = zertifikat.getGueltigSeit();
+        LocalDateTime gueltigBis = zertifikat.getGueltigBis();
+
+        // Null-sichere Prüfung des Zeitraums: fehlende Grenzen werden als offen betrachtet
+        boolean imZeitraum = (gueltigSeit == null || !zeitpunkt.isBefore(gueltigSeit)) &&
+                              (gueltigBis == null || !zeitpunkt.isAfter(gueltigBis));
+
+        // Prüfe Widerruf: wenn das Zertifikat als widerrufen markiert ist, kann ein Widerrufszeitpunkt vorhanden sein
         boolean nichtWiderrufen = !Boolean.TRUE.equals(zertifikat.getWiderrufen());
         if (!nichtWiderrufen && zertifikat.getWiderrufenAm() != null) {
             // War zum Prüfzeitpunkt noch nicht widerrufen
@@ -285,14 +291,15 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
                 }
             }
 
-            details.add(createDetailRow("Gültig von:", zertifikat.getGueltigSeit().format(dateFormatter) + " Uhr"));
-            details.add(createDetailRow("Gültig bis:", zertifikat.getGueltigBis().format(dateFormatter) + " Uhr"));
+            // Null-sichere Formatierung für Gültigkeitsangaben
+            details.add(createDetailRow("Gültig von:", formatDateTimeNullable(zertifikat.getGueltigSeit())));
+            details.add(createDetailRow("Gültig bis:", formatDateTimeNullable(zertifikat.getGueltigBis())));
 
             // Widerruf-Informationen
             if (Boolean.TRUE.equals(zertifikat.getWiderrufen())) {
                 details.add(createDetailRow("Widerrufen am:",
                         zertifikat.getWiderrufenAm() != null
-                                ? zertifikat.getWiderrufenAm().format(dateFormatter) + " Uhr"
+                                ? formatDateTimeNullable(zertifikat.getWiderrufenAm())
                                 : "Unbekannt"));
                 if (zertifikat.getWiderrufsGrund() != null && !zertifikat.getWiderrufsGrund().isEmpty()) {
                     details.add(createDetailRow("Widerrufsgrund:", zertifikat.getWiderrufsGrund()));
@@ -366,5 +373,18 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
             case "AUFSEHER" -> "Aufseher-Zertifikat";
             default -> typ;
         };
+    }
+
+    // Hilfsmethode zur null-sicheren Formatierung von LocalDateTime
+    private String formatDateTimeNullable(LocalDateTime dt) {
+        if (dt == null) {
+            return "Unbekannt";
+        }
+        try {
+            return dt.format(dateFormatter) + " Uhr";
+        } catch (Exception e) {
+            log.warn("Fehler beim Formatieren des Datums: {}", e.getMessage());
+            return "Unbekannt";
+        }
     }
 }

@@ -8,8 +8,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.EqualsAndHashCode;
 
-import lombok.EqualsAndHashCode;
-
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -64,11 +62,14 @@ public class Benutzer {
     @Column(name = "aktualisiert_am")
     private LocalDateTime aktualisiertAm;
 
-    @Column(name = "reset_token")
-    private String resetToken;
+    @Column(name = "email_verifiziert", nullable = false)
+    @Builder.Default
+    private boolean emailVerifiziert = false;
 
-    @Column(name = "reset_token_ablauf")
-    private LocalDateTime resetTokenAblauf;
+    // Notification preferences: früher mehrere Flags, jetzt ein einziges Flag für alle E-Mail-Benachrichtigungen
+    @Column(name = "email_notifications_enabled", nullable = false)
+    @Builder.Default
+    private boolean emailNotificationsEnabled = true;
 
     @OneToMany(mappedBy = "benutzer", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

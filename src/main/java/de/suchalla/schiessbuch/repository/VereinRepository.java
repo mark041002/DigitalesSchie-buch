@@ -4,6 +4,7 @@ import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Verband;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -34,13 +35,6 @@ public interface VereinRepository extends JpaRepository<Verein, Long> {
      */
     Optional<Verein> findByVereinsNummer(String vereinsNummer);
 
-    /**
-     * Findet Vereine nach Namen (Teilstring-Suche).
-     *
-     * @param name Suchbegriff
-     * @return Liste der Vereine
-     */
-    List<Verein> findByNameContainingIgnoreCase(String name);
 
     /**
      * Findet alle Vereine mit Verband und Mitgliedschaften.
@@ -58,4 +52,13 @@ public interface VereinRepository extends JpaRepository<Verein, Long> {
      */
     @EntityGraph(attributePaths = {"verbaende", "mitgliedschaften", "mitgliedschaften.benutzer"})
     Optional<Verein> findById(Long id);
+
+    /**
+     * Liefert nur die Namen aller Vereine (als Strings). Wird verwendet, um LazyInitializationExceptions
+     * zu vermeiden, wenn die View nur die Namen für einen Filter benötigt.
+     *
+     * @return Liste mit Vereinsnamen
+     */
+    @Query("SELECT v.name FROM Verein v")
+    List<String> findAllNames();
 }

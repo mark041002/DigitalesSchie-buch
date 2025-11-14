@@ -15,10 +15,14 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
+import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.repository.BenutzerRepository;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import jakarta.annotation.security.RolesAllowed;
@@ -26,6 +30,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,6 +46,9 @@ import java.util.List;
 public class ZertifikateView extends VerticalLayout {
     private final DigitalesZertifikatRepository zertifikatRepository;
     private final BenutzerRepository benutzerRepository;
+    private Tab gueltigTab;
+    private Tab widerrufenTab;
+    private Tab aktuellerTab;
     private final Grid<DigitalesZertifikat> grid = new Grid<>(DigitalesZertifikat.class, false);
     private Div emptyStateMessage;
 
@@ -92,6 +100,18 @@ public class ZertifikateView extends VerticalLayout {
 
         infoBox.add(infoIcon, beschreibung);
         contentWrapper.add(infoBox);
+
+        // Tabs für Status-Filter
+        gueltigTab = new Tab("Gültig");
+        widerrufenTab = new Tab("Widerrufen");
+        aktuellerTab = gueltigTab;
+        Tabs tabs = new Tabs(gueltigTab, widerrufenTab);
+        tabs.setWidthFull();
+        tabs.addSelectedChangeListener(event -> {
+            aktuellerTab = event.getSelectedTab();
+            updateGrid();
+        });
+        contentWrapper.add(tabs);
 
         // Grid-Container mit weißem Hintergrund
         Div gridContainer = new Div();
@@ -184,12 +204,6 @@ public class ZertifikateView extends VerticalLayout {
                 .setAutoWidth(true)
                 .setFlexGrow(0);
 
-        // CSS für rechtsbündige Ausrichtung
-        grid.getElement().executeJs(
-                "const style = document.createElement('style');" +
-                        "style.textContent = '.align-right { text-align: right; }';" +
-                        "document.head.appendChild(style);"
-        );
 
         gridContainer.add(grid, emptyStateMessage);
         contentWrapper.add(gridContainer);
@@ -201,16 +215,17 @@ public class ZertifikateView extends VerticalLayout {
         detailsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
         detailsButton.addClickListener(e -> zeigeDetailsDialog(zertifikat));
 
-        Button loeschenButton = new Button("Löschen", VaadinIcon.TRASH.create());
-        loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-        loeschenButton.addClickListener(e -> zeigeLoeschDialog(zertifikat));
-
-        HorizontalLayout actions = new HorizontalLayout(detailsButton, loeschenButton);
-        actions.setSpacing(false);
-        actions.setPadding(false);
-        actions.setMargin(false);
-        actions.getStyle().set("gap", "8px");
-        return actions;
+        if (aktuellerTab == gueltigTab) {
+            Button widerrufenButton = new Button("Widerrufen", VaadinIcon.BAN.create());
+            widerrufenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+            widerrufenButton.addClickListener(e -> zeigeLoeschDialog(zertifikat));
+            return new HorizontalLayout(detailsButton, widerrufenButton);
+        } else {
+            Button endgueltigLoeschenButton = new Button("Endgültig löschen", VaadinIcon.TRASH.create());
+            endgueltigLoeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+            endgueltigLoeschenButton.addClickListener(e -> zeigeEndgueltigLoeschenDialog(zertifikat));
+            return new HorizontalLayout(detailsButton, endgueltigLoeschenButton);
+        }
     }
 
     private Span createStatusBadge(DigitalesZertifikat zertifikat) {
@@ -243,87 +258,115 @@ public class ZertifikateView extends VerticalLayout {
 
 
     private void zeigeLoeschDialog(DigitalesZertifikat zertifikat) {
-        ConfirmDialog dialog = new ConfirmDialog();
-        dialog.setHeader("Zertifikat löschen");
-        dialog.setText("Sind Sie sicher, dass Sie dieses Zertifikat löschen möchten?");
-        dialog.setCancelable(true);
-        dialog.setConfirmText("Löschen");
-        dialog.setRejectText("Abbrechen");
-        dialog.addConfirmListener(e -> loescheZertifikat(zertifikat));
-        dialog.open();
-    }
-
-    private void zeigeDetailsDialog(DigitalesZertifikat zertifikat) {
+        // Dialog zum Widerrufen mit optionalem Grund
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Zertifikat-Details");
-        dialog.setWidth("600px");
-        dialog.setMaxWidth("95vw");
+        dialog.setHeaderTitle("Zertifikat widerrufen");
 
         VerticalLayout layout = new VerticalLayout();
         layout.setSpacing(false);
         layout.setPadding(false);
-        layout.setWidthFull();
-        layout.getStyle().set("gap", "var(--lumo-space-s)");
 
-        // Detail-Zeilen
-        layout.add(createDetailRow("ID:", String.valueOf(zertifikat.getId())));
+        Paragraph info = new Paragraph("Möchten Sie dieses Zertifikat wirklich widerrufen? (Root- und Vereinszertifikate können nicht widerrufen werden)");
+        info.getStyle().set("margin", "0 0 var(--lumo-space-s) 0");
 
-        if (zertifikat.getBenutzer() != null) {
-            layout.add(createDetailRow("Benutzer:", zertifikat.getBenutzer().getVollstaendigerName()));
-            layout.add(createDetailRow("E-Mail:", zertifikat.getBenutzer().getEmail()));
-        }
+        TextArea grundField = new TextArea("Widerrufsgrund (optional)");
+        grundField.setWidthFull();
+        grundField.setHeight("120px");
 
-        if (zertifikat.getVerein() != null) {
-            layout.add(createDetailRow("Verein:", zertifikat.getVerein().getName()));
-        }
+        layout.add(info, grundField);
 
-        if (zertifikat.getSchiesstand() != null) {
-            layout.add(createDetailRow("Schießstand:", zertifikat.getSchiesstand().getName()));
-        }
+        Button widerrufenButton = new Button("Widerrufen", event -> {
+            loescheZertifikat(zertifikat, grundField.getValue());
+            dialog.close();
+        });
+        widerrufenButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
 
-        layout.add(createDetailRow("Typ:", zertifikat.getZertifikatsTyp()));
-        layout.add(createDetailRow("Seriennummer:", zertifikat.getSeriennummer()));
-        layout.add(createDetailRow("Gültig seit:", formatDatum(zertifikat.getGueltigSeit())));
-        layout.add(createDetailRow("Gültig bis:", formatDatum(zertifikat.getGueltigBis())));
-        layout.add(createDetailRow("Widerrufen am:", formatDatum(zertifikat.getWiderrufenAm())));
-        layout.add(createDetailRow("Widerrufsgrund:", zertifikat.getWiderrufsGrund() != null ? zertifikat.getWiderrufsGrund() : "-"));
-
-        Button schliessenButton = new Button("Schließen", e -> dialog.close());
-        schliessenButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        Button abbrechenButton = new Button("Abbrechen", event -> dialog.close());
 
         dialog.add(layout);
-        dialog.getFooter().add(schliessenButton);
+        dialog.getFooter().add(abbrechenButton, widerrufenButton);
         dialog.open();
     }
 
-    private com.vaadin.flow.component.html.Div createDetailRow(String label, String value) {
-        com.vaadin.flow.component.html.Div row = new com.vaadin.flow.component.html.Div();
-        row.addClassName("detail-row");
-        row.getStyle()
-                .set("display", "grid")
-                .set("grid-template-columns", "180px 1fr")
-                .set("gap", "var(--lumo-space-m)")
-                .set("padding", "var(--lumo-space-s) 0")
-                .set("border-bottom", "1px solid var(--lumo-contrast-10pct)");
-
-        com.vaadin.flow.component.html.Span labelSpan = new com.vaadin.flow.component.html.Span(label);
-        labelSpan.getStyle()
-                .set("font-weight", "600")
-                .set("color", "var(--lumo-secondary-text-color)");
-
-        com.vaadin.flow.component.html.Span valueSpan = new com.vaadin.flow.component.html.Span(value != null ? value : "-");
-        valueSpan.getStyle()
-                .set("color", "var(--lumo-body-text-color)")
-                .set("word-break", "break-word");
-
-        row.add(labelSpan, valueSpan);
-        return row;
+    private void zeigeEndgueltigLoeschenDialog(DigitalesZertifikat zertifikat) {
+        ConfirmDialog dialog = new ConfirmDialog();
+        dialog.setHeader("Zertifikat endgültig löschen");
+        dialog.setText("Sind Sie sicher, dass Sie dieses Zertifikat unwiderruflich löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.");
+        dialog.setCancelable(true);
+        dialog.setConfirmText("Endgültig löschen");
+        dialog.setRejectText("Abbrechen");
+        dialog.addConfirmListener(e -> endgueltigLoescheZertifikat(zertifikat));
+        dialog.open();
     }
 
-    private void loescheZertifikat(DigitalesZertifikat zertifikat) {
+    private void loescheZertifikat(DigitalesZertifikat zertifikat, String grund) {
+        try {
+            String typ = zertifikat.getZertifikatsTyp() != null ? zertifikat.getZertifikatsTyp().toUpperCase() : "";
+            // Verhindere Widerruf von ROOT und VEREIN Zertifikaten
+            if ("ROOT".equals(typ) || "VEREIN".equals(typ)) {
+                Notification.show("Dieses Zertifikat kann nicht widerrufen werden.")
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
+
+            // Markiere Zertifikat als widerrufen
+            zertifikat.setWiderrufen(true);
+            zertifikat.setWiderrufenAm(LocalDateTime.now());
+            zertifikat.setWiderrufsGrund(grund != null && !grund.isBlank() ? grund : "Vom Administrator widerrufen");
+
+            // Wenn das Zertifikat einem Benutzer gehört, entziehe Rollen/Flags falls nötig
+            Benutzer b = zertifikat.getBenutzer();
+            if (b != null) {
+                boolean changed = false;
+
+                // Bestimme betroffenen Verein (falls vorhanden)
+                Verein certVerein = zertifikat.getVerein();
+                if (certVerein == null && zertifikat.getSchiesstand() != null) {
+                    certVerein = zertifikat.getSchiesstand().getVerein();
+                }
+
+                // Entziehe Vereinsrollen in den Mitgliedschaften zwar nur für den betroffenen Verein
+                if (b.getVereinsmitgliedschaften() != null) {
+                    for (var vm : b.getVereinsmitgliedschaften()) {
+                        if (certVerein == null || vm.getVerein() == null || vm.getVerein().getId().equals(certVerein.getId())) {
+                            if (Boolean.TRUE.equals(vm.getIstVereinschef())) {
+                                vm.setIstVereinschef(false);
+                                changed = true;
+                            }
+                            if (Boolean.TRUE.equals(vm.getIstAufseher())) {
+                                vm.setIstAufseher(false);
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+
+                // Entziehe die globale Rolle, falls Zertifikat Typen auf spezielle Rollen hindeuten
+                if ("AUFSEHER".equals(typ) || "SCHIESSTANDAUFSEHER".equals(typ) || "SCHIESSSTAND_AUFSEHER".equals(typ) || "VEREINS_CHEF".equals(typ)) {
+                    b.setRolle(de.suchalla.schiessbuch.model.enums.BenutzerRolle.SCHUETZE);
+                    changed = true;
+                }
+
+                if (changed) {
+                    benutzerRepository.save(b);
+                }
+            }
+
+            // Speichere das Zertifikat als widerrufen
+            zertifikatRepository.save(zertifikat);
+            Notification.show("Zertifikat erfolgreich widerrufen")
+                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            updateGrid();
+        } catch (Exception e) {
+            Notification.show("Fehler: " + e.getMessage())
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
+    }
+
+    private void endgueltigLoescheZertifikat(DigitalesZertifikat zertifikat) {
         try {
             zertifikatRepository.deleteById(zertifikat.getId());
-            Notification.show("Zertifikat erfolgreich gelöscht")
+            Notification.show("Zertifikat endgültig gelöscht")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             updateGrid();
         } catch (Exception e) {
@@ -361,44 +404,19 @@ public class ZertifikateView extends VerticalLayout {
                 .anyMatch(a -> "ROLE_SCHIESSSTAND_AUFSEHER".equals(a.getAuthority()));
 
         List<DigitalesZertifikat> zertifikate = new ArrayList<>();
+        List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetailsAndMitgliedschaften();
 
-        if (isAdmin) {
-            zertifikate = zertifikatRepository.findAllWithDetailsAndMitgliedschaften();
-        } else if (isVereinschef) {
-            List<Long> vereinsIds = aktuellerBenutzer.getVereinsmitgliedschaften().stream()
-                    .filter(vm -> Boolean.TRUE.equals(vm.getIstVereinschef()))
-                    .map(vm -> vm.getVerein().getId())
-                    .toList();
-            if (!vereinsIds.isEmpty()) {
-                List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetailsAndMitgliedschaften();
-                for (DigitalesZertifikat z : alleZertifikate) {
-                    if (z.getVerein() != null && vereinsIds.contains(z.getVerein().getId())
-                        && "VEREIN".equals(z.getZertifikatsTyp())) {
-                        zertifikate.add(z);
-                    } else if (z.getBenutzer() != null && "AUFSEHER".equals(z.getZertifikatsTyp())) {
-                        boolean istImVerein = z.getBenutzer().getVereinsmitgliedschaften().stream()
-                                .anyMatch(vm -> vereinsIds.contains(vm.getVerein().getId()));
-                        if (istImVerein) {
-                            zertifikate.add(z);
-                        }
-                    }
-                }
-            }
-        } else if (isAufseher) {
-            List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetailsAndMitgliedschaften();
+        if (aktuellerTab == gueltigTab) {
+            // Zeige alle gültigen Zertifikate
             for (DigitalesZertifikat z : alleZertifikate) {
-                if (z.getBenutzer() != null
-                    && z.getBenutzer().getId().equals(aktuellerBenutzer.getId())
-                    && "AUFSEHER".equals(z.getZertifikatsTyp())) {
+                if (!Boolean.TRUE.equals(z.getWiderrufen())) {
                     zertifikate.add(z);
                 }
             }
-        } else if (isSchiesstandAufseher) {
-            List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetailsAndMitgliedschaften();
+        } else {
+            // Zeige alle widerrufenen Zertifikate
             for (DigitalesZertifikat z : alleZertifikate) {
-                if (z.getBenutzer() != null
-                    && z.getBenutzer().getId().equals(aktuellerBenutzer.getId())
-                    && "SCHIESSTANDAUFSEHER".equals(z.getZertifikatsTyp())) {
+                if (Boolean.TRUE.equals(z.getWiderrufen())) {
                     zertifikate.add(z);
                 }
             }
@@ -428,5 +446,34 @@ public class ZertifikateView extends VerticalLayout {
     private String formatDatum(java.time.LocalDateTime datum) {
         if (datum == null) return "-";
         return datum.toLocalDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+    }
+
+    private void zeigeDetailsDialog(DigitalesZertifikat zertifikat) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Zertifikatsdetails");
+        VerticalLayout layout = new VerticalLayout();
+        layout.setSpacing(false);
+        layout.setPadding(false);
+
+        layout.add(new Paragraph("Seriennummer: " + (zertifikat.getSeriennummer() != null ? zertifikat.getSeriennummer() : "-")));
+        layout.add(new Paragraph("Typ: " + (zertifikat.getZertifikatsTyp() != null ? zertifikat.getZertifikatsTyp() : "-")));
+        layout.add(new Paragraph("Status: " + (zertifikat.getWiderrufen() ? "Widerrufen" : "Gültig")));
+        layout.add(new Paragraph("Gültig seit: " + formatDatum(zertifikat.getGueltigSeit())));
+        layout.add(new Paragraph("Widerrufen am: " + (zertifikat.getWiderrufenAm() != null ? formatDatum(zertifikat.getWiderrufenAm()) : "-")));
+        layout.add(new Paragraph("Widerrufsgrund: " + (zertifikat.getWiderrufsGrund() != null ? zertifikat.getWiderrufsGrund() : "-")));
+        if (zertifikat.getBenutzer() != null) {
+            layout.add(new Paragraph("Benutzer: " + zertifikat.getBenutzer().getVollstaendigerName()));
+        }
+        if (zertifikat.getVerein() != null) {
+            layout.add(new Paragraph("Verein: " + zertifikat.getVerein().getName()));
+        }
+        if (zertifikat.getSchiesstand() != null) {
+            layout.add(new Paragraph("Schießstand: " + zertifikat.getSchiesstand().getName()));
+        }
+        Button closeButton = new Button("Schließen", e -> dialog.close());
+        closeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        dialog.add(layout);
+        dialog.getFooter().add(closeButton);
+        dialog.open();
     }
 }

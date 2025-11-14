@@ -33,12 +33,20 @@ public class DataInitializer implements CommandLineRunner {
     private final VereinsmitgliedschaftRepository mitgliedschaftRepository;
     private final PasswordEncoder passwordEncoder;
     private final PkiService pkiService;
+    private final SchiessnachweisEintragRepository eintragRepository;
+    private final de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository zertifikatRepository;
 
     @Override
     public void run(String... args) {
         // Prüfen ob bereits Daten vorhanden sind
         if (benutzerRepository.count() > 0) {
             log.info("Datenbank enthält bereits Daten. Initialisierung übersprungen.");
+            // Reparatur trotzdem durchführen: fehlende Zertifikatszuweisungen nachtragen
+            try {
+                repairMissingCertificates();
+            } catch (Exception e) {
+                log.error("Fehler während Reparatur beim Start", e);
+            }
             return;
         }
 
@@ -52,6 +60,8 @@ public class DataInitializer implements CommandLineRunner {
                     .vorname("System")
                     .nachname("Administrator")
                     .rolle(BenutzerRolle.ADMIN)
+                    .emailVerifiziert(true)
+                    .emailNotificationsEnabled(true)
                     .build();
             benutzerRepository.save(admin);
             log.info("Admin-Benutzer erstellt: admin@schiessbuch.de / admin123");
@@ -63,6 +73,8 @@ public class DataInitializer implements CommandLineRunner {
                     .vorname("Max")
                     .nachname("Mustermann")
                     .rolle(BenutzerRolle.SCHUETZE)
+                    .emailVerifiziert(true)
+                    .emailNotificationsEnabled(true)
                     .build();
             benutzerRepository.save(schuetze);
             log.info("Test-Schütze erstellt: schuetze@test.de / test123");
@@ -73,6 +85,8 @@ public class DataInitializer implements CommandLineRunner {
                     .vorname("Klaus")
                     .nachname("Aufseher")
                     .rolle(BenutzerRolle.AUFSEHER)
+                    .emailVerifiziert(true)
+                    .emailNotificationsEnabled(true)
                     .build();
             benutzerRepository.save(aufseher);
 
@@ -84,6 +98,8 @@ public class DataInitializer implements CommandLineRunner {
                     .vorname("Peter")
                     .nachname("Standaufseher")
                     .rolle(BenutzerRolle.SCHIESSSTAND_AUFSEHER)
+                    .emailVerifiziert(true)
+                    .emailNotificationsEnabled(true)
                     .build();
             benutzerRepository.save(schiesstandAufseher);
             log.info("Test-Schießstandaufseher erstellt: standaufseher@test.de / test123");
@@ -94,6 +110,8 @@ public class DataInitializer implements CommandLineRunner {
                     .vorname("Werner")
                     .nachname("Vereinschef")
                     .rolle(BenutzerRolle.VEREINS_CHEF)
+                    .emailVerifiziert(true)
+                    .emailNotificationsEnabled(true)
                     .build();
             benutzerRepository.save(vereinschef);
             log.info("Test-Vereinschef erstellt: vereinschef@test.de / test123");
@@ -223,9 +241,15 @@ public class DataInitializer implements CommandLineRunner {
             // PKI-Zertifikate erstellen
             log.info("Erstelle PKI-Zertifikate...");
 
+            // Variablen hier deklarieren, damit wir sie später den Einträgen zuweisen können
+            DigitalesZertifikat vereinsZertifikat = null;
+            DigitalesZertifikat aufseherZertifikat = null;
+            DigitalesZertifikat vereinschefZertifikat = null;
+            DigitalesZertifikat schiesstandAufseherZertifikat = null;
+
             // Vereinszertifikat erstellen
             try {
-                DigitalesZertifikat vereinsZertifikat = pkiService.createVereinCertificate(verein);
+                vereinsZertifikat = pkiService.createVereinCertificate(verein);
                 log.info("Vereinszertifikat erstellt für: {} (SN: {})", verein.getName(), vereinsZertifikat.getSeriennummer());
             } catch (Exception e) {
                 log.error("Fehler beim Erstellen des Vereinszertifikats", e);
@@ -233,7 +257,7 @@ public class DataInitializer implements CommandLineRunner {
 
             // Aufseher-Zertifikat erstellen
             try {
-                DigitalesZertifikat aufseherZertifikat = pkiService.createAufseherCertificate(aufseher, verein);
+                aufseherZertifikat = pkiService.createAufseherCertificate(aufseher, verein);
                 log.info("Aufseher-Zertifikat erstellt für: {} (SN: {})", aufseher.getVollstaendigerName(), aufseherZertifikat.getSeriennummer());
             } catch (Exception e) {
                 log.error("Fehler beim Erstellen des Aufseher-Zertifikats", e);
@@ -241,7 +265,7 @@ public class DataInitializer implements CommandLineRunner {
 
             // Vereinschef-Zertifikat erstellen (da Vereinschefs auch Aufseher sind)
             try {
-                DigitalesZertifikat vereinschefZertifikat = pkiService.createAufseherCertificate(vereinschef, verein);
+                vereinschefZertifikat = pkiService.createAufseherCertificate(vereinschef, verein);
                 log.info("Vereinschef-Zertifikat erstellt für: {} (SN: {})", vereinschef.getVollstaendigerName(), vereinschefZertifikat.getSeriennummer());
             } catch (Exception e) {
                 log.error("Fehler beim Erstellen des Vereinschef-Zertifikats", e);
@@ -249,7 +273,7 @@ public class DataInitializer implements CommandLineRunner {
 
             // Schießstandaufseher-Zertifikat erstellen (für Verbands-Schießstand)
             try {
-                DigitalesZertifikat schiesstandAufseherZertifikat = pkiService.createSchiesstandaufseheCertificate(schiesstandAufseher, verbandsSchiesstand);
+                schiesstandAufseherZertifikat = pkiService.createSchiesstandaufseheCertificate(schiesstandAufseher, verbandsSchiesstand);
                 log.info("Schießstandaufseher-Zertifikat erstellt für: {} (SN: {})", schiesstandAufseher.getVollstaendigerName(), schiesstandAufseherZertifikat.getSeriennummer());
             } catch (Exception e) {
                 log.error("Fehler beim Erstellen des Schießstandaufseher-Zertifikats", e);
@@ -267,8 +291,190 @@ public class DataInitializer implements CommandLineRunner {
             log.info("PKI-Zertifikate wurden erstellt");
             log.info("===============================================");
 
+            // Zwei signierte Einträge für den Schützen anlegen
+            Disziplin disziplin1 = disziplinRepository.findAll().get(0);
+            Disziplin disziplin2 = disziplinRepository.findAll().get(1);
+
+            Schiesstand verwendeterStand = schiesstand;
+
+            SchiessnachweisEintrag eintragVomAufseher = SchiessnachweisEintrag.builder()
+                    .schuetze(schuetze)
+                    .disziplin(disziplin1)
+                    .schiesstand(verwendeterStand)
+                    .datum(LocalDate.now().minusDays(10))
+                    .kaliber(".22lr")
+                    .waffenart("Gewehr")
+                    .anzahlSchuesse(30)
+                    .ergebnis("285 Ringe")
+                    .status(de.suchalla.schiessbuch.model.enums.EintragStatus.SIGNIERT)
+                    .aufseher(aufseher)
+                    .signiertAm(java.time.LocalDateTime.now().minusDays(9))
+                    .build();
+            schiesstandRepository.save(verwendeterStand); // falls nicht persistiert
+            // Eintrag signieren und Zertifikat zuweisen, falls Aufseher-Zertifikat vorhanden
+            if (aufseherZertifikat != null) {
+                String dataToSign = buildSigningPayload(eintragVomAufseher);
+                String signature = pkiService.signData(dataToSign, aufseherZertifikat);
+                eintragVomAufseher.setZertifikat(aufseherZertifikat);
+                eintragVomAufseher.setDigitaleSignatur(signature);
+                eintragVomAufseher.setIstSigniert(true);
+            }
+            // Eintrag speichern
+            eintragRepository.save(eintragVomAufseher);
+
+            SchiessnachweisEintrag eintragVomVereinschef = SchiessnachweisEintrag.builder()
+                    .schuetze(schuetze)
+                    .disziplin(disziplin2)
+                    .schiesstand(verwendeterStand)
+                    .datum(LocalDate.now().minusDays(5))
+                    .kaliber("9mm")
+                    .waffenart("Pistole")
+                    .anzahlSchuesse(20)
+                    .ergebnis("180 Ringe")
+                    .status(de.suchalla.schiessbuch.model.enums.EintragStatus.SIGNIERT)
+                    .aufseher(vereinschef)
+                    .signiertAm(java.time.LocalDateTime.now().minusDays(4))
+                    .build();
+            if (vereinschefZertifikat != null) {
+                String dataToSign = buildSigningPayload(eintragVomVereinschef);
+                String signature = pkiService.signData(dataToSign, vereinschefZertifikat);
+                eintragVomVereinschef.setZertifikat(vereinschefZertifikat);
+                eintragVomVereinschef.setDigitaleSignatur(signature);
+                eintragVomVereinschef.setIstSigniert(true);
+            }
+            eintragRepository.save(eintragVomVereinschef);
+            log.info("Zwei signierte Einträge für Schütze wurden erstellt.");
+            log.info("===============================================");
+
+            // 20 signierte Einträge für den Schützen anlegen (10 vom Aufseher, 10 vom Vereinschef)
+            java.util.List<Disziplin> disziplinen = disziplinRepository.findAll();
+            verwendeterStand = schiesstand;
+            for (int i = 0; i < 10; i++) {
+                SchiessnachweisEintrag eintragVomAufseherLoop = SchiessnachweisEintrag.builder()
+                        .schuetze(schuetze)
+                        .disziplin(disziplinen.get(i % disziplinen.size()))
+                        .schiesstand(verwendeterStand)
+                        .datum(LocalDate.now().minusDays(20 - i))
+                        .kaliber(".22lr")
+                        .waffenart("Gewehr")
+                        .anzahlSchuesse(30 + i)
+                        .ergebnis((280 + i) + " Ringe")
+                        .status(de.suchalla.schiessbuch.model.enums.EintragStatus.SIGNIERT)
+                        .aufseher(aufseher)
+                        .signiertAm(java.time.LocalDateTime.now().minusDays(19 - i))
+                        .build();
+                if (aufseherZertifikat != null) {
+                    String dataToSign = buildSigningPayload(eintragVomAufseherLoop);
+                    String signature = pkiService.signData(dataToSign, aufseherZertifikat);
+                    eintragVomAufseherLoop.setZertifikat(aufseherZertifikat);
+                    eintragVomAufseherLoop.setDigitaleSignatur(signature);
+                    eintragVomAufseherLoop.setIstSigniert(true);
+                }
+                eintragRepository.save(eintragVomAufseherLoop);
+            }
+            for (int i = 0; i < 10; i++) {
+                SchiessnachweisEintrag eintragVomVereinschefLoop = SchiessnachweisEintrag.builder()
+                        .schuetze(schuetze)
+                        .disziplin(disziplinen.get((i + 1) % disziplinen.size()))
+                        .schiesstand(verwendeterStand)
+                        .datum(LocalDate.now().minusDays(10 - i))
+                        .kaliber("9mm")
+                        .waffenart("Pistole")
+                        .anzahlSchuesse(20 + i)
+                        .ergebnis((170 + i) + " Ringe")
+                        .status(de.suchalla.schiessbuch.model.enums.EintragStatus.SIGNIERT)
+                        .aufseher(vereinschef)
+                        .signiertAm(java.time.LocalDateTime.now().minusDays(9 - i))
+                        .build();
+                if (vereinschefZertifikat != null) {
+                    String dataToSign = buildSigningPayload(eintragVomVereinschefLoop);
+                    String signature = pkiService.signData(dataToSign, vereinschefZertifikat);
+                    eintragVomVereinschefLoop.setZertifikat(vereinschefZertifikat);
+                    eintragVomVereinschefLoop.setDigitaleSignatur(signature);
+                    eintragVomVereinschefLoop.setIstSigniert(true);
+                }
+                eintragRepository.save(eintragVomVereinschefLoop);
+            }
+            log.info("20 signierte Einträge für Schütze wurden erstellt.");
+            log.info("===============================================");
+
+            // Reparatur: Falls signierte Einträge kein Zertifikat zugewiesen haben, weise das Zertifikat des Aufsehers zu
+            try {
+                log.info("Prüfe auf signierte Einträge ohne Zertifikat und weise ggf. Zertifikate nachträglich zu...");
+                java.util.List<SchiessnachweisEintrag> alle = eintragRepository.findAll();
+                int repariert = 0;
+                for (SchiessnachweisEintrag e : alle) {
+                    if (e == null) continue;
+                    if (e.getStatus() == de.suchalla.schiessbuch.model.enums.EintragStatus.SIGNIERT
+                            && e.getZertifikat() == null && e.getAufseher() != null) {
+                        // Zertifikat für den Aufseher finden
+                        java.util.Optional<de.suchalla.schiessbuch.model.entity.DigitalesZertifikat> opt = zertifikatRepository.findByBenutzer(e.getAufseher());
+                        if (opt.isPresent()) {
+                            de.suchalla.schiessbuch.model.entity.DigitalesZertifikat cert = opt.get();
+                            e.setZertifikat(cert);
+                            // Falls keine digitale Signatur vorhanden, neu signieren
+                            if (e.getDigitaleSignatur() == null || e.getDigitaleSignatur().isEmpty()) {
+                                String payload = buildSigningPayload(e);
+                                String sig = pkiService.signData(payload, cert);
+                                e.setDigitaleSignatur(sig);
+                                e.setIstSigniert(true);
+                            }
+                            eintragRepository.save(e);
+                            repariert++;
+                        }
+                    }
+                }
+                log.info("Reparatur abgeschlossen. {} Einträge aktualisiert.", repariert);
+            } catch (Exception rex) {
+                log.error("Fehler während nachträglicher Zertifikatszuweisung für Einträge", rex);
+            }
+
         } catch (Exception e) {
             log.error("Fehler bei der Datenbank-Initialisierung", e);
         }
+    }
+
+    // Hilfsmethode zum Erzeugen einer konsistenten Signier-Payload aus einem Eintrag
+    private String buildSigningPayload(SchiessnachweisEintrag eintrag) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(eintrag.getSchuetze() != null ? eintrag.getSchuetze().getEmail() : "")
+                .append('|')
+                .append(eintrag.getDatum() != null ? eintrag.getDatum().toString() : "")
+                .append('|')
+                .append(eintrag.getDisziplin() != null ? eintrag.getDisziplin().getName() : "")
+                .append('|')
+                .append(eintrag.getSchiesstand() != null ? eintrag.getSchiesstand().getName() : "")
+                .append('|')
+                .append(eintrag.getErgebnis() != null ? eintrag.getErgebnis() : "")
+                .append('|')
+                .append(eintrag.getAufseher() != null ? eintrag.getAufseher().getEmail() : "");
+        return sb.toString();
+    }
+
+    // Reparatur-Methode: signierte Einträge ohne Zertifikat nachträglich mit dem Zertifikat des Aufsehers versehen
+    private void repairMissingCertificates() {
+        log.info("Starte Reparatur: signierte Einträge ohne Zertifikat werden geprüft...");
+        java.util.List<SchiessnachweisEintrag> alle = eintragRepository.findAll();
+        int repariert = 0;
+        for (SchiessnachweisEintrag e : alle) {
+            if (e == null) continue;
+            if (e.getStatus() == de.suchalla.schiessbuch.model.enums.EintragStatus.SIGNIERT
+                    && e.getZertifikat() == null && e.getAufseher() != null) {
+                java.util.Optional<de.suchalla.schiessbuch.model.entity.DigitalesZertifikat> opt = zertifikatRepository.findByBenutzer(e.getAufseher());
+                if (opt.isPresent()) {
+                    de.suchalla.schiessbuch.model.entity.DigitalesZertifikat cert = opt.get();
+                    e.setZertifikat(cert);
+                    if (e.getDigitaleSignatur() == null || e.getDigitaleSignatur().isEmpty()) {
+                        String payload = buildSigningPayload(e);
+                        String sig = pkiService.signData(payload, cert);
+                        e.setDigitaleSignatur(sig);
+                        e.setIstSigniert(true);
+                    }
+                    eintragRepository.save(e);
+                    repariert++;
+                }
+            }
+        }
+        log.info("Reparatur abgeschlossen. {} Einträge aktualisiert.", repariert);
     }
 }

@@ -3,6 +3,7 @@ package de.suchalla.schiessbuch.ui.view.administrativ;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
@@ -20,6 +21,7 @@ import de.suchalla.schiessbuch.service.BenutzerService;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
+import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
 
 import java.util.List;
 
@@ -78,7 +80,7 @@ public class MitgliederVerwaltungView extends VerticalLayout {
         infoIcon.setSize("20px");
 
         Paragraph beschreibung = new Paragraph(
-                "Verwalten Sie alle Benutzer im System. Sie können Passwörter ändern und Benutzer löschen."
+                "Übersicht aller Benutzer im System."
         );
         beschreibung.getStyle()
                 .set("color", "var(--lumo-primary-text-color)")
@@ -140,7 +142,7 @@ public class MitgliederVerwaltungView extends VerticalLayout {
                 .setAutoWidth(true)
                 .setFlexGrow(0)
                 .setResizable(true)
-                .setClassNameGenerator(item -> "align-right");
+                .setTextAlign(ColumnTextAlign.END);
 
         grid.addColumn(Benutzer::getVollstaendigerName)
                 .setHeader("Name")
@@ -173,12 +175,6 @@ public class MitgliederVerwaltungView extends VerticalLayout {
                 .setAutoWidth(true)
                 .setFlexGrow(0)
                 .setResizable(false);
-
-        grid.getElement().executeJs(
-                "const style = document.createElement('style');" +
-                        "style.textContent = '.align-right { text-align: right; }';" +
-                        "document.head.appendChild(style);"
-        );
     }
 
     private HorizontalLayout createActionButtons(Benutzer benutzer) {
@@ -191,7 +187,12 @@ public class MitgliederVerwaltungView extends VerticalLayout {
         loeschenButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ERROR);
         loeschenButton.addClickListener(e -> bestaetigeLoesch(benutzer));
 
-        layout.add(loeschenButton);
+        // Button: Benutzer als Admin machen
+        Button makeAdminButton = new Button("Als Admin machen", VaadinIcon.USER.create());
+        makeAdminButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_PRIMARY);
+        makeAdminButton.addClickListener(e -> bestaetigeAdmin(benutzer));
+
+        layout.add(makeAdminButton, loeschenButton);
         return layout;
     }
 
@@ -201,7 +202,6 @@ public class MitgliederVerwaltungView extends VerticalLayout {
 
         VerticalLayout layout = new VerticalLayout();
         layout.add(new Paragraph("Möchten Sie den Benutzer " + benutzer.getVollstaendigerName() + " wirklich löschen?"));
-        layout.add(new Paragraph("Die Daten werden anonymisiert."));
 
         Button loeschenButton = new Button("Ja, löschen", e -> {
             try {
@@ -222,6 +222,37 @@ public class MitgliederVerwaltungView extends VerticalLayout {
 
         confirmDialog.add(layout);
         confirmDialog.getFooter().add(abbrechenButton, loeschenButton);
+        confirmDialog.open();
+    }
+
+    // Bestätigungs-Dialog und Aktion: Benutzer zur Rolle ADMIN machen
+    private void bestaetigeAdmin(Benutzer benutzer) {
+        Dialog confirmDialog = new Dialog();
+        confirmDialog.setHeaderTitle("Benutzer zum Admin machen?");
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.add(new Paragraph("Möchten Sie den Benutzer " + benutzer.getVollstaendigerName() + " zur Rolle 'Administrator' befördern?"));
+
+        Button confirmButton = new Button("Als Admin machen", e -> {
+            try {
+                benutzer.setRolle(BenutzerRolle.ADMIN);
+                benutzerService.aktualisiereBenutzer(benutzer);
+                Notification.show("Benutzer wurde zum Administrator gemacht")
+                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                confirmDialog.close();
+                updateGrid();
+            } catch (Exception ex) {
+                log.error("Fehler beim Setzen der Rolle", ex);
+                Notification.show("Fehler: " + ex.getMessage())
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+        });
+        confirmButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
+
+        Button cancelButton = new Button("Abbrechen", e -> confirmDialog.close());
+
+        confirmDialog.add(layout);
+        confirmDialog.getFooter().add(cancelButton, confirmButton);
         confirmDialog.open();
     }
 

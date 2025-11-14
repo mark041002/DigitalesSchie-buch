@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
@@ -38,6 +39,7 @@ import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
 import de.suchalla.schiessbuch.service.PdfExportService;
 import de.suchalla.schiessbuch.service.SignaturService;
+import de.suchalla.schiessbuch.service.email.NotificationService;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +67,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     private final SchiesstandRepository schiesstandRepository;
     private final PdfExportService pdfExportService;
     private final SignaturService signaturService;
+    private final NotificationService notificationService;
 
     private final Grid<SchiessnachweisEintrag> grid = new Grid<>(SchiessnachweisEintrag.class, false);
     private final ComboBox<String> schuetzenComboBox = new ComboBox<>("Schütze");
@@ -89,11 +92,13 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                                    SchiessnachweisService schiessnachweisService,
                                    SchiesstandRepository schiesstandRepository,
                                    PdfExportService pdfExportService,
-                                   SignaturService signaturService) {
+                                   SignaturService signaturService,
+                                   NotificationService notificationService) {
         this.schiessnachweisService = schiessnachweisService;
         this.schiesstandRepository = schiesstandRepository;
         this.pdfExportService = pdfExportService;
         this.signaturService = signaturService;
+        this.notificationService = notificationService;
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
         setSpacing(false);
@@ -312,12 +317,9 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         aufseherComboBox.setClearButtonVisible(true);
         aufseherComboBox.addValueChangeListener(e -> updateGrid());
 
-        vonDatum.setValue(LocalDate.now().minusMonths(3));
-        vonDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
+        // Datum-Filter standardmäßig leer (Benutzer setzt bei Bedarf)
         vonDatum.setWidth("200px");
 
-        bisDatum.setValue(LocalDate.now());
-        bisDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
         bisDatum.setWidth("200px");
 
         filterButton.addClickListener(e -> updateGrid());
@@ -327,7 +329,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         pdfDownload = new Anchor(createPdfResource(), "");
         pdfDownload.getElement().setAttribute("download", true);
         Button pdfButton = new Button("PDF exportieren", new Icon(VaadinIcon.DOWNLOAD));
-        pdfButton.addClassName("pdf-export-btn");
+        pdfButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
         pdfDownload.add(pdfButton);
 
         // Alle Filter nebeneinander, responsive mit flex-wrap
@@ -412,11 +414,11 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse)
                 .setHeader("Schüsse")
                 .setAutoWidth(true)
-                .setClassNameGenerator(item -> "align-right");
+                .setTextAlign(ColumnTextAlign.END);
         grid.addColumn(SchiessnachweisEintrag::getErgebnis)
                 .setHeader("Ergebnis")
                 .setAutoWidth(true)
-                .setClassNameGenerator(item -> "align-right");
+                .setTextAlign(ColumnTextAlign.END);
         grid.addComponentColumn(this::createStatusBadge)
                 .setHeader("Status")
                 .setAutoWidth(true);
@@ -428,13 +430,6 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                 .setHeader("Aktionen")
                 .setWidth("250px")
                 .setFlexGrow(0);
-
-        // CSS für rechtsbündige Ausrichtung
-        grid.getElement().executeJs(
-                "const style = document.createElement('style');" +
-                "style.textContent = '.align-right { text-align: right; }';" +
-                "document.head.appendChild(style);"
-        );
 
         layout.add(grid);
         return layout;
@@ -501,7 +496,6 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
             log.info("Starte PKI-Signierung für Eintrag {} in EintraegeVerwaltungView", eintrag.getId());
 
             // Eintrag mit allen Relationen inkl. Verein neu aus DB laden
-            // Verwendet JOIN FETCH um LazyInitializationException zu vermeiden
             SchiessnachweisEintrag vollstaendigerEintrag = schiessnachweisService.findeEintragMitVerein(eintrag.getId())
                     .orElseThrow(() -> new RuntimeException("Eintrag nicht gefunden"));
 
@@ -513,6 +507,13 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
 
             // Mit PKI-Zertifikat signieren über SignaturService
             signaturService.signEintrag(vollstaendigerEintrag, currentUser, verein);
+
+            // Benachrichtigung: Informiere den Schützen, dass sein Eintrag signiert wurde
+            try {
+                notificationService.notifyEntrySigned(vollstaendigerEintrag);
+            } catch (Exception nEx) {
+                log.warn("Fehler beim Senden der Entry-signed-Benachrichtigung: {}", nEx.getMessage());
+            }
 
             Notification.show("Eintrag erfolgreich mit PKI-Zertifikat signiert")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -605,7 +606,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                         .collect(Collectors.toList());
             }
 
-            // Filter nach Datum NUR wenn "Alle" Tab aktiv ist
+            // Filter nach Datum nur anwenden, wenn beide Felder gesetzt sind und Tab 'Alle' aktiv
             if (aktuellerTab == alleTab) {
                 LocalDate von = vonDatum.getValue();
                 LocalDate bis = bisDatum.getValue();
@@ -639,8 +640,9 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                 LocalDate von = vonDatum.getValue() != null ? vonDatum.getValue() : LocalDate.now().minusMonths(3);
                 LocalDate bis = bisDatum.getValue() != null ? bisDatum.getValue() : LocalDate.now();
 
-                byte[] pdfBytes = pdfExportService.exportiereSchiessnachweise(
-                        currentUser,
+                // Verwende den Schießstand-spezifischen Export für die Eintragsverwaltung
+                byte[] pdfBytes = pdfExportService.exportiereEintragsverwaltungSchiesstand(
+                        aktuellerSchiesstand,
                         aktuelleFiltierteEintraege,
                         von,
                         bis

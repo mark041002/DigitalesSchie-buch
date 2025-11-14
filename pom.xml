@@ -116,6 +116,13 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
+
+        <!-- JavaMail API für E-Mail-Versand -->
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>jakarta.mail</artifactId>
+            <version>2.0.1</version>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
@@ -203,7 +210,3 @@
         </profile>
     </profiles>
 </project>
-
-
-
-

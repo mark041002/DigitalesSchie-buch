@@ -8,6 +8,7 @@ import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
 import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.repository.VereinsmitgliedschaftRepository;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
+import de.suchalla.schiessbuch.service.email.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +33,7 @@ public class VereinsmitgliedschaftService {
     private final VereinsmitgliedschaftRepository mitgliedschaftRepository;
     private final VereinRepository vereinRepository;
     private final DigitalesZertifikatRepository zertifikatRepository;
+    private final NotificationService notificationService;
 
     /**
      * Beantragt eine Vereinsmitgliedschaft.
@@ -93,6 +95,17 @@ public class VereinsmitgliedschaftService {
                 return existierende.get(0);
             }
             throw ex;
+        }
+        finally {
+            // Benachrichtigung an Vereinschefs über neue Beitrittsanfrage
+            try {
+                notificationService.notifyMembershipRequest(verein, benutzer);
+            } catch (Exception nEx) {
+                // Nur loggen, Fehler in Notifikation sollen nicht den Flow abbrechen
+                // (DB-Operation ist bereits abgeschlossen)
+                org.slf4j.LoggerFactory.getLogger(VereinsmitgliedschaftService.class)
+                        .warn("Fehler beim Senden der Beitrittsanfrage-Benachrichtigung: {}", nEx.getMessage());
+            }
         }
     }
 

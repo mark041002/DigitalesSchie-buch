@@ -1,9 +1,13 @@
-package de.suchalla.schiessbuch.ui.view;
+package de.suchalla.schiessbuch.ui.view.persoenlich;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -20,7 +24,11 @@ import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.service.BenutzerService;
+import de.suchalla.schiessbuch.service.email.EmailService;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Registrierungs-View für neue Benutzer.
@@ -35,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 public class RegisterView extends VerticalLayout {
 
     private final BenutzerService benutzerService;
+    private final EmailService emailService;
 
     private final TextField vornameField = new TextField("Vorname");
     private final TextField nachnameField = new TextField("Nachname");
@@ -45,8 +54,9 @@ public class RegisterView extends VerticalLayout {
 
     private final Binder<Benutzer> binder = new BeanValidationBinder<>(Benutzer.class);
 
-    public RegisterView(BenutzerService benutzerService) {
+    public RegisterView(BenutzerService benutzerService, EmailService emailService) {
         this.benutzerService = benutzerService;
+        this.emailService = emailService;
 
         setSizeFull();
         setAlignItems(Alignment.CENTER);
@@ -131,33 +141,42 @@ public class RegisterView extends VerticalLayout {
         );
     }
 
+    private String getBaseUrl() {
+        return "http://localhost:8000";
+    }
+
     /**
      * Führt die Registrierung durch.
      */
     private void registrieren() {
         try {
-            // Passwörter vergleichen
             if (!passwortField.getValue().equals(passwortBestaetigenField.getValue())) {
                 Notification.show("Die Passwörter stimmen nicht überein")
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return;
             }
-
-            // Benutzer validieren und erstellen
             Benutzer benutzer = new Benutzer();
             binder.writeBean(benutzer);
-
-            // Registrierung durchführen
+            benutzer.setEmailVerifiziert(false);
             benutzerService.registriereBenutzer(benutzer);
-
-            Notification notification = Notification.show(
-                "Registrierung erfolgreich! Sie können sich jetzt anmelden."
-            );
-            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            notification.setDuration(3000);
-
-            // Zur Login-Seite weiterleiten
-            getUI().ifPresent(ui -> ui.navigate(LoginView.class));
+            
+            // Verifizierungslink generieren und E-Mail versenden (mit Fehlerbehandlung)
+            String token = benutzerService.erstelleVerifizierungsToken(benutzer);
+            String link = getBaseUrl() + "/email-verifizieren?token=" + token;
+            
+            try {
+                Map<String, Object> vars = new HashMap<>();
+                vars.put("username", benutzer.getVollstaendigerName());
+                vars.put("verificationLink", link);
+                emailService.sendMail(benutzer.getEmail(), "E-Mail bestätigen", "verification.html", vars);
+                log.info("Verifizierungs-E-Mail erfolgreich an {} versendet", benutzer.getEmail());
+            } catch (Exception mailException) {
+                log.error("Fehler beim Versenden der Verifizierungs-E-Mail an {}", benutzer.getEmail(), mailException);
+                // E-Mail-Fehler blockieren nicht die Registrierung
+            }
+            
+            // Dialog anzeigen und zur Homepage weiterleiten
+            zeigeVerifizierungsDialog(benutzer.getEmail());
 
         } catch (ValidationException e) {
             Notification.show("Bitte überprüfen Sie Ihre Eingaben")
@@ -170,5 +189,59 @@ public class RegisterView extends VerticalLayout {
             Notification.show("Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.")
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
+    }
+
+    /**
+     * Zeigt einen Dialog mit Hinweis zur E-Mail-Verifizierung und leitet zur Homepage weiter.
+     */
+    private void zeigeVerifizierungsDialog(String email) {
+        Dialog dialog = new Dialog();
+        dialog.setCloseOnEsc(false);
+        dialog.setCloseOnOutsideClick(false);
+
+        // Dialog-Layout
+        VerticalLayout dialogLayout = new VerticalLayout();
+        dialogLayout.setPadding(true);
+        dialogLayout.setSpacing(true);
+        dialogLayout.setAlignItems(Alignment.CENTER);
+        dialogLayout.getStyle().set("text-align", "center");
+
+        // Icon
+        Icon successIcon = VaadinIcon.CHECK_CIRCLE.create();
+        successIcon.setSize("64px");
+        successIcon.setColor("var(--lumo-success-color)");
+
+        // Titel
+        H2 titel = new H2("Registrierung erfolgreich!");
+        titel.getStyle().set("margin-top", "0");
+
+        // Beschreibung
+        Paragraph beschreibung = new Paragraph(
+            "Wir haben Ihnen eine E-Mail an " + email + " geschickt. " +
+            "Bitte bestätigen Sie Ihre E-Mail-Adresse über den Link in der E-Mail, " +
+            "bevor Sie sich anmelden können."
+        );
+        beschreibung.getStyle()
+                .set("max-width", "500px")
+                .set("margin", "var(--lumo-space-m) 0");
+
+        // Hinweis
+        Paragraph hinweis = new Paragraph(
+            "Falls Sie keine E-Mail erhalten haben, überprüfen Sie bitte Ihren Spam-Ordner."
+        );
+        hinweis.getStyle()
+                .set("font-size", "var(--lumo-font-size-s)")
+                .set("color", "var(--lumo-secondary-text-color)");
+
+        // Button
+        Button okButton = new Button("Zur Startseite", e -> {
+            dialog.close();
+            getUI().ifPresent(ui -> ui.navigate(""));
+        });
+        okButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        dialogLayout.add(successIcon, titel, beschreibung, hinweis, okButton);
+        dialog.add(dialogLayout);
+        dialog.open();
     }
 }
