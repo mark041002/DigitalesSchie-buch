@@ -54,7 +54,7 @@ public class NotificationService {
 
         // Vereinschefs
         List<de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft> chefs =
-                mitgliedschaftRepository.findByVereinAndIstVereinschefTrue(verein);
+                mitgliedschaftRepository.findByVereinAndIstVereinschef(verein, true);
         for (var m : chefs) {
             var b = m.getBenutzer();
             if (b == null) continue;
@@ -66,7 +66,7 @@ public class NotificationService {
                 continue;
             }
             if (Boolean.TRUE.equals(b.isEmailNotificationsEnabled())) {
-                emailService.sendMail(email, "Eintrag zur Signatur", "signature-request.html", vars);
+                emailService.sendMail(email, "Digitales Schießbuch - Eintrag zur Signatur", "signature-request.html", vars);
                 if (uid != null) sentUserIds.add(uid);
                 sentEmails.add(email);
             }
@@ -74,7 +74,7 @@ public class NotificationService {
 
         // Aufseher
         List<de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft> aufseher =
-                mitgliedschaftRepository.findByVereinAndIstAufseherTrue(verein);
+                mitgliedschaftRepository.findByVereinAndIstAufseher(verein, true);
         for (var m : aufseher) {
             var b = m.getBenutzer();
             if (b == null) continue;
@@ -86,7 +86,7 @@ public class NotificationService {
                 continue;
             }
             if (Boolean.TRUE.equals(b.isEmailNotificationsEnabled())) {
-                emailService.sendMail(email, "Eintrag zur Signatur", "signature-request.html", vars);
+                emailService.sendMail(email, "Digitales Schießbuch - Eintrag zur Signatur", "signature-request.html", vars);
                 if (uid != null) sentUserIds.add(uid);
                 sentEmails.add(email);
             }
@@ -113,7 +113,7 @@ public class NotificationService {
         java.util.Set<String> sentEmails = new java.util.HashSet<>();
 
         List<de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft> chefs =
-                mitgliedschaftRepository.findByVereinAndIstVereinschefTrue(verein);
+                mitgliedschaftRepository.findByVereinAndIstVereinschef(verein, true);
         for (var m : chefs) {
             var b = m.getBenutzer();
             if (b == null) continue;
@@ -125,7 +125,7 @@ public class NotificationService {
                 continue;
             }
             if (Boolean.TRUE.equals(b.isEmailNotificationsEnabled())) {
-                emailService.sendMail(email, "Neue Beitrittsanfrage", "membership-request.html", vars);
+                emailService.sendMail(email, "Digitales Schießbuch - Neue Beitrittsanfrage", "membership-request.html", vars);
                 if (uid != null) sentUserIds.add(uid);
                 sentEmails.add(email);
             }
@@ -143,7 +143,7 @@ public class NotificationService {
             vars.put("entryId", eintrag.getId());
             // Ziel-URL: Meine Einträge
             vars.put("actionUrl", baseUrl + "/meine-eintraege");
-            emailService.sendMail(schuetze.getEmail(), "Eintrag signiert", "entry-signed.html", vars);
+            emailService.sendMail(schuetze.getEmail(), "Digitales Schießbuch - Eintrag signiert", "entry-signed.html", vars);
         }
     }
 }

@@ -37,6 +37,7 @@
     border-radius: var(--lumo-border-radius-l);
     box-shadow: var(--lumo-box-shadow-m);
     box-sizing: border-box;
+    margin-bottom: var(--lumo-space-l);
 }
 
 .gradient-header h2 {

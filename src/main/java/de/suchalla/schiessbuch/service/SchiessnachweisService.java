@@ -49,7 +49,7 @@ public class SchiessnachweisService {
      */
     @Transactional(readOnly = true)
     public Optional<SchiessnachweisEintragDetailDTO> findeEintragMitVerein(Long id) {
-        return eintragRepository.findByIdWithVerein(id)
+        return eintragRepository.findById(id)
                 .map(eintragMapper::toDetailDTO);
     }
 
@@ -63,7 +63,7 @@ public class SchiessnachweisService {
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintragListDTO> findeEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
-        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchuetzeAndDatumBetweenWithVerein(schuetze, von, bis);
+        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchuetzeAndDatumBetween(schuetze, von, bis);
         return eintragMapper.toListDTOList(entities);
     }
 
@@ -89,7 +89,7 @@ public class SchiessnachweisService {
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintragListDTO> findeSignierteEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
-        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchuetzeAndDatumBetweenAndStatusWithVerein(
+        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchuetzeAndDatumBetweenAndStatus(
                 schuetze, von, bis, EintragStatus.SIGNIERT);
         return eintragMapper.toListDTOList(entities);
     }
@@ -102,7 +102,7 @@ public class SchiessnachweisService {
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintragListDTO> findeUnsignierteEintraege(Schiesstand schiesstand) {
-        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchiesstandAndStatusWithVerein(schiesstand, EintragStatus.UNSIGNIERT);
+        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchiesstandAndStatus(schiesstand, EintragStatus.UNSIGNIERT);
         return eintragMapper.toListDTOList(entities);
     }
 
@@ -114,7 +114,7 @@ public class SchiessnachweisService {
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintragListDTO> findeEintraegeAnSchiesstand(Schiesstand schiesstand) {
-        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchiesstandWithVerein(schiesstand);
+        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchiesstand(schiesstand);
         return eintragMapper.toListDTOList(entities);
     }
 
@@ -128,7 +128,7 @@ public class SchiessnachweisService {
      */
     @Transactional
     public void signiereEintrag(Long eintragId, Benutzer aufseher, String signatur) {
-        SchiessnachweisEintrag eintrag = eintragRepository.findByIdWithDetails(eintragId)
+        SchiessnachweisEintrag eintrag = eintragRepository.findById(eintragId)
                 .orElseThrow(() -> new IllegalArgumentException("Eintrag nicht gefunden"));
 
         if (eintrag.getStatus() != EintragStatus.UNSIGNIERT) {
@@ -153,7 +153,7 @@ public class SchiessnachweisService {
      */
     @Transactional
     public void lehneEintragAb(Long eintragId, Benutzer aufseher, String ablehnungsgrund) {
-        SchiessnachweisEintrag eintrag = eintragRepository.findByIdWithDetails(eintragId)
+        SchiessnachweisEintrag eintrag = eintragRepository.findById(eintragId)
                 .orElseThrow(() -> new IllegalArgumentException("Eintrag nicht gefunden"));
 
         if (eintrag.getStatus() != EintragStatus.UNSIGNIERT) {
@@ -177,7 +177,7 @@ public class SchiessnachweisService {
      */
     @Transactional
     public void loescheEintrag(Long eintragId) {
-        SchiessnachweisEintrag eintrag = eintragRepository.findByIdWithDetails(eintragId)
+        SchiessnachweisEintrag eintrag = eintragRepository.findById(eintragId)
                 .orElseThrow(() -> new IllegalArgumentException("Eintrag nicht gefunden"));
 
         if (eintrag.getStatus() == EintragStatus.SIGNIERT) {

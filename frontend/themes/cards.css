@@ -10,12 +10,6 @@
     margin-bottom: var(--lumo-space-l);
 }
 
-@media (max-width: 768px) {
-    .stats-grid {
-        grid-template-columns: 1fr ;
-    }
-}
-
 /* Stat Card - für Dashboard */
 .stat-card {
     background: var(--lumo-base-color);
@@ -30,6 +24,12 @@
 .stat-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--lumo-box-shadow-m);
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Card */
@@ -107,30 +107,18 @@
     margin: var(--lumo-space-m);
 }
 
-/* Quick Access Container - für Dashboard */
-.quick-access-container {
-    width: 100%;
-    background: linear-gradient(135deg, var(--lumo-contrast-5pct) 0%, var(--lumo-primary-color-10pct) 100%);
-    border-radius: var(--lumo-border-radius-l);
-    padding: var(--lumo-space-l);
-    box-shadow: var(--lumo-box-shadow-m);
-    border: 1px solid var(--lumo-contrast-10pct);
-    box-sizing: border-box;
-    max-width: 100%;
-    overflow: hidden;
+/* Cards Container - für Karten-Layout */
+.cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: var(--lumo-space-m);
+    margin-top: var(--lumo-space-m);
 }
 
-.quick-access-container h3 {
-    margin: 0 0 var(--lumo-space-m) 0;
-    color: var(--lumo-primary-text-color);
-}
-
-/* Quick Access Grid - Button Layout */
-.quick-access-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--lumo-space-s);
-    justify-content: flex-start;
+@media (max-width: 768px) {
+    .cards-container {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Grid Row Hover */

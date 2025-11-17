@@ -14,7 +14,8 @@
     border: none;
 }
 
-.neuer-eintrag-btn:hover, .neuer-eintrag-btn:focus {
+.neuer-eintrag-btn:hover,
+.neuer-eintrag-btn:focus {
     background: white;
     color: var(--lumo-success-color);
     transform: translateY(-2px) scale(1.04);
@@ -53,18 +54,5 @@ vaadin-button:hover:not([disabled]) {
     transform: rotate(15deg);
 }
 
-/* Card Hover-Effekte */
-.card-hover {
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.card-hover:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--lumo-box-shadow-m);
-}
-
-/* Grid Row Hover */
-vaadin-grid::part(row):hover {
-    background-color: var(--lumo-primary-color-10pct);
-}
+/* Note: .card-hover moved to cards.css to avoid duplication */
+/* Note: Grid Row Hover moved to cards.css to avoid duplication */

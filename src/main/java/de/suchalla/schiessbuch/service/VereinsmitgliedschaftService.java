@@ -170,7 +170,7 @@ public class VereinsmitgliedschaftService {
      */
     @Transactional(readOnly = true)
     public List<VereinsmigliedschaftDTO> findeBeitrittsanfragen(Verein verein) {
-        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatusWithDetails(verein, MitgliedschaftStatus.BEANTRAGT);
+        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftStatus.BEANTRAGT);
         return vereinsmigliedschaftMapper.toDTOList(entities);
     }
 
@@ -182,7 +182,7 @@ public class VereinsmitgliedschaftService {
      */
     @Transactional(readOnly = true)
     public List<VereinsmigliedschaftDTO> findeAktiveMitgliedschaften(Verein verein) {
-        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatusWithDetails(verein, MitgliedschaftStatus.AKTIV);
+        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftStatus.AKTIV);
         return vereinsmigliedschaftMapper.toDTOList(entities);
     }
 
@@ -194,7 +194,7 @@ public class VereinsmitgliedschaftService {
      */
     @Transactional(readOnly = true)
     public List<Vereinsmitgliedschaft> findeAktiveMitgliedschaftenEntities(Verein verein) {
-        return mitgliedschaftRepository.findByVereinAndStatusWithDetails(verein, MitgliedschaftStatus.AKTIV);
+        return mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftStatus.AKTIV);
     }
 
     /**
@@ -371,7 +371,7 @@ public class VereinsmitgliedschaftService {
      */
     @Transactional(readOnly = true)
     public List<VereinsmigliedschaftDTO> findeAlleMitgliedschaften(Verein verein) {
-        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinWithDetails(verein);
+        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVerein(verein);
         return vereinsmigliedschaftMapper.toDTOList(entities);
     }
 
@@ -384,7 +384,7 @@ public class VereinsmitgliedschaftService {
      */
     @Transactional(readOnly = true)
     public List<VereinsmigliedschaftDTO> findeMitgliedschaftenNachStatus(Verein verein, MitgliedschaftStatus status) {
-        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatusWithDetails(verein, status);
+        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, status);
         return vereinsmigliedschaftMapper.toDTOList(entities);
     }
 

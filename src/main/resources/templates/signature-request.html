@@ -1,15 +1,26 @@
 <!doctype html>
 <html lang="de">
 <head>
-<meta charset="utf-8">
-<title>Signaturanfrage</title>
+    <meta charset="utf-8">
+    <title>Signaturanfrage - Digitales Schießbuch</title>
 </head>
 <body>
-<p>Hallo {{username}},</p>
-<p>Es gibt einen neuen Schießnachweis-Eintrag, der Ihre Signatur benötigt (Eintrag-ID: {{entryId}}).</p>
-<p>Bitte prüfen Sie den Eintrag und signieren Sie ihn falls zutreffend:</p>
-<p><a href="{{actionUrl}}">Zur Eintragsverwaltung / offenen Signaturen</a></p>
-<p>Viele Grüße<br/>Digitales Schießbuch</p>
+    <h1>Digitales Schießbuch</h1>
+    <h2>Signaturanfrage</h2>
+
+    <p>Hallo {{username}},</p>
+
+    <p>Ein neuer Schießnachweis-Eintrag wartet auf Ihre digitale Signatur:</p>
+
+    <p><strong>Eintrag-ID:</strong> {{entryId}}</p>
+    <p>Bitte prüfen Sie den Eintrag auf Richtigkeit, bevor Sie ihn signieren.</p>
+
+    <p><a href="{{actionUrl}}">Zur Eintragsverwaltung</a></p>
+
+    <p><strong>Hinweis:</strong> Mit Ihrer digitalen Signatur bestätigen Sie die Richtigkeit der Angaben.</p>
+
+    <hr>
+    <p><strong>Digitales Schießbuch</strong></p>
+    <p>Diese E-Mail wurde automatisch generiert. Bitte antworten Sie nicht auf diese Nachricht.</p>
 </body>
 </html>
-

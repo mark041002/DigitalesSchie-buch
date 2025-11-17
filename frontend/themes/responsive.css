@@ -19,42 +19,8 @@
         font-size: 0.875rem;
     }
 
-    .quick-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--lumo-space-s);
-        justify-content: center;
-    }
-
-    /* Stat-Cards: Eine Spalte auf Mobile */
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .grid-container {
-        overflow-x: auto;
-        overflow-y: visible;
-        -webkit-overflow-scrolling: touch;
-        width: 100%;
-        max-width: calc(100vw - var(--lumo-space-m) * 2);
-        padding: var(--lumo-space-s);
-        margin: 0 auto;
-    }
-
-    .grid-container vaadin-grid {
-        min-width: 900px;
-        width: auto;
-    }
-
-    /* View Container auf Mobile anpassen */
-    .view-container {
-        padding: var(--lumo-space-s);
-    }
-
-    /* Content Wrapper auf Mobile */
-    .content-wrapper {
-        padding: 0;
-    }
+    /* Note: .quick-actions, .stats-grid, .grid-container, .view-container, .content-wrapper mobile styles */
+    /* are already defined in their respective CSS files (layout.css, cards.css) */
 }
 
 @media (max-width: 480px) {

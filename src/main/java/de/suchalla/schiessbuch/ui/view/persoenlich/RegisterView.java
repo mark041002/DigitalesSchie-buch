@@ -168,7 +168,7 @@ public class RegisterView extends VerticalLayout {
                 Map<String, Object> vars = new HashMap<>();
                 vars.put("username", benutzer.getVollstaendigerName());
                 vars.put("verificationLink", link);
-                emailService.sendMail(benutzer.getEmail(), "E-Mail bestätigen", "verification.html", vars);
+                emailService.sendMail(benutzer.getEmail(), "Digitales Schießbuch - E-Mail bestätigen", "verification.html", vars);
                 log.info("Verifizierungs-E-Mail erfolgreich an {} versendet", benutzer.getEmail());
             } catch (Exception mailException) {
                 log.error("Fehler beim Versenden der Verifizierungs-E-Mail an {}", benutzer.getEmail(), mailException);
