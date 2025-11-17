@@ -32,6 +32,16 @@ public class SignaturService {
     private final ZertifikatVerifizierungsService zertifikatVerifizierungsService;
 
     /**
+     * Signiert einen Schießnachweis-Eintrag anhand der ID.
+     */
+    @Transactional
+    public void signEintragMitId(Long eintragId, Benutzer aufseher, Verein verein) {
+        SchiessnachweisEintrag eintrag = eintragRepository.findById(eintragId)
+                .orElseThrow(() -> new IllegalArgumentException("Eintrag nicht gefunden"));
+        signEintrag(eintrag, aufseher, verein);
+    }
+
+    /**
      * Signiert einen Schießnachweis-Eintrag mit dem Zertifikat des Aufsehers.
      */
     @Transactional

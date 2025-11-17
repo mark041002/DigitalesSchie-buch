@@ -1,5 +1,7 @@
 package de.suchalla.schiessbuch.service;
 
+import de.suchalla.schiessbuch.mapper.BenutzerMapper;
+import de.suchalla.schiessbuch.model.dto.BenutzerDTO;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.UserToken;
 import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
@@ -27,6 +29,7 @@ public class BenutzerService {
     private final BenutzerRepository benutzerRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserTokenRepository userTokenRepository;
+    private final BenutzerMapper benutzerMapper;
 
     /**
      * Registriert einen neuen Benutzer.
@@ -46,12 +49,23 @@ public class BenutzerService {
     }
 
     /**
-     * Gibt alle Benutzer zurück.
+     * Gibt alle Benutzer als DTOs zurück (OHNE password-Hash!).
      *
-     * @return Liste aller Benutzer
+     * @return Liste aller Benutzer als DTOs
      */
     @Transactional(readOnly = true)
-    public List<Benutzer> findAlleBenutzer() {
+    public List<BenutzerDTO> findAlleBenutzer() {
+        List<Benutzer> entities = benutzerRepository.findAll();
+        return benutzerMapper.toDTOList(entities);
+    }
+
+    /**
+     * Gibt alle Benutzer als Entities zurück (für interne Verwendung wie ComboBoxen).
+     *
+     * @return Liste aller Benutzer als Entities
+     */
+    @Transactional(readOnly = true)
+    public List<Benutzer> findAlleBenutzerEntities() {
         return benutzerRepository.findAll();
     }
 

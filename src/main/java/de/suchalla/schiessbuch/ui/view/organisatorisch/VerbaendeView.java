@@ -147,7 +147,7 @@ public class VerbaendeView extends VerticalLayout {
         layout.setPadding(true);
 
         // Verwende die Service-Methode, die nach Verband-ID filtert
-        List<Disziplin> disziplinen = disziplinService.findeDisziplinenVonVerband(verband.getId());
+        List<Disziplin> disziplinen = disziplinService.findeDisziplinenVonVerbandEntities(verband.getId());
 
         if (disziplinen.isEmpty()) {
             layout.add(new Paragraph("Dieser Verband bietet noch keine Disziplinen an."));
@@ -176,7 +176,7 @@ public class VerbaendeView extends VerticalLayout {
      * Aktualisiert das Grid.
      */
     private void updateGrid() {
-        List<Verband> verbaende = verbandService.findeAlleVerbaendeMitVereinen(); // EAGER laden!
+        List<Verband> verbaende = verbandService.findeAlleVerbaendeMitVereinenEntities(); // EAGER laden!
         grid.setItems(verbaende);
         // Wichtig: Grid komplett neu rendern, damit Status und Buttons aktualisiert werden
         grid.recalculateColumnWidths();

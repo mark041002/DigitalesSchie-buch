@@ -22,6 +22,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Verband;
+import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.VereinService;
 import de.suchalla.schiessbuch.service.VerbandService;
@@ -49,6 +50,7 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
     private final VereinService vereinService;
     private final VerbandService verbandService;
     private final VereinsmitgliedschaftService mitgliedschaftService;
+    private final VereinRepository vereinRepository;
     private final Benutzer currentUser;
 
     private final TextField nameField = new TextField("Vereinsname");
@@ -62,10 +64,12 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
     public VereinDetailsView(SecurityService securityService,
                              VereinService vereinService,
                              VerbandService verbandService,
-                             VereinsmitgliedschaftService mitgliedschaftService) {
+                             VereinsmitgliedschaftService mitgliedschaftService,
+                             VereinRepository vereinRepository) {
         this.vereinService = vereinService;
         this.verbandService = verbandService;
         this.mitgliedschaftService = mitgliedschaftService;
+        this.vereinRepository = vereinRepository;
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
         setSpacing(false);
@@ -164,7 +168,7 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
         beschreibungField.setWidthFull();
         beschreibungField.setHeight("150px");
         verbaendeField.setRequired(true);
-        verbaendeField.setItems(verbandService.findeAlleVerbaende());
+        verbaendeField.setItems(verbandService.findeAlleVerbaendeEntities());
         verbaendeField.setItemLabelGenerator(Verband::getName);
         verbaendeField.setPlaceholder("Verbände auswählen...");
         verbaendeField.setWidthFull();
@@ -222,8 +226,9 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
         mitgliedschaftService.findeMitgliedschaften(currentUser).stream()
                 .filter(m -> Boolean.TRUE.equals(m.getIstVereinschef()))
                 .findFirst()
-                .ifPresent(mitgliedschaft -> {
-                    aktuellerVerein = mitgliedschaft.getVerein();
+                .ifPresent(dto -> {
+                    Long vereinId = dto.getVereinId();
+                    aktuellerVerein = vereinRepository.findById(vereinId).orElse(null);
                     ladeVereinsdaten();
                 });
 

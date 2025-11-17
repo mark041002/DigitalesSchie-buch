@@ -127,7 +127,7 @@ public class NeuerEintragView extends VerticalLayout {
         datum.setRequired(true);
 
         // Schießstand: Mit Icon
-        schiesstand.setItems(disziplinService.findeAlleSchiesstaende());
+        schiesstand.setItems(disziplinService.findeAlleSchiesstaendeEntities());
         schiesstand.setItemLabelGenerator(Schiesstand::getName);
         schiesstand.setRequired(true);
         schiesstand.setPlaceholder("Schießstand auswählen");
@@ -217,7 +217,7 @@ public class NeuerEintragView extends VerticalLayout {
         }
 
         // Verwende Service-Methode statt direkten Zugriff auf lazy Collection
-        return vereinsmitgliedschaftService.findeVerbaendeVonBenutzer(currentUser);
+        return vereinsmitgliedschaftService.findeVerbaendeVonBenutzerEntities(currentUser);
     }
 
     /**
@@ -236,7 +236,7 @@ public class NeuerEintragView extends VerticalLayout {
             disziplin.setEnabled(true);
 
             // Lade Disziplinen direkt für den ausgewählten Verband
-            List<Disziplin> verfuegbareDisziplinen = disziplinService.findeDisziplinenVonVerband(verband.getValue().getId());
+            List<Disziplin> verfuegbareDisziplinen = disziplinService.findeDisziplinenVonVerbandEntities(verband.getValue().getId());
 
             disziplin.setItems(verfuegbareDisziplinen);
             disziplin.setPlaceholder("Disziplin auswählen");

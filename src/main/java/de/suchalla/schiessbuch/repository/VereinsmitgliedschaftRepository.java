@@ -51,7 +51,6 @@ public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmi
 
     /**
      * Findet alle Mitgliedschaften eines Vereins mit allen Statussen.
-     * @TODO KANN MAN DAS ÄNDERN?
      *
      * @param verein Der Verein
      * @return Liste der Mitgliedschaften

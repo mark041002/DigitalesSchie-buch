@@ -1,5 +1,9 @@
 package de.suchalla.schiessbuch.service;
 
+import de.suchalla.schiessbuch.mapper.DisziplinMapper;
+import de.suchalla.schiessbuch.mapper.SchiesstandMapper;
+import de.suchalla.schiessbuch.model.dto.DisziplinDTO;
+import de.suchalla.schiessbuch.model.dto.SchiesstandDTO;
 import de.suchalla.schiessbuch.model.entity.Disziplin;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.repository.DisziplinRepository;
@@ -24,6 +28,8 @@ public class DisziplinService {
 
     private final DisziplinRepository disziplinRepository;
     private final SchiesstandRepository schiesstandRepository;
+    private final DisziplinMapper disziplinMapper;
+    private final SchiesstandMapper schiesstandMapper;
 
     /**
      * Erstellt eine neue Disziplin.
@@ -39,11 +45,12 @@ public class DisziplinService {
      * Findet alle Disziplinen eines Verbands.
      *
      * @param verbandid Die Verband-ID
-     * @return Liste der Disziplinen
+     * @return Liste der Disziplinen als DTOs
      */
     @Transactional(readOnly = true)
-    public List<Disziplin> findeDisziplinenVonVerband(Long verbandid) {
-        return disziplinRepository.findByVerbandId(verbandid);
+    public List<DisziplinDTO> findeDisziplinenVonVerband(Long verbandid) {
+        List<Disziplin> entities = disziplinRepository.findByVerbandId(verbandid);
+        return disziplinMapper.toDTOList(entities);
     }
 
     /**
@@ -76,12 +83,34 @@ public class DisziplinService {
     }
 
     /**
-     * Findet alle Schießstände.
+     * Findet alle Schießstände als DTOs.
      *
-     * @return Liste aller Schießstände
+     * @return Liste aller Schießstände als DTOs
      */
     @Transactional(readOnly = true)
-    public List<Schiesstand> findeAlleSchiesstaende() {
+    public List<SchiesstandDTO> findeAlleSchiesstaende() {
+        List<Schiesstand> entities = schiesstandRepository.findAllWithVerein();
+        return schiesstandMapper.toDTOList(entities);
+    }
+
+    /**
+     * Findet alle Disziplinen eines Verbands als Entities (für interne Verwendung).
+     *
+     * @param verbandId Die Verband-ID
+     * @return Liste der Disziplinen als Entities
+     */
+    @Transactional(readOnly = true)
+    public List<Disziplin> findeDisziplinenVonVerbandEntities(Long verbandId) {
+        return disziplinRepository.findByVerbandId(verbandId);
+    }
+
+    /**
+     * Findet alle Schießstände als Entities (für interne Verwendung).
+     *
+     * @return Liste aller Schießstände als Entities
+     */
+    @Transactional(readOnly = true)
+    public List<Schiesstand> findeAlleSchiesstaendeEntities() {
         return schiesstandRepository.findAllWithVerein();
     }
 

@@ -257,7 +257,7 @@ public class MitgliederVerwaltungView extends VerticalLayout {
     }
 
     private void updateGrid() {
-        List<Benutzer> alleBenutzzer = benutzerService.findAlleBenutzer();
+        List<Benutzer> alleBenutzzer = benutzerService.findAlleBenutzerEntities();
         grid.setItems(alleBenutzzer);
         grid.getDataProvider().refreshAll();
 

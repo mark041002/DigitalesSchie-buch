@@ -155,7 +155,7 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
         adresseField.setWidthFull();
 
 
-        vereinComboBox.setItems(verbandService.findeAlleVereine());
+        vereinComboBox.setItems(verbandService.findeAlleVereineEntities());
         vereinComboBox.setItemLabelGenerator(Verein::getName);
         vereinComboBox.setPlaceholder("Verein auswählen...");
         vereinComboBox.setWidthFull();
@@ -207,7 +207,7 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
             return;
         }
 
-        List<Schiesstand> schiesstaende = disziplinService.findeAlleSchiesstaende();
+        List<Schiesstand> schiesstaende = disziplinService.findeAlleSchiesstaendeEntities();
         schiesstaende.stream()
                 .filter(s -> s.getAufseher() != null && s.getAufseher().getId().equals(currentUser.getId()))
                 .findFirst()

@@ -19,8 +19,8 @@ import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
+import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
-import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.PdfExportService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
@@ -51,7 +51,7 @@ public class MeineEintraegeView extends VerticalLayout {
     private final PdfExportService pdfExportService;
     private final VereinService vereinService;
 
-    private final Grid<SchiessnachweisEintrag> grid = new Grid<>(SchiessnachweisEintrag.class, false);
+    private final Grid<SchiessnachweisEintragListDTO> grid = new Grid<>(SchiessnachweisEintragListDTO.class, false);
     private final DatePicker vonDatum = new DatePicker("Von");
     private final DatePicker bisDatum = new DatePicker("Bis");
     private Div emptyStateMessage;
@@ -190,43 +190,38 @@ public class MeineEintraegeView extends VerticalLayout {
         gridContainer.addClassName("grid-container");
         gridContainer.setWidthFull();
 
-        // Grid mit modernem Styling
+        // Grid mit modernem Styling - jetzt mit DTOs (flache Struktur)
         grid.setHeight("600px");
         grid.addClassName("rounded-grid");
-        grid.addColumn(SchiessnachweisEintrag::getDatum)
+        grid.addColumn(SchiessnachweisEintragListDTO::getDatum)
                 .setHeader("Datum")
                 .setSortable(true)
                 .setAutoWidth(true);
 
-        grid.addColumn(eintrag -> eintrag.getDisziplin().getName())
+        grid.addColumn(SchiessnachweisEintragListDTO::getDisziplinName)
                 .setHeader("Disziplin")
                 .setAutoWidth(true)
                 .setFlexGrow(1);
 
-        // Vereinsspalte anzeigen (über Schießstand -> Verein)
-        grid.addColumn(eintrag -> {
-            if (eintrag.getSchiesstand() != null && eintrag.getSchiesstand().getVerein() != null) {
-                return eintrag.getSchiesstand().getVerein().getName();
-            }
-            return "-";
-        })
+        // Vereinsspalte anzeigen (direkt aus DTO)
+        grid.addColumn(eintrag -> eintrag.getVereinName() != null ? eintrag.getVereinName() : "-")
                 .setHeader("Verein")
                 .setAutoWidth(true);
 
-        grid.addColumn(SchiessnachweisEintrag::getKaliber)
+        grid.addColumn(SchiessnachweisEintragListDTO::getKaliber)
                 .setHeader("Kaliber")
                 .setAutoWidth(true);
 
-        grid.addColumn(SchiessnachweisEintrag::getWaffenart)
+        grid.addColumn(SchiessnachweisEintragListDTO::getWaffenart)
                 .setHeader("Waffenart")
                 .setAutoWidth(true);
 
-        grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse)
+        grid.addColumn(SchiessnachweisEintragListDTO::getAnzahlSchuesse)
                 .setHeader("Schüsse")
                 .setAutoWidth(true)
                 .setTextAlign(ColumnTextAlign.END);
 
-        grid.addColumn(SchiessnachweisEintrag::getErgebnis)
+        grid.addColumn(SchiessnachweisEintragListDTO::getErgebnis)
                 .setHeader("Ergebnis")
                 .setAutoWidth(true)
                 .setTextAlign(ColumnTextAlign.END);
@@ -235,8 +230,7 @@ public class MeineEintraegeView extends VerticalLayout {
                 .setHeader("Status")
                 .setAutoWidth(true);
 
-        grid.addColumn(eintrag -> eintrag.getAufseher() != null ?
-                eintrag.getAufseher().getVollstaendigerName() : "-")
+        grid.addColumn(SchiessnachweisEintragListDTO::getAufseherVollstaendigerName)
                 .setHeader("Aufseher")
                 .setAutoWidth(true);
 
@@ -275,28 +269,28 @@ public class MeineEintraegeView extends VerticalLayout {
     /**
      * Erstellt Aktions-Buttons für Grid-Zeilen.
      *
-     * @param eintrag Der Eintrag
+     * @param eintrag Der Eintrag (DTO)
      * @return Layout mit Buttons
      */
-    private HorizontalLayout createActionButtons(SchiessnachweisEintrag eintrag) {
+    private HorizontalLayout createActionButtons(SchiessnachweisEintragListDTO eintrag) {
         HorizontalLayout layout = new HorizontalLayout();
         layout.setSpacing(true);
         Button deleteButton = new Button("Löschen", new com.vaadin.flow.component.icon.Icon(com.vaadin.flow.component.icon.VaadinIcon.TRASH));
         deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-        deleteButton.addClickListener(e -> deleteEintrag(eintrag));
+        deleteButton.addClickListener(e -> deleteEintrag(eintrag.getId()));
         layout.add(deleteButton);
 
         return layout;
     }
 
     /**
-     * Löscht einen Eintrag.
+     * Löscht einen Eintrag anhand der ID.
      *
-     * @param eintrag Der zu löschende Eintrag
+     * @param eintragId Die ID des zu löschenden Eintrags
      */
-    private void deleteEintrag(SchiessnachweisEintrag eintrag) {
+    private void deleteEintrag(Long eintragId) {
         try {
-            schiessnachweisService.loescheEintrag(eintrag.getId());
+            schiessnachweisService.loescheEintrag(eintragId);
             Notification.show("Eintrag erfolgreich gelöscht").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             updateGrid();
         } catch (Exception e) {
@@ -306,13 +300,13 @@ public class MeineEintraegeView extends VerticalLayout {
     }
 
     /**
-     * Aktualisiert das Grid mit Einträgen.
+     * Aktualisiert das Grid mit Einträgen (jetzt mit DTOs).
      */
     private void updateGrid() {
         if (currentUser != null) {
             LocalDate von = vonDatum.getValue();
             LocalDate bis = bisDatum.getValue();
-            List<SchiessnachweisEintrag> eintraege;
+            List<SchiessnachweisEintragListDTO> eintraege;
             if (von != null && bis != null) {
                 eintraege = schiessnachweisService.findeEintraegeImZeitraum(currentUser, von, bis);
             } else {
@@ -333,12 +327,11 @@ public class MeineEintraegeView extends VerticalLayout {
             }
             // Bei 'Alle' keine Statusfilterung
 
-            // Vereinsfilter anwenden
+            // Vereinsfilter anwenden (jetzt direkt über DTO-Felder)
             String vereinFilterValue = vereinFilter.getValue();
             if (vereinFilterValue != null && !vereinFilterValue.isEmpty()) {
                 eintraege = eintraege.stream()
-                        .filter(e -> e.getSchiesstand() != null && e.getSchiesstand().getVerein() != null
-                                && e.getSchiesstand().getVerein().getName().equals(vereinFilterValue))
+                        .filter(e -> e.getVereinName() != null && e.getVereinName().equals(vereinFilterValue))
                         .toList();
             }
 
@@ -367,7 +360,7 @@ public class MeineEintraegeView extends VerticalLayout {
     }
 
     /**
-     * Erstellt eine StreamResource für den PDF-Export.
+     * Erstellt eine StreamResource für den PDF-Export (jetzt mit DTOs).
      *
      * @return StreamResource
      */
@@ -379,10 +372,20 @@ public class MeineEintraegeView extends VerticalLayout {
                 LocalDate vonEff = von != null ? von : LocalDate.now().minusMonths(3);
                 LocalDate bisEff = bis != null ? bis : LocalDate.now();
 
-                List<SchiessnachweisEintrag> eintraege = schiessnachweisService
+                // Service gibt jetzt DTOs zurück
+                List<SchiessnachweisEintragListDTO> eintraege = schiessnachweisService
                         .findeSignierteEintraegeImZeitraum(currentUser, vonEff, bisEff);
 
-                byte[] pdfBytes = pdfExportService.exportiereSchiessnachweise(currentUser, eintraege, vonEff, bisEff);
+                // BenutzerMapper wird nicht benötigt, da currentUser noch Entity ist (für Security)
+                // Aber wir erstellen ein DTO für den PDF-Export
+                de.suchalla.schiessbuch.model.dto.BenutzerDTO schuetzeDTO = de.suchalla.schiessbuch.model.dto.BenutzerDTO.builder()
+                        .id(currentUser.getId())
+                        .vorname(currentUser.getVorname())
+                        .nachname(currentUser.getNachname())
+                        .email(currentUser.getEmail())
+                        .build();
+
+                byte[] pdfBytes = pdfExportService.exportiereSchiessnachweise(schuetzeDTO, eintraege, vonEff, bisEff);
                 return new ByteArrayInputStream(pdfBytes);
             } catch (Exception e) {
                 Notification.show("Fehler beim PDF-Export: " + e.getMessage())
@@ -393,9 +396,9 @@ public class MeineEintraegeView extends VerticalLayout {
     }
 
     /**
-     * Erstellt ein farbiges Status-Badge.
+     * Erstellt ein farbiges Status-Badge (jetzt mit DTO).
      */
-    private Span createStatusBadge(SchiessnachweisEintrag eintrag) {
+    private Span createStatusBadge(SchiessnachweisEintragListDTO eintrag) {
         Span badge = new Span();
         badge.getStyle()
                 .set("padding", "4px 12px")

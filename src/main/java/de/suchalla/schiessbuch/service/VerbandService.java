@@ -1,5 +1,9 @@
 package de.suchalla.schiessbuch.service;
 
+import de.suchalla.schiessbuch.mapper.VerbandMapper;
+import de.suchalla.schiessbuch.mapper.VereinMapper;
+import de.suchalla.schiessbuch.model.dto.VerbandDTO;
+import de.suchalla.schiessbuch.model.dto.VereinDTO;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.model.entity.Verein;
@@ -27,6 +31,8 @@ public class VerbandService {
     private final VerbandRepository verbandRepository;
     private final VereinRepository vereinRepository;
     private final VereinsmitgliedschaftService vereinsmitgliedschaftService;
+    private final VerbandMapper verbandMapper;
+    private final VereinMapper vereinMapper;
 
     /**
      * Erstellt einen neuen Verband.
@@ -53,22 +59,43 @@ public class VerbandService {
     }
 
     /**
-     * Findet alle Verbände.
+     * Findet alle Verbände als DTOs.
      *
-     * @return Liste aller Verbände
+     * @return Liste aller Verbände als DTOs
      */
     @Transactional(readOnly = true)
-    public List<Verband> findeAlleVerbaende() {
+    public List<VerbandDTO> findeAlleVerbaende() {
+        List<Verband> entities = verbandRepository.findAllWithVereine();
+        return verbandMapper.toDTOList(entities);
+    }
+
+    /**
+     * Findet alle Verbände als Entities (für interne Verwendung wie ComboBoxen).
+     *
+     * @return Liste aller Verbände als Entities
+     */
+    @Transactional(readOnly = true)
+    public List<Verband> findeAlleVerbaendeEntities() {
         return verbandRepository.findAllWithVereine();
     }
 
     /**
-     * Alias für EAGER-Laden aller Verbände (wird in UI verwendet).
+     * Alias für EAGER-Laden aller Verbände als DTOs (wird in UI verwendet).
      *
-     * @return Liste aller Verbände mit Vereinen
+     * @return Liste aller Verbände als DTOs
      */
     @Transactional(readOnly = true)
-    public List<Verband> findeAlleVerbaendeMitVereinen() {
+    public List<VerbandDTO> findeAlleVerbaendeMitVereinen() {
+        return findeAlleVerbaende();
+    }
+
+    /**
+     * EAGER-Laden aller Verbände als Entities (für interne Verwendung).
+     *
+     * @return Liste aller Verbände als Entities
+     */
+    @Transactional(readOnly = true)
+    public List<Verband> findeAlleVerbaendeMitVereinenEntities() {
         return verbandRepository.findAllWithVereine();
     }
 
@@ -119,7 +146,7 @@ public class VerbandService {
         if (benutzer == null || verbandId == null) {
             return;
         }
-        List<Vereinsmitgliedschaft> mitgliedschaften = vereinsmitgliedschaftService.findeMitgliedschaftenVonBenutzer(benutzer);
+        List<Vereinsmitgliedschaft> mitgliedschaften = vereinsmitgliedschaftService.findeMitgliedschaftenVonBenutzerEntities(benutzer);
         mitgliedschaften.stream()
                 .filter(m -> m.getVerein() != null && m.getVerein().getVerbaende() != null)
                 .filter(m -> m.getVerein().getVerbaende().stream()
@@ -173,12 +200,23 @@ public class VerbandService {
     }
 
     /**
-     * Findet alle Vereine.
+     * Findet alle Vereine als DTOs.
      *
-     * @return Liste aller Vereine
+     * @return Liste aller Vereine als DTOs
      */
     @Transactional(readOnly = true)
-    public List<Verein> findeAlleVereine() {
+    public List<VereinDTO> findeAlleVereine() {
+        List<Verein> entities = vereinRepository.findAll();
+        return vereinMapper.toDTOList(entities);
+    }
+
+    /**
+     * Findet alle Vereine als Entities (für interne Verwendung wie ComboBoxen).
+     *
+     * @return Liste aller Vereine als Entities
+     */
+    @Transactional(readOnly = true)
+    public List<Verein> findeAlleVereineEntities() {
         return vereinRepository.findAll();
     }
 

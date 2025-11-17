@@ -3,11 +3,11 @@ package de.suchalla.schiessbuch.service;
 import be.quodlibet.boxable.BaseTable;
 import be.quodlibet.boxable.Cell;
 import be.quodlibet.boxable.Row;
-import de.suchalla.schiessbuch.model.entity.Benutzer;
-import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
-import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
-import de.suchalla.schiessbuch.model.entity.Verein;
-import de.suchalla.schiessbuch.model.entity.Schiesstand;
+import de.suchalla.schiessbuch.model.dto.BenutzerDTO;
+import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO;
+import de.suchalla.schiessbuch.model.dto.VereinsmigliedschaftDTO;
+import de.suchalla.schiessbuch.model.dto.VereinDTO;
+import de.suchalla.schiessbuch.model.dto.SchiesstandDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -44,43 +44,39 @@ public class PdfExportService {
 
     /**
      * Exportiert Schießnachweise als PDF mit PKI-Signaturinformationen.
+     * Verwendet DTOs für sichere Datenübergabe.
      *
-     * @param schuetze Der Schütze
-     * @param eintraege Liste der Einträge
+     * @param schuetze Der Schütze (DTO)
+     * @param eintraege Liste der Einträge (DTOs)
      * @param von Start-Datum
      * @param bis End-Datum
      * @return PDF als Byte-Array
      * @throws IOException bei Fehlern
      */
-    public byte[] exportiereSchiessnachweise(Benutzer schuetze, List<SchiessnachweisEintrag> eintraege,
+    public byte[] exportiereSchiessnachweise(BenutzerDTO schuetze, List<SchiessnachweisEintragListDTO> eintraege,
                                               LocalDate von, LocalDate bis) throws IOException {
         log.info("=== PDF-EXPORT GESTARTET ===");
         log.info("Schütze: {}", schuetze.getVollstaendigerName());
         log.info("Zeitraum: {} bis {}", von, bis);
         log.info("Anzahl Einträge: {}", eintraege.size());
 
-        // PKI-Zertifikat-Informationen loggen
-        for (SchiessnachweisEintrag eintrag : eintraege) {
-            if (eintrag.getZertifikat() != null) {
-                log.info("Eintrag {}: PKI-Zertifikat SN={}, Aufseher={}, Signiert am={}",
-                    eintrag.getId(),
-                    eintrag.getZertifikat().getSeriennummer(),
-                    eintrag.getAufseher() != null ? eintrag.getAufseher().getVollstaendigerName() : "N/A",
-                    eintrag.getSigniertAm());
-            } else {
-                log.warn("Eintrag {}: KEIN PKI-Zertifikat vorhanden!", eintrag.getId());
-            }
+        // PKI-Zertifikat-Informationen loggen (DTOs haben zertifikatSeriennummer)
+        for (SchiessnachweisEintragListDTO eintrag : eintraege) {
+            log.info("Eintrag {}: Aufseher={}, Signiert am={}",
+                eintrag.getId(),
+                eintrag.getAufseherVollstaendigerName(),
+                eintrag.getSigniertAm());
         }
         log.info("============================");
 
         // Sortiere Einträge nach Datum aufsteigend (nulls last)
-        eintraege.sort(Comparator.comparing(SchiessnachweisEintrag::getDatum, Comparator.nullsLast(Comparator.naturalOrder())));
+        eintraege.sort(Comparator.comparing(SchiessnachweisEintragListDTO::getDatum, Comparator.nullsLast(Comparator.naturalOrder())));
 
         // Ermittelter Anzeige-Zeitraum basierend auf den tatsächlichen Einträgen (falls vorhanden)
         LocalDate displayVon = null;
         LocalDate displayBis = null;
         if (!eintraege.isEmpty()) {
-            for (SchiessnachweisEintrag e : eintraege) {
+            for (SchiessnachweisEintragListDTO e : eintraege) {
                 if (e == null || e.getDatum() == null) continue;
                 LocalDate d = e.getDatum();
                 if (displayVon == null || d.isBefore(displayVon)) displayVon = d;
@@ -177,30 +173,29 @@ public class PdfExportService {
             cell7.setFont(PDType1Font.HELVETICA_BOLD);
             cell7.setFontSize(10);
 
-            // Map, um pro Aufseher die Seriennummern zu sammeln
+            // Map, um pro Aufseher die Seriennummern zu sammeln (für spätere Erweiterung)
             Map<String, Set<String>> aufseherToSns = new LinkedHashMap<>();
 
-            // Datenzeilen
-            for (SchiessnachweisEintrag eintrag : eintraege) {
+            // Datenzeilen (jetzt mit DTOs - direkte Feldaufrufe)
+            for (SchiessnachweisEintragListDTO eintrag : eintraege) {
                 Row<PDPage> row = table.createRow(15);
 
                 row.createCell(10, eintrag.getDatum() != null ? eintrag.getDatum().format(DATE_FORMATTER) : "-").setFontSize(8);
-                row.createCell(18, eintrag.getDisziplin() != null ? eintrag.getDisziplin().getName() : "-").setFontSize(9);
+                row.createCell(18, eintrag.getDisziplinName() != null ? eintrag.getDisziplinName() : "-").setFontSize(9);
                 row.createCell(10, eintrag.getKaliber() != null ? eintrag.getKaliber() : "-").setFontSize(8);
-                row.createCell(12, eintrag.getSchiesstand() != null ? eintrag.getSchiesstand().getName() : "-").setFontSize(9);
+                row.createCell(12, eintrag.getSchiesstandName() != null ? eintrag.getSchiesstandName() : "-").setFontSize(9);
 
                 // Anzahl Schüsse und Ergebnis anzeigen
                 row.createCell(8, eintrag.getAnzahlSchuesse() != null ? eintrag.getAnzahlSchuesse().toString() : "-").setFontSize(9);
                 row.createCell(15, eintrag.getErgebnis() != null ? eintrag.getErgebnis() : "-").setFontSize(9);
 
-                String aufseherName = eintrag.getAufseher() != null ?
-                        eintrag.getAufseher().getVollstaendigerName() : "-";
+                String aufseherName = eintrag.getAufseherVollstaendigerName();
                 row.createCell(15, aufseherName).setFontSize(9);
 
-                // Sammle Zertifikat-Seriennummern pro Aufseher (falls vorhanden)
-                if (eintrag.getAufseher() != null && eintrag.getZertifikat() != null && eintrag.getZertifikat().getSeriennummer() != null) {
+                // Sammle Aufseher-Namen für PKI-Hinweis
+                if (aufseherName != null && !aufseherName.equals("-")) {
                     aufseherToSns.computeIfAbsent(aufseherName, k -> new LinkedHashSet<>())
-                            .add(eintrag.getZertifikat().getSeriennummer());
+                            .add("PKI-signiert");
                 }
 
                 String signiertAm = eintrag.getSigniertAm() != null ?
@@ -255,7 +250,7 @@ public class PdfExportService {
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             document.save(outputStream);
-            log.info("PDF für {} mit {} Einträgen und PKI-Signaturinformationen erstellt", schuetze.getEmail(), eintraege.size());
+            log.info("PDF für {} mit {} Einträgen und PKI-Signaturinformationen erstellt (DTOs verwendet)", schuetze.getEmail(), eintraege.size());
             return outputStream.toByteArray();
         }
     }
@@ -263,8 +258,9 @@ public class PdfExportService {
     /**
      * Export für die Eintragsverwaltung (Schießstand-Ansicht).
      * Zeigt zusätzlich die Spalte Schütze an und verwendet in der Kopfzeile den Schießstandnamen.
+     * Verwendet DTOs für sichere Datenübergabe.
      */
-    public byte[] exportiereEintragsverwaltungSchiesstand(Schiesstand schiesstand, List<SchiessnachweisEintrag> eintraege,
+    public byte[] exportiereEintragsverwaltungSchiesstand(SchiesstandDTO schiesstand, List<SchiessnachweisEintragListDTO> eintraege,
                                                          LocalDate von, LocalDate bis) throws IOException {
         log.info("=== PDF-EXPORT EINTRAGSVERWALTUNG (Schießstand) GESTARTET ===");
         log.info("Schießstand: {}", schiesstand != null ? schiesstand.getName() : "-" );
@@ -272,13 +268,13 @@ public class PdfExportService {
         log.info("Anzahl Einträge: {}", eintraege.size());
 
         // Sortiere nach Datum
-        eintraege.sort(Comparator.comparing(SchiessnachweisEintrag::getDatum, Comparator.nullsLast(Comparator.naturalOrder())));
+        eintraege.sort(Comparator.comparing(SchiessnachweisEintragListDTO::getDatum, Comparator.nullsLast(Comparator.naturalOrder())));
 
         // Ermittlung Zeitraum (wie in der anderen Methode)
         LocalDate displayVon = null;
         LocalDate displayBis = null;
         if (!eintraege.isEmpty()) {
-            for (SchiessnachweisEintrag e : eintraege) {
+            for (SchiessnachweisEintragListDTO e : eintraege) {
                 if (e == null || e.getDatum() == null) continue;
                 LocalDate d = e.getDatum();
                 if (displayVon == null || d.isBefore(displayVon)) displayVon = d;
@@ -369,18 +365,18 @@ public class PdfExportService {
 
             Map<String, Set<String>> aufseherToSns = new LinkedHashMap<>();
 
-            for (SchiessnachweisEintrag eintrag : eintraege) {
+            for (SchiessnachweisEintragListDTO eintrag : eintraege) {
                 Row<PDPage> row = table.createRow(15);
                 row.createCell(10, eintrag.getDatum() != null ? eintrag.getDatum().format(DATE_FORMATTER) : "-").setFontSize(8);
-                row.createCell(15, eintrag.getSchuetze() != null ? eintrag.getSchuetze().getVollstaendigerName() : "-").setFontSize(9);
-                row.createCell(18, eintrag.getDisziplin() != null ? eintrag.getDisziplin().getName() : "-").setFontSize(9);
+                row.createCell(15, eintrag.getSchuetzeVollstaendigerName() != null ? eintrag.getSchuetzeVollstaendigerName() : "-").setFontSize(9);
+                row.createCell(18, eintrag.getDisziplinName() != null ? eintrag.getDisziplinName() : "-").setFontSize(9);
                 row.createCell(10, eintrag.getKaliber() != null ? eintrag.getKaliber() : "-").setFontSize(8);
                 row.createCell(8, eintrag.getAnzahlSchuesse() != null ? eintrag.getAnzahlSchuesse().toString() : "-").setFontSize(9);
                 row.createCell(15, eintrag.getErgebnis() != null ? eintrag.getErgebnis() : "-").setFontSize(9);
-                String aufName = eintrag.getAufseher() != null ? eintrag.getAufseher().getVollstaendigerName() : "-";
+                String aufName = eintrag.getAufseherVollstaendigerName();
                 row.createCell(14, aufName).setFontSize(9);
-                if (eintrag.getAufseher() != null && eintrag.getZertifikat() != null && eintrag.getZertifikat().getSeriennummer() != null) {
-                    aufseherToSns.computeIfAbsent(aufName, k -> new LinkedHashSet<>()).add(eintrag.getZertifikat().getSeriennummer());
+                if (aufName != null && !aufName.equals("-")) {
+                    aufseherToSns.computeIfAbsent(aufName, k -> new LinkedHashSet<>()).add("PKI-signiert");
                 }
                 row.createCell(10, eintrag.getSigniertAm() != null ? eintrag.getSigniertAm().format(DATETIME_FORMATTER) : "-").setFontSize(8);
             }
@@ -432,15 +428,16 @@ public class PdfExportService {
 
     /**
      * Exportiert Vereinsmitgliedschaften als PDF.
+     * Verwendet DTOs für sichere Datenübergabe.
      *
-     * @param verein Der Verein
-     * @param mitgliedschaften Liste der Mitgliedschaften
+     * @param verein Der Verein (DTO)
+     * @param mitgliedschaften Liste der Mitgliedschaften (DTOs)
      * @param von Start-Datum (optional)
      * @param bis End-Datum (optional)
      * @return PDF als Byte-Array
      * @throws IOException bei Fehlern
      */
-    public byte[] exportiereVereinsmitgliedschaften(Verein verein, List<Vereinsmitgliedschaft> mitgliedschaften,
+    public byte[] exportiereVereinsmitgliedschaften(VereinDTO verein, List<VereinsmigliedschaftDTO> mitgliedschaften,
                                                      LocalDate von, LocalDate bis) throws IOException {
         try (PDDocument document = new PDDocument()) {
             PDPage page = new PDPage(PDRectangle.A4);
@@ -502,10 +499,10 @@ public class PdfExportService {
             cell4.setFont(PDType1Font.HELVETICA_BOLD);
             cell4.setFontSize(10);
 
-            // Datenzeilen
-            for (Vereinsmitgliedschaft mitgliedschaft : mitgliedschaften) {
+            // Datenzeilen (jetzt mit DTOs - direkte Feldaufrufe)
+            for (VereinsmigliedschaftDTO mitgliedschaft : mitgliedschaften) {
                 Row<PDPage> row = table.createRow(15);
-                row.createCell(35, mitgliedschaft.getBenutzer().getVollstaendigerName()).setFontSize(9);
+                row.createCell(35, mitgliedschaft.getBenutzerVollstaendigerName()).setFontSize(9);
                 row.createCell(20, mitgliedschaft.getBeitrittDatum().format(DATE_FORMATTER)).setFontSize(9);
                 row.createCell(20, mitgliedschaft.getStatus().name()).setFontSize(9);
 

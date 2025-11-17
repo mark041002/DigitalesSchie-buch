@@ -1,5 +1,9 @@
 package de.suchalla.schiessbuch.service;
 
+import de.suchalla.schiessbuch.mapper.VerbandMapper;
+import de.suchalla.schiessbuch.mapper.VereinsmigliedschaftMapper;
+import de.suchalla.schiessbuch.model.dto.VerbandDTO;
+import de.suchalla.schiessbuch.model.dto.VereinsmigliedschaftDTO;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
@@ -34,6 +38,8 @@ public class VereinsmitgliedschaftService {
     private final VereinRepository vereinRepository;
     private final DigitalesZertifikatRepository zertifikatRepository;
     private final NotificationService notificationService;
+    private final VereinsmigliedschaftMapper vereinsmigliedschaftMapper;
+    private final VerbandMapper verbandMapper;
 
     /**
      * Beantragt eine Vereinsmitgliedschaft.
@@ -157,36 +163,50 @@ public class VereinsmitgliedschaftService {
     }
 
     /**
-     * Gibt alle Beitrittsanfragen für einen Verein zurück.
+     * Gibt alle Beitrittsanfragen für einen Verein als DTOs zurück.
      *
      * @param verein Der Verein
-     * @return Liste der Anfragen
+     * @return Liste der Anfragen als DTOs
      */
     @Transactional(readOnly = true)
-    public List<Vereinsmitgliedschaft> findeBeitrittsanfragen(Verein verein) {
-        return mitgliedschaftRepository.findByVereinAndStatusWithDetails(verein, MitgliedschaftStatus.BEANTRAGT);
+    public List<VereinsmigliedschaftDTO> findeBeitrittsanfragen(Verein verein) {
+        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatusWithDetails(verein, MitgliedschaftStatus.BEANTRAGT);
+        return vereinsmigliedschaftMapper.toDTOList(entities);
     }
 
     /**
-     * Gibt alle aktiven Mitgliedschaften für einen Verein zurück.
+     * Gibt alle aktiven Mitgliedschaften für einen Verein als DTOs zurück.
      *
      * @param verein Der Verein
-     * @return Liste der Mitgliedschaften
+     * @return Liste der Mitgliedschaften als DTOs
      */
     @Transactional(readOnly = true)
-    public List<Vereinsmitgliedschaft> findeAktiveMitgliedschaften(Verein verein) {
+    public List<VereinsmigliedschaftDTO> findeAktiveMitgliedschaften(Verein verein) {
+        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatusWithDetails(verein, MitgliedschaftStatus.AKTIV);
+        return vereinsmigliedschaftMapper.toDTOList(entities);
+    }
+
+    /**
+     * Findet alle aktiven Mitgliedschaften eines Vereins als Entities (für interne Verwendung).
+     *
+     * @param verein Der Verein
+     * @return Liste der Mitgliedschaften als Entities
+     */
+    @Transactional(readOnly = true)
+    public List<Vereinsmitgliedschaft> findeAktiveMitgliedschaftenEntities(Verein verein) {
         return mitgliedschaftRepository.findByVereinAndStatusWithDetails(verein, MitgliedschaftStatus.AKTIV);
     }
 
     /**
-     * Gibt alle Mitgliedschaften eines Benutzers zurück.
+     * Gibt alle Mitgliedschaften eines Benutzers als DTOs zurück.
      *
      * @param benutzer Der Benutzer
-     * @return Liste der Mitgliedschaften
+     * @return Liste der Mitgliedschaften als DTOs
      */
     @Transactional(readOnly = true)
-    public List<Vereinsmitgliedschaft> findeMitgliedschaften(Benutzer benutzer) {
-        return mitgliedschaftRepository.findByBenutzer(benutzer);
+    public List<VereinsmigliedschaftDTO> findeMitgliedschaften(Benutzer benutzer) {
+        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByBenutzer(benutzer);
+        return vereinsmigliedschaftMapper.toDTOList(entities);
     }
 
 
@@ -242,11 +262,24 @@ public class VereinsmitgliedschaftService {
      * Findet alle Mitgliedschaften eines Benutzers.
      *
      * @param benutzer Der Benutzer
-     * @return Liste der Mitgliedschaften
+     * @return Liste der Mitgliedschaften als DTOs
      */
     @Transactional(readOnly = true)
-    public List<Vereinsmitgliedschaft> findeMitgliedschaftenVonBenutzer(Benutzer benutzer) {
+    public List<VereinsmigliedschaftDTO> findeMitgliedschaftenVonBenutzer(Benutzer benutzer) {
         return findeMitgliedschaften(benutzer);
+    }
+
+    /**
+     * Findet alle Mitgliedschaften eines Benutzers als Entities (für interne Verwendung).
+     *
+     * @param benutzer Der Benutzer
+     * @return Liste der Mitgliedschaften als Entities
+     */
+    @Transactional(readOnly = true)
+    public List<Vereinsmitgliedschaft> findeMitgliedschaftenVonBenutzerEntities(Benutzer benutzer) {
+        return mitgliedschaftRepository.findByBenutzer(benutzer).stream()
+                .filter(m -> Boolean.TRUE.equals(m.getAktiv()))
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**
@@ -285,10 +318,27 @@ public class VereinsmitgliedschaftService {
      * Gibt die Verbände zurück, bei denen der Benutzer aktive Mitgliedschaften hat.
      *
      * @param benutzer Der Benutzer
-     * @return Liste der Verbände
+     * @return Liste der Verbände als DTOs
      */
     @Transactional(readOnly = true)
-    public List<de.suchalla.schiessbuch.model.entity.Verband> findeVerbaendeVonBenutzer(Benutzer benutzer) {
+    public List<VerbandDTO> findeVerbaendeVonBenutzer(Benutzer benutzer) {
+        List<de.suchalla.schiessbuch.model.entity.Verband> entities =
+                mitgliedschaftRepository.findByBenutzer(benutzer).stream()
+                .filter((Vereinsmitgliedschaft m) -> m.getStatus() == MitgliedschaftStatus.AKTIV && m.getAktiv())
+                .flatMap((Vereinsmitgliedschaft m) -> m.getVerein().getVerbaende().stream())
+                .distinct()
+                .collect(java.util.stream.Collectors.toList());
+        return verbandMapper.toDTOList(entities);
+    }
+
+    /**
+     * Gibt die Verbände zurück, bei denen der Benutzer aktive Mitgliedschaften hat (als Entities).
+     *
+     * @param benutzer Der Benutzer
+     * @return Liste der Verbände als Entities
+     */
+    @Transactional(readOnly = true)
+    public List<de.suchalla.schiessbuch.model.entity.Verband> findeVerbaendeVonBenutzerEntities(Benutzer benutzer) {
         return mitgliedschaftRepository.findByBenutzer(benutzer).stream()
                 .filter((Vereinsmitgliedschaft m) -> m.getStatus() == MitgliedschaftStatus.AKTIV && m.getAktiv())
                 .flatMap((Vereinsmitgliedschaft m) -> m.getVerein().getVerbaende().stream())
@@ -314,26 +364,28 @@ public class VereinsmitgliedschaftService {
     }
 
     /**
-     * Gibt alle Mitgliedschaften für einen Verein zurück (alle Status).
+     * Gibt alle Mitgliedschaften für einen Verein als DTOs zurück (alle Status).
      *
      * @param verein Der Verein
-     * @return Liste aller Mitgliedschaften
+     * @return Liste aller Mitgliedschaften als DTOs
      */
     @Transactional(readOnly = true)
-    public List<Vereinsmitgliedschaft> findeAlleMitgliedschaften(Verein verein) {
-        return mitgliedschaftRepository.findByVereinWithDetails(verein);
+    public List<VereinsmigliedschaftDTO> findeAlleMitgliedschaften(Verein verein) {
+        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinWithDetails(verein);
+        return vereinsmigliedschaftMapper.toDTOList(entities);
     }
 
     /**
-     * Gibt Mitgliedschaften für einen Verein nach Status zurück.
+     * Gibt Mitgliedschaften für einen Verein nach Status als DTOs zurück.
      *
      * @param verein Der Verein
      * @param status Der Status
-     * @return Liste der Mitgliedschaften
+     * @return Liste der Mitgliedschaften als DTOs
      */
     @Transactional(readOnly = true)
-    public List<Vereinsmitgliedschaft> findeMitgliedschaftenNachStatus(Verein verein, MitgliedschaftStatus status) {
-        return mitgliedschaftRepository.findByVereinAndStatusWithDetails(verein, status);
+    public List<VereinsmigliedschaftDTO> findeMitgliedschaftenNachStatus(Verein verein, MitgliedschaftStatus status) {
+        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatusWithDetails(verein, status);
+        return vereinsmigliedschaftMapper.toDTOList(entities);
     }
 
 

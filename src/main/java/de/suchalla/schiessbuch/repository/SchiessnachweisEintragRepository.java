@@ -35,7 +35,12 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
     List<SchiessnachweisEintrag> findBySchuetzeAndDatumBetween(Benutzer schuetze, LocalDate von, LocalDate bis);
 
     /**
-     * Sicher: Findet alle Einträge eines Schützen in einem Zeitraum und lädt Schiesstand sowie Verein via JOIN FETCH.
+     * Findet alle Einträge eines Schützen in einem Zeitraum und lädt alle Beziehungen via JOIN FETCH.
+     *
+     * @param schuetze Der Schütze
+     * @param von Start-Datum
+     * @param bis End-Datum
+     * @return Liste der Einträge mit geladenen Beziehungen
      */
     @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
             "LEFT JOIN FETCH e.schuetze " +
@@ -61,7 +66,13 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
             Benutzer schuetze, LocalDate von, LocalDate bis, EintragStatus status);
 
     /**
-     * Sicher: wie oben, aber mit Status-Filter.
+     * Findet alle Einträge eines Schützen in einem Zeitraum mit Status-Filter und lädt alle Beziehungen via JOIN FETCH.
+     *
+     * @param schuetze Der Schütze
+     * @param von Start-Datum
+     * @param bis End-Datum
+     * @param status Der Status
+     * @return Liste der Einträge mit geladenen Beziehungen
      */
     @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
             "LEFT JOIN FETCH e.schuetze " +
@@ -83,7 +94,10 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
     List<SchiessnachweisEintrag> findBySchiesstand(Schiesstand schiesstand);
 
     /**
-     * Sicher: Findet alle Einträge an einem Schießstand und lädt Verein mit.
+     * Findet alle Einträge an einem Schießstand und lädt alle Beziehungen via JOIN FETCH.
+     *
+     * @param schiesstand Der Schießstand
+     * @return Liste der Einträge mit geladenen Beziehungen
      */
     @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
             "LEFT JOIN FETCH e.schuetze " +
@@ -106,7 +120,11 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
     List<SchiessnachweisEintrag> findBySchiesstandAndStatus(Schiesstand schiesstand, EintragStatus status);
 
     /**
-     * Sicher: wie oben, mit Status-Filter.
+     * Findet alle Einträge an einem Schießstand mit Status-Filter und lädt alle Beziehungen via JOIN FETCH.
+     *
+     * @param schiesstand Der Schießstand
+     * @param status Der Status
+     * @return Liste der Einträge mit geladenen Beziehungen
      */
     @Query("SELECT DISTINCT e FROM SchiessnachweisEintrag e " +
             "LEFT JOIN FETCH e.schuetze " +

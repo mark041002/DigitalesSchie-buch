@@ -1,5 +1,8 @@
 package de.suchalla.schiessbuch.service;
 
+import de.suchalla.schiessbuch.mapper.SchiessnachweisEintragMapper;
+import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragDetailDTO;
+import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
@@ -26,6 +29,7 @@ import java.util.Optional;
 public class SchiessnachweisService {
 
     private final SchiessnachweisEintragRepository eintragRepository;
+    private final SchiessnachweisEintragMapper eintragMapper;
 
     /**
      * Erstellt einen neuen Schießnachweis-Eintrag.
@@ -38,103 +42,80 @@ public class SchiessnachweisService {
     }
 
     /**
-     * Findet einen Eintrag anhand der ID inklusive Verein-Daten.
-     * Verwendet JOIN FETCH um LazyInitializationException beim Zugriff auf
-     * schiesstand.verein zu vermeiden.
+     * Findet einen Eintrag anhand der ID und gibt ihn als DetailDTO zurück.
      *
      * @param id Die Eintrags-ID
-     * @return Optional mit Eintrag inkl. Verein
+     * @return Optional mit Eintrag als DetailDTO
      */
     @Transactional(readOnly = true)
-    public Optional<SchiessnachweisEintrag> findeEintragMitVerein(Long id) {
-        return eintragRepository.findByIdWithVerein(id);
+    public Optional<SchiessnachweisEintragDetailDTO> findeEintragMitVerein(Long id) {
+        return eintragRepository.findByIdWithVerein(id)
+                .map(eintragMapper::toDetailDTO);
     }
 
     /**
-     * Findet alle Einträge eines Schützen in einem Zeitraum.
+     * Findet alle Einträge eines Schützen in einem Zeitraum und gibt sie als ListDTOs zurück.
      *
      * @param schuetze Der Schütze
      * @param von Start-Datum
      * @param bis End-Datum
-     * @return Liste der Einträge
+     * @return Liste der Einträge als ListDTOs
      */
     @Transactional(readOnly = true)
-    public List<SchiessnachweisEintrag> findeEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
-        // Nutze die sichere Query mit JOIN FETCH, damit Schiesstand und Verein geladen werden
-        List<SchiessnachweisEintrag> result = eintragRepository.findBySchuetzeAndDatumBetweenWithVerein(schuetze, von, bis);
-        // Touch Verein-Name, um sicher zu gehen, dass die Proxy-Objekte initialisiert sind
-        result.forEach(e -> {
-            if (e.getSchiesstand() != null && e.getSchiesstand().getVerein() != null) {
-                e.getSchiesstand().getVerein().getName();
-            }
-        });
-        return result;
-    }
-
-    @Transactional(readOnly = true)
-    public List<SchiessnachweisEintrag> findeEintraegeFuerSchuetze(Benutzer schuetze) {
-        // EntityGraph für findBySchuetze wurde aktualisiert, das lädt ebenfalls Schiesstand.verein
-        List<SchiessnachweisEintrag> result = eintragRepository.findBySchuetze(schuetze);
-        result.forEach(e -> {
-            if (e.getSchiesstand() != null && e.getSchiesstand().getVerein() != null) {
-                e.getSchiesstand().getVerein().getName();
-            }
-        });
-        return result;
+    public List<SchiessnachweisEintragListDTO> findeEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
+        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchuetzeAndDatumBetweenWithVerein(schuetze, von, bis);
+        return eintragMapper.toListDTOList(entities);
     }
 
     /**
-     * Findet alle signierten Einträge eines Schützen in einem Zeitraum.
+     * Findet alle Einträge eines Schützen und gibt sie als ListDTOs zurück.
+     *
+     * @param schuetze Der Schütze
+     * @return Liste der Einträge als ListDTOs
+     */
+    @Transactional(readOnly = true)
+    public List<SchiessnachweisEintragListDTO> findeEintraegeFuerSchuetze(Benutzer schuetze) {
+        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchuetze(schuetze);
+        return eintragMapper.toListDTOList(entities);
+    }
+
+    /**
+     * Findet alle signierten Einträge eines Schützen in einem Zeitraum als ListDTOs.
      *
      * @param schuetze Der Schütze
      * @param von Start-Datum
      * @param bis End-Datum
-     * @return Liste der signierten Einträge
+     * @return Liste der signierten Einträge als ListDTOs
      */
     @Transactional(readOnly = true)
-    public List<SchiessnachweisEintrag> findeSignierteEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
-        List<SchiessnachweisEintrag> result = eintragRepository.findBySchuetzeAndDatumBetweenAndStatusWithVerein(
+    public List<SchiessnachweisEintragListDTO> findeSignierteEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
+        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchuetzeAndDatumBetweenAndStatusWithVerein(
                 schuetze, von, bis, EintragStatus.SIGNIERT);
-        result.forEach(e -> {
-            if (e.getSchiesstand() != null && e.getSchiesstand().getVerein() != null) {
-                e.getSchiesstand().getVerein().getName();
-            }
-        });
-        return result;
+        return eintragMapper.toListDTOList(entities);
     }
 
     /**
-     * Findet alle unsignierten Einträge an einem Schießstand.
+     * Findet alle unsignierten Einträge an einem Schießstand als ListDTOs.
      *
      * @param schiesstand Der Schießstand
-     * @return Liste der unsignierten Einträge
+     * @return Liste der unsignierten Einträge als ListDTOs
      */
     @Transactional(readOnly = true)
-    public List<SchiessnachweisEintrag> findeUnsignierteEintraege(Schiesstand schiesstand) {
-        List<SchiessnachweisEintrag> result = eintragRepository.findBySchiesstandAndStatusWithVerein(schiesstand, EintragStatus.UNSIGNIERT);
-        result.forEach(e -> {
-            if (e.getSchiesstand() != null && e.getSchiesstand().getVerein() != null) {
-                e.getSchiesstand().getVerein().getName();
-            }
-        });
-        return result;
+    public List<SchiessnachweisEintragListDTO> findeUnsignierteEintraege(Schiesstand schiesstand) {
+        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchiesstandAndStatusWithVerein(schiesstand, EintragStatus.UNSIGNIERT);
+        return eintragMapper.toListDTOList(entities);
     }
 
     /**
-     * Findet alle Einträge an einem Schießstand.
+     * Findet alle Einträge an einem Schießstand als ListDTOs.
      *
      * @param schiesstand Der Schießstand
-     * @return Liste der Einträge
+     * @return Liste der Einträge als ListDTOs
      */
     @Transactional(readOnly = true)
-    public List<SchiessnachweisEintrag> findeEintraegeAnSchiesstand(Schiesstand schiesstand) {
-        List<SchiessnachweisEintrag> result = eintragRepository.findBySchiesstandWithVerein(schiesstand);
-        result.forEach(e -> {
-            if (e.getSchiesstand() != null && e.getSchiesstand().getVerein() != null) {
-                e.getSchiesstand().getVerein().getName();
-            }
-        });
-        return result;
+    public List<SchiessnachweisEintragListDTO> findeEintraegeAnSchiesstand(Schiesstand schiesstand) {
+        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchiesstandWithVerein(schiesstand);
+        return eintragMapper.toListDTOList(entities);
     }
 
     /**

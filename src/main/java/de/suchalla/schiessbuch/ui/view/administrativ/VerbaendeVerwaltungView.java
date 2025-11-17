@@ -257,7 +257,7 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
     }
 
     private void updateGrid() {
-        List<Verband> verbaende = verbandService.findeAlleVerbaende();
+        List<Verband> verbaende = verbandService.findeAlleVerbaendeEntities();
         grid.setItems(verbaende);
         grid.getDataProvider().refreshAll();
 

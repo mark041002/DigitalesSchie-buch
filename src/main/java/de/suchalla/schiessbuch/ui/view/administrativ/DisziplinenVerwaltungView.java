@@ -331,7 +331,7 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
 
     private void updateGrid() {
         List<Disziplin> disziplinen = aktuellerVerband != null
-            ? disziplinService.findeDisziplinenVonVerband(aktuellerVerband.getId())
+            ? disziplinService.findeDisziplinenVonVerbandEntities(aktuellerVerband.getId())
             : List.of();
         grid.setItems(disziplinen);
         grid.getDataProvider().refreshAll();

@@ -342,7 +342,7 @@ public class MeineVereineView extends VerticalLayout {
     private void updateGrid() {
         if (currentUser != null) {
             List<Vereinsmitgliedschaft> mitgliedschaften =
-                    mitgliedschaftService.findeMitgliedschaftenVonBenutzer(currentUser);
+                    mitgliedschaftService.findeMitgliedschaftenVonBenutzerEntities(currentUser);
             grid.setItems(mitgliedschaften);
 
             // Zeige/Verstecke Empty State Message

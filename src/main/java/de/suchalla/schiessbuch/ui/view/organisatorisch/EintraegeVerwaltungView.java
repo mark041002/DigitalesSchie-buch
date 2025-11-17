@@ -29,9 +29,11 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.router.PreserveOnRefresh;
+import de.suchalla.schiessbuch.mapper.SchiesstandMapper;
+import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragDetailDTO;
+import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
-import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.enums.EintragStatus;
 import de.suchalla.schiessbuch.repository.SchiesstandRepository;
@@ -68,8 +70,9 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     private final PdfExportService pdfExportService;
     private final SignaturService signaturService;
     private final NotificationService notificationService;
+    private final SchiesstandMapper schiesstandMapper;
 
-    private final Grid<SchiessnachweisEintrag> grid = new Grid<>(SchiessnachweisEintrag.class, false);
+    private final Grid<SchiessnachweisEintragListDTO> grid = new Grid<>(SchiessnachweisEintragListDTO.class, false);
     private final ComboBox<String> schuetzenComboBox = new ComboBox<>("Schütze");
     private final ComboBox<String> aufseherComboBox = new ComboBox<>("Aufseher");
     private final DatePicker vonDatum = new DatePicker("Von");
@@ -84,7 +87,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     private Tab aktuellerTab;
     private Tab alleTab;
 
-    private List<SchiessnachweisEintrag> aktuelleFiltierteEintraege = List.of();
+    private List<SchiessnachweisEintragListDTO> aktuelleFiltierteEintraege = List.of();
     private Long uebergebeneSchiesstandId; // Über URL übergebene Schießstand-ID
     private boolean contentCreated = false; // Flag um mehrfaches Erstellen zu verhindern
 
@@ -93,12 +96,14 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                                    SchiesstandRepository schiesstandRepository,
                                    PdfExportService pdfExportService,
                                    SignaturService signaturService,
-                                   NotificationService notificationService) {
+                                   NotificationService notificationService,
+                                   SchiesstandMapper schiesstandMapper) {
         this.schiessnachweisService = schiessnachweisService;
         this.schiesstandRepository = schiesstandRepository;
         this.pdfExportService = pdfExportService;
         this.signaturService = signaturService;
         this.notificationService = notificationService;
+        this.schiesstandMapper = schiesstandMapper;
         this.currentUser = securityService.getAuthenticatedUser().orElse(null);
 
         setSpacing(false);
@@ -354,8 +359,8 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
             return;
         }
 
-        // Lade alle Einträge des Schießstands
-        List<SchiessnachweisEintrag> alleEintraege = schiessnachweisService.findeEintraegeAnSchiesstand(aktuellerSchiesstand);
+        // Lade alle Einträge des Schießstands als DTOs
+        List<SchiessnachweisEintragListDTO> alleEintraege = schiessnachweisService.findeEintraegeAnSchiesstand(aktuellerSchiesstand);
 
         // Filtern nach aktuellem Status (wenn nicht "Alle")
         if (aktuellerStatus != null) {
@@ -364,9 +369,9 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                     .toList();
         }
 
-        // Extrahiere eindeutige Schützennamen
+        // Extrahiere eindeutige Schützennamen (flache DTO-Struktur)
         List<String> schuetzenNamen = alleEintraege.stream()
-                .map(e -> e.getSchuetze().getVollstaendigerName())
+                .map(e -> (e.getSchuetzeVorname() + " " + e.getSchuetzeNachname()).trim())
                 .distinct()
                 .sorted()
                 .toList();
@@ -374,8 +379,8 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
 
         // Extrahiere eindeutige Aufsehernamen (nur signierte/abgelehnte Einträge)
         List<String> aufseherNamen = alleEintraege.stream()
-                .filter(e -> e.getAufseher() != null)
-                .map(e -> e.getAufseher().getVollstaendigerName())
+                .filter(e -> e.getAufseherVorname() != null && e.getAufseherNachname() != null)
+                .map(e -> (e.getAufseherVorname() + " " + e.getAufseherNachname()).trim())
                 .distinct()
                 .sorted()
                 .toList();
@@ -394,36 +399,40 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         grid.setHeight("600px");
         grid.addClassName("rounded-grid");
 
-        grid.addColumn(eintrag -> eintrag.getSchuetze().getVollstaendigerName())
+        grid.addColumn(dto -> (dto.getSchuetzeVorname() + " " + dto.getSchuetzeNachname()).trim())
                 .setHeader("Schütze")
                 .setSortable(true)
                 .setAutoWidth(true);
-        grid.addColumn(SchiessnachweisEintrag::getDatum)
+        grid.addColumn(SchiessnachweisEintragListDTO::getDatum)
                 .setHeader("Datum")
                 .setSortable(true)
                 .setAutoWidth(true);
-        grid.addColumn(eintrag -> eintrag.getDisziplin().getName())
+        grid.addColumn(SchiessnachweisEintragListDTO::getDisziplinName)
                 .setHeader("Disziplin")
                 .setAutoWidth(true);
-        grid.addColumn(SchiessnachweisEintrag::getKaliber)
+        grid.addColumn(SchiessnachweisEintragListDTO::getKaliber)
                 .setHeader("Kaliber")
                 .setAutoWidth(true);
-        grid.addColumn(SchiessnachweisEintrag::getWaffenart)
+        grid.addColumn(SchiessnachweisEintragListDTO::getWaffenart)
                 .setHeader("Waffenart")
                 .setAutoWidth(true);
-        grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse)
+        grid.addColumn(SchiessnachweisEintragListDTO::getAnzahlSchuesse)
                 .setHeader("Schüsse")
                 .setAutoWidth(true)
                 .setTextAlign(ColumnTextAlign.END);
-        grid.addColumn(SchiessnachweisEintrag::getErgebnis)
+        grid.addColumn(SchiessnachweisEintragListDTO::getErgebnis)
                 .setHeader("Ergebnis")
                 .setAutoWidth(true)
                 .setTextAlign(ColumnTextAlign.END);
         grid.addComponentColumn(this::createStatusBadge)
                 .setHeader("Status")
                 .setAutoWidth(true);
-        grid.addColumn(eintrag -> eintrag.getAufseher() != null ?
-                        eintrag.getAufseher().getVollstaendigerName() : "-")
+        grid.addColumn(dto -> {
+            if (dto.getAufseherVorname() != null && dto.getAufseherNachname() != null) {
+                return (dto.getAufseherVorname() + " " + dto.getAufseherNachname()).trim();
+            }
+            return "-";
+        })
                 .setHeader("Aufseher")
                 .setAutoWidth(true);
         grid.addComponentColumn(this::createActionButtons)
@@ -438,16 +447,16 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     /**
      * Erstellt Aktions-Buttons je nach Status.
      */
-    private HorizontalLayout createActionButtons(SchiessnachweisEintrag eintrag) {
+    private HorizontalLayout createActionButtons(SchiessnachweisEintragListDTO dto) {
         HorizontalLayout layout = new HorizontalLayout();
         layout.setSpacing(true);
         layout.getStyle().set("flex-wrap", "wrap");
 
-        if (eintrag.getStatus() == EintragStatus.UNSIGNIERT) {
-            Button signierenButton = new Button("Signieren", e -> signiereEintrag(eintrag));
+        if (dto.getStatus() == EintragStatus.UNSIGNIERT) {
+            Button signierenButton = new Button("Signieren", e -> signiereEintrag(dto.getId()));
             signierenButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
-            Button ablehnenButton = new Button("Ablehnen", e -> zeigeAblehnungsDialog(eintrag));
+            Button ablehnenButton = new Button("Ablehnen", e -> zeigeAblehnungsDialog(dto.getId()));
             ablehnenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
 
             layout.add(signierenButton, ablehnenButton);
@@ -456,18 +465,18 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         // Löschen-Button für alle Einträge
         Button loeschenButton = new Button("Löschen", VaadinIcon.TRASH.create());
         loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-        loeschenButton.addClickListener(e -> zeigeLoeschDialog(eintrag));
+        loeschenButton.addClickListener(e -> zeigeLoeschDialog(dto.getId()));
         layout.add(loeschenButton);
 
         return layout;
     }
 
-    private void zeigeLoeschDialog(SchiessnachweisEintrag eintrag) {
+    private void zeigeLoeschDialog(Long eintragId) {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Eintrag löschen");
         dialog.add(new Paragraph("Möchten Sie diesen Eintrag wirklich löschen?"));
         Button loeschenButton = new Button("Löschen", event -> {
-            deleteEintrag(eintrag);
+            deleteEintrag(eintragId);
             dialog.close();
         });
         loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
@@ -477,9 +486,9 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         dialog.open();
     }
 
-    private void deleteEintrag(SchiessnachweisEintrag eintrag) {
+    private void deleteEintrag(Long eintragId) {
         try {
-            schiessnachweisService.loescheEintrag(eintrag.getId());
+            schiessnachweisService.loescheEintrag(eintragId);
             Notification.show("Eintrag erfolgreich gelöscht").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             updateGrid();
         } catch (Exception e) {
@@ -490,39 +499,24 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
 
     /**
      * Signiert einen Eintrag mit PKI-Zertifikat.
+     * Service-Layer lädt die Entity intern und führt die Signierung durch.
      */
-    private void signiereEintrag(SchiessnachweisEintrag eintrag) {
+    private void signiereEintrag(Long eintragId) {
         try {
-            log.info("Starte PKI-Signierung für Eintrag {} in EintraegeVerwaltungView", eintrag.getId());
+            log.info("Starte PKI-Signierung für Eintrag {} in EintraegeVerwaltungView", eintragId);
 
-            // Eintrag mit allen Relationen inkl. Verein neu aus DB laden
-            SchiessnachweisEintrag vollstaendigerEintrag = schiessnachweisService.findeEintragMitVerein(eintrag.getId())
-                    .orElseThrow(() -> new RuntimeException("Eintrag nicht gefunden"));
-
-            // Verein des Schießstands ermitteln - jetzt ohne LazyInitializationException
-            Verein verein = vollstaendigerEintrag.getSchiesstand().getVerein();
-
-            log.info("Verwende Verein: {} (ID: {})", verein.getName(), verein.getId());
-            log.info("Aufseher: {} (ID: {})", currentUser.getVollstaendigerName(), currentUser.getId());
-
-            // Mit PKI-Zertifikat signieren über SignaturService
-            signaturService.signEintrag(vollstaendigerEintrag, currentUser, verein);
-
-            // Benachrichtigung: Informiere den Schützen, dass sein Eintrag signiert wurde
-            try {
-                notificationService.notifyEntrySigned(vollstaendigerEintrag);
-            } catch (Exception nEx) {
-                log.warn("Fehler beim Senden der Entry-signed-Benachrichtigung: {}", nEx.getMessage());
-            }
+            // SignaturService wird die Entity intern laden und signieren
+            // Wir übergeben nur die IDs
+            signaturService.signEintragMitId(eintragId, currentUser, aktuellerSchiesstand.getVerein());
 
             Notification.show("Eintrag erfolgreich mit PKI-Zertifikat signiert")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
             updateGrid();
-            log.info("PKI-Signierung erfolgreich abgeschlossen für Eintrag {}", eintrag.getId());
+            log.info("PKI-Signierung erfolgreich abgeschlossen für Eintrag {}", eintragId);
 
         } catch (Exception e) {
-            log.error("Fehler beim PKI-Signieren von Eintrag {}", eintrag.getId(), e);
+            log.error("Fehler beim PKI-Signieren von Eintrag {}", eintragId, e);
             Notification.show("Fehler beim Signieren: " + e.getMessage())
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
@@ -531,7 +525,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     /**
      * Zeigt einen Dialog zum Ablehnen eines Eintrags.
      */
-    private void zeigeAblehnungsDialog(SchiessnachweisEintrag eintrag) {
+    private void zeigeAblehnungsDialog(Long eintragId) {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Eintrag ablehnen");
 
@@ -549,12 +543,12 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
             }
 
             try {
-                schiessnachweisService.lehneEintragAb(eintrag.getId(), currentUser, grundField.getValue());
+                schiessnachweisService.lehneEintragAb(eintragId, currentUser, grundField.getValue());
                 Notification.show("Eintrag abgelehnt")
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 dialog.close();
                 updateGrid();
-                log.info("Eintrag abgelehnt: {}", eintrag.getId());
+                log.info("Eintrag abgelehnt: {}", eintragId);
             } catch (Exception ex) {
                 log.error("Fehler beim Ablehnen", ex);
                 Notification.show("Fehler: " + ex.getMessage())
@@ -577,7 +571,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
      */
     private void updateGrid() {
         if (aktuellerSchiesstand != null) {
-            List<SchiessnachweisEintrag> eintraege;
+            List<SchiessnachweisEintragListDTO> eintraege;
 
             if (aktuellerStatus == null) {
                 // Alle Einträge
@@ -593,7 +587,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
             String selektierterSchuetze = schuetzenComboBox.getValue();
             if (selektierterSchuetze != null && !selektierterSchuetze.trim().isEmpty()) {
                 eintraege = eintraege.stream()
-                        .filter(e -> e.getSchuetze().getVollstaendigerName().equals(selektierterSchuetze))
+                        .filter(e -> (e.getSchuetzeVorname() + " " + e.getSchuetzeNachname()).trim().equals(selektierterSchuetze))
                         .collect(Collectors.toList());
             }
 
@@ -601,8 +595,8 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
             String selektierterAufseher = aufseherComboBox.getValue();
             if (selektierterAufseher != null && !selektierterAufseher.trim().isEmpty()) {
                 eintraege = eintraege.stream()
-                        .filter(e -> e.getAufseher() != null &&
-                                     e.getAufseher().getVollstaendigerName().equals(selektierterAufseher))
+                        .filter(e -> e.getAufseherVorname() != null && e.getAufseherNachname() != null &&
+                                     (e.getAufseherVorname() + " " + e.getAufseherNachname()).trim().equals(selektierterAufseher))
                         .collect(Collectors.toList());
             }
 
@@ -619,7 +613,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
 
             // Sortierung: Neueste zuerst
             eintraege = eintraege.stream()
-                    .sorted(Comparator.comparing(SchiessnachweisEintrag::getDatum).reversed())
+                    .sorted(Comparator.comparing(SchiessnachweisEintragListDTO::getDatum).reversed())
                     .collect(Collectors.toList());
 
             aktuelleFiltierteEintraege = eintraege;
@@ -642,7 +636,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
 
                 // Verwende den Schießstand-spezifischen Export für die Eintragsverwaltung
                 byte[] pdfBytes = pdfExportService.exportiereEintragsverwaltungSchiesstand(
-                        aktuellerSchiesstand,
+                        schiesstandMapper.toDTO(aktuellerSchiesstand),
                         aktuelleFiltierteEintraege,
                         von,
                         bis
@@ -662,7 +656,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     /**
      * Erstellt ein farbiges Status-Badge.
      */
-    private Span createStatusBadge(SchiessnachweisEintrag eintrag) {
+    private Span createStatusBadge(SchiessnachweisEintragListDTO dto) {
         Span badge = new Span();
         badge.getStyle()
                 .set("padding", "4px 12px")
@@ -671,7 +665,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                 .set("font-size", "12px")
                 .set("display", "inline-block");
 
-        switch (eintrag.getStatus()) {
+        switch (dto.getStatus()) {
             case UNSIGNIERT, OFFEN -> {
                 badge.setText("Unsigniert");
                 badge.getStyle()

@@ -150,7 +150,7 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
         LocalDateTime pruefZeitpunkt = pruefDatum.atStartOfDay();
 
         try {
-            DigitalesZertifikat zertifikat = verifizierungsService.verifiziere(seriennummer.trim());
+            de.suchalla.schiessbuch.model.dto.DigitalesZertifikatDTO zertifikat = verifizierungsService.verifiziere(seriennummer.trim());
 
             if (zertifikat != null) {
                 // Prüfe Gültigkeit zum angegebenen Zeitpunkt
@@ -169,7 +169,7 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
     /**
      * Prüft, ob das Zertifikat zu einem bestimmten Zeitpunkt gültig war.
      */
-    private boolean istGueltigZuZeitpunkt(DigitalesZertifikat zertifikat, LocalDateTime zeitpunkt) {
+    private boolean istGueltigZuZeitpunkt(de.suchalla.schiessbuch.model.dto.DigitalesZertifikatDTO zertifikat, LocalDateTime zeitpunkt) {
         if (zertifikat == null || zeitpunkt == null) {
             return false;
         }
@@ -194,7 +194,7 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
     /**
      * Zeigt das Verifizierungsergebnis an.
      */
-    private void zeigeErgebnis(DigitalesZertifikat zertifikat, boolean gefunden,
+    private void zeigeErgebnis(de.suchalla.schiessbuch.model.dto.DigitalesZertifikatDTO zertifikat, boolean gefunden,
                                boolean gueltigZumZeitpunkt, LocalDateTime pruefZeitpunkt) {
         ergebnisLayout.removeAll();
 
@@ -278,16 +278,18 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
             details.add(createDetailRow("Seriennummer:", zertifikat.getSeriennummer()));
 
             // Aufseher-Informationen (falls vorhanden)
-            if ("AUFSEHER".equals(zertifikat.getZertifikatsTyp()) && zertifikat.getBenutzer() != null) {
-                details.add(createDetailRow("Aufseher:", zertifikat.getBenutzer().getVollstaendigerName()));
-                details.add(createDetailRow("E-Mail:", zertifikat.getBenutzer().getEmail()));
+            if ("AUFSEHER".equals(zertifikat.getZertifikatsTyp()) && zertifikat.getBenutzerVollstaendigerName() != null) {
+                details.add(createDetailRow("Aufseher:", zertifikat.getBenutzerVollstaendigerName()));
+                if (zertifikat.getBenutzerEmail() != null) {
+                    details.add(createDetailRow("E-Mail:", zertifikat.getBenutzerEmail()));
+                }
             }
 
             // Vereinsinformationen (falls vorhanden)
-            if (zertifikat.getVerein() != null) {
-                details.add(createDetailRow("Verein:", zertifikat.getVerein().getName()));
-                if (zertifikat.getVerein().getAdresse() != null && !zertifikat.getVerein().getAdresse().isEmpty()) {
-                    details.add(createDetailRow("Vereinsadresse:", zertifikat.getVerein().getAdresse()));
+            if (zertifikat.getVereinName() != null) {
+                details.add(createDetailRow("Verein:", zertifikat.getVereinName()));
+                if (zertifikat.getVereinAdresse() != null && !zertifikat.getVereinAdresse().isEmpty()) {
+                    details.add(createDetailRow("Vereinsadresse:", zertifikat.getVereinAdresse()));
                 }
             }
 

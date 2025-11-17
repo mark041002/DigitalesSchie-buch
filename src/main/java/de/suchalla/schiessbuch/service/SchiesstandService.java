@@ -1,5 +1,7 @@
 package de.suchalla.schiessbuch.service;
 
+import de.suchalla.schiessbuch.mapper.SchiesstandMapper;
+import de.suchalla.schiessbuch.model.dto.SchiesstandDTO;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.enums.SchiesstandTyp;
 import de.suchalla.schiessbuch.repository.SchiesstandRepository;
@@ -15,15 +17,20 @@ import java.util.List;
 public class SchiesstandService {
     private final SchiesstandRepository schiesstandRepository;
     private final PkiService pkiService;
+    private final SchiesstandMapper schiesstandMapper;
 
     @Autowired
-    public SchiesstandService(SchiesstandRepository schiesstandRepository, PkiService pkiService) {
+    public SchiesstandService(SchiesstandRepository schiesstandRepository, PkiService pkiService,
+                              SchiesstandMapper schiesstandMapper) {
         this.schiesstandRepository = schiesstandRepository;
         this.pkiService = pkiService;
+        this.schiesstandMapper = schiesstandMapper;
     }
 
-    public List<Schiesstand> findAll() {
-        return schiesstandRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<SchiesstandDTO> findAll() {
+        List<Schiesstand> entities = schiesstandRepository.findAll();
+        return schiesstandMapper.toDTOList(entities);
     }
 
     @Transactional

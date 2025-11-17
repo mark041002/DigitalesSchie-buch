@@ -134,7 +134,7 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
                 inhaberComboBox.setVisible(true);
                 inhaberComboBox.setRequired(true);
                 // Alle Benutzer als mögliche gewerbliche Inhaber
-                List<Benutzer> inhaber = benutzerService.findAlleBenutzer();
+                List<Benutzer> inhaber = benutzerService.findAlleBenutzerEntities();
                 inhaberComboBox.setItems(inhaber);
             } else {
                 vereinComboBox.setVisible(false);
@@ -151,7 +151,7 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
         inhaberComboBox.addCustomValueSetListener(event ->
                 Notification.show("Bitte wählen Sie einen Benutzer aus der Liste.", 3000, Notification.Position.MIDDLE)
         );
-        vereinComboBox.setItems(verbandService.findeAlleVereine());
+        vereinComboBox.setItems(verbandService.findeAlleVereineEntities());
         vereinComboBox.setItemLabelGenerator(Verein::getName);
         vereinComboBox.setVisible(false);
 
@@ -368,7 +368,7 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
 
         // Verein-ComboBox (nur bei vereinsgebunden)
         ComboBox<Verein> vereinComboBoxEdit = new ComboBox<>("Verein");
-        vereinComboBoxEdit.setItems(verbandService.findeAlleVereine());
+        vereinComboBoxEdit.setItems(verbandService.findeAlleVereineEntities());
         vereinComboBoxEdit.setItemLabelGenerator(Verein::getName);
         vereinComboBoxEdit.setValue(schiesstand.getVerein());
         vereinComboBoxEdit.setWidthFull();
@@ -376,7 +376,7 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
 
         // Inhaber-ComboBox (nur bei gewerblich)
         ComboBox<Benutzer> inhaberComboBoxEdit = new ComboBox<>("Inhaber");
-        inhaberComboBoxEdit.setItems(benutzerService.findAlleBenutzer());
+        inhaberComboBoxEdit.setItems(benutzerService.findAlleBenutzerEntities());
         inhaberComboBoxEdit.setItemLabelGenerator(Benutzer::getVollstaendigerName);
         inhaberComboBoxEdit.setValue(schiesstand.getAufseher());
         inhaberComboBoxEdit.setWidthFull();
@@ -430,7 +430,7 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
     }
 
     private void updateGrid() {
-        List<Schiesstand> schiesstaende = disziplinService.findeAlleSchiesstaende();
+        List<Schiesstand> schiesstaende = disziplinService.findeAlleSchiesstaendeEntities();
         grid.setItems(schiesstaende);
         grid.getDataProvider().refreshAll();
 
