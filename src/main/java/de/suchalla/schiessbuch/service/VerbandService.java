@@ -5,17 +5,20 @@ import de.suchalla.schiessbuch.mapper.VereinMapper;
 import de.suchalla.schiessbuch.model.dto.VerbandDTO;
 import de.suchalla.schiessbuch.model.dto.VereinDTO;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
+import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
 import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
+import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
+import de.suchalla.schiessbuch.repository.DisziplinRepository;
 import de.suchalla.schiessbuch.repository.VerbandRepository;
 import de.suchalla.schiessbuch.repository.VereinRepository;
+import de.suchalla.schiessbuch.repository.VereinsmitgliedschaftRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Service für Verbands- und Vereinsverwaltung.
@@ -30,6 +33,9 @@ public class VerbandService {
 
     private final VerbandRepository verbandRepository;
     private final VereinRepository vereinRepository;
+    private final DigitalesZertifikatRepository zertifikatRepository;
+    private final VereinsmitgliedschaftRepository mitgliedschaftRepository;
+    private final DisziplinRepository disziplinRepository;
     private final VereinsmitgliedschaftService vereinsmitgliedschaftService;
     private final VerbandMapper verbandMapper;
     private final VereinMapper vereinMapper;
@@ -159,8 +165,13 @@ public class VerbandService {
      * Löscht einen Verband.
      *
      * @param verbandId Die Verbands-ID
+     * @throws IllegalStateException wenn der Verband noch Disziplinen hat
      */
     public void loescheVerband(Long verbandId) {
+        // Prüfe, ob es abhängige Disziplinen gibt
+        if (!disziplinRepository.findByVerbandId(verbandId).isEmpty()) {
+            throw new IllegalStateException("Verband kann nicht gelöscht werden, da noch Disziplinen zugeordnet sind");
+        }
         verbandRepository.deleteById(verbandId);
     }
 
@@ -178,25 +189,25 @@ public class VerbandService {
      * Findet einen Verein anhand der ID.
      *
      * @param id Die Vereins-ID
-     * @return Optional mit Verein
+     * @return Verein oder null
      */
     @Transactional(readOnly = true)
-    public Optional<Verein> findeVerein(Long id) {
-        return vereinRepository.findById(id);
+    public Verein findeVerein(Long id) {
+        return vereinRepository.findById(id).orElse(null);
     }
 
     /**
      * Findet einen Verein anhand der Vereinsnummer.
      *
      * @param vereinsNummer Die Vereinsnummer
-     * @return Optional mit Verein
+     * @return Verein oder null
      */
     @Transactional(readOnly = true)
-    public Optional<Verein> findeVereinByVereinsNummer(String vereinsNummer) {
+    public Verein findeVereinByVereinsNummer(String vereinsNummer) {
         if (vereinsNummer == null) {
-            return Optional.empty();
+            return null;
         }
-        return vereinRepository.findByVereinsNummer(vereinsNummer.trim());
+        return vereinRepository.findByVereinsNummer(vereinsNummer.trim()).orElse(null);
     }
 
     /**
@@ -232,20 +243,34 @@ public class VerbandService {
     }
 
     /**
-     * Löscht einen Verein.
+     * Löscht einen Verein samt aller abhängiger Entities.
+     * Löscht in korrekter Reihenfolge:
+     * 1. Digitale Zertifikate des Vereins
+     * 2. Mitgliedschaften (falls keine aktiven vorhanden)
+     * 3. Den Verein selbst
      *
      * @param vereinId Die Vereins-ID
-     * @throws IllegalStateException wenn Verein noch Mitglieder hat
+     * @throws IllegalStateException wenn Verein noch aktive Mitglieder hat
+     * @throws IllegalArgumentException wenn Verein nicht gefunden
      */
     public void loescheVerein(Long vereinId) {
         Verein verein = vereinRepository.findById(vereinId)
                 .orElseThrow(() -> new IllegalArgumentException("Verein nicht gefunden"));
 
+        // 1. Lösche alle Zertifikate des Vereins (Foreign Key Constraint)
+        List<DigitalesZertifikat> zertifikate = zertifikatRepository.findByVerein(verein);
+        zertifikatRepository.deleteAll(zertifikate);
+
+        // 2. Mitgliedschaften nicht löschen, sondern als inaktiv markieren
         if (!verein.getMitgliedschaften().isEmpty()) {
-            throw new IllegalStateException(
-                    "Verein kann nicht gelöscht werden, da noch Mitglieder vorhanden sind");
+            for (Vereinsmitgliedschaft mitgliedschaft : verein.getMitgliedschaften()) {
+                mitgliedschaft.setAktiv(false);
+                mitgliedschaft.setAustrittDatum(java.time.LocalDate.now());
+                mitgliedschaftRepository.save(mitgliedschaft);
+            }
         }
 
+        // 3. Lösche den Verein
         vereinRepository.delete(verein);
     }
 }

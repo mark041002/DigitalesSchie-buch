@@ -7,13 +7,17 @@ import de.suchalla.schiessbuch.model.entity.UserToken;
 import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
 import de.suchalla.schiessbuch.model.enums.UserTokenTyp;
 import de.suchalla.schiessbuch.repository.BenutzerRepository;
+import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import de.suchalla.schiessbuch.repository.UserTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Service für Benutzer-Verwaltung.
@@ -29,6 +33,7 @@ public class BenutzerService {
     private final BenutzerRepository benutzerRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserTokenRepository userTokenRepository;
+    private final DigitalesZertifikatRepository digitalesZertifikatRepository;
     private final BenutzerMapper benutzerMapper;
 
     /**
@@ -98,64 +103,156 @@ public class BenutzerService {
      * @param benutzer Der Benutzer
      */
     public void loescheBenutzer(Benutzer benutzer) {
-        benutzerRepository.delete(benutzer);
+        // Sicherstellen, dass wir auf einer managed-Instanz arbeiten to avoid transient/merge issues
+        if (benutzer == null) {
+            return;
+        }
+
+        if (benutzer.getId() == null) {
+            // Kein ID verfügbar - versuchen, direkt zu löschen (keine bessere Option)
+            benutzerRepository.delete(benutzer);
+            return;
+        }
+
+        Benutzer managed = benutzerRepository.findById(benutzer.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Benutzer nicht gefunden"));
+
+        // Zuerst alle zugehörigen Zertifikate löschen (DB FK verhindert sonst das Löschen des Benutzers)
+        digitalesZertifikatRepository.deleteAllByBenutzerId(managed.getId());
+
+        // Dann alle zugehörigen UserTokens löschen
+        userTokenRepository.deleteAllByBenutzer(managed);
+
+        // Anschließend den Benutzer löschen (Children wie Vereinsmitgliedschaften/Schiessnachweise werden per Cascade entfernt)
+        benutzerRepository.delete(managed);
+    }
+
+    /**
+     * Löscht einen Benutzer anhand der ID. Diese Variante vermeidet das Übergeben von ggf. detached Entities
+     * und löscht zuerst alle zugehörigen Tokens per Benutzer-ID.
+     *
+     * @param benutzerId ID des zu löschenden Benutzers
+     */
+    public void loescheBenutzerById(Long benutzerId) {
+        if (benutzerId == null) {
+            return;
+        }
+
+        if (!benutzerRepository.existsById(benutzerId)) {
+            throw new IllegalArgumentException("Benutzer nicht gefunden");
+        }
+
+        // Zuerst alle zugehörigen Zertifikate per Benutzer-ID löschen (vermeidet FK-Constraint)
+        digitalesZertifikatRepository.deleteAllByBenutzerId(benutzerId);
+
+        // Tokens per ID löschen (vermeidet das Laden einer transient/ detached Benutzer-Instanz)
+        userTokenRepository.deleteAllByBenutzerId(benutzerId);
+
+        // Benutzer direkt per Id löschen
+        benutzerRepository.deleteById(benutzerId);
     }
 
     /**
      * Erstellt einen Token für die E-Mail-Bestätigung.
      */
     public String erstelleVerifizierungsToken(Benutzer benutzer) {
-        String token = java.util.UUID.randomUUID().toString();
-        UserToken userToken = new UserToken(token, java.time.LocalDateTime.now().plusDays(1), UserTokenTyp.VERIFICATION, benutzer);
-        userTokenRepository.save(userToken);
-        return token;
+        return createToken(benutzer, UserTokenTyp.VERIFICATION, Duration.ofDays(1));
     }
 
     /**
      * Bestätigt die E-Mail-Adresse anhand des Tokens.
      */
     public boolean bestaetigeEmail(String token) {
-        UserToken userToken = userTokenRepository.findByToken(token).orElse(null);
-        if (userToken != null && userToken.getTyp() == UserTokenTyp.VERIFICATION) {
-            if (userToken.getAblaufdatum().isAfter(java.time.LocalDateTime.now())) {
-                Benutzer benutzer = userToken.getBenutzer();
-                benutzer.setEmailVerifiziert(true);
-                userTokenRepository.delete(userToken);
-                benutzerRepository.save(benutzer);
-                return true;
-            } else {
-                userTokenRepository.delete(userToken);
-            }
-        }
-        return false;
+        return validateAndProcessToken(token, UserTokenTyp.VERIFICATION, benutzer -> {
+            benutzer.setEmailVerifiziert(true);
+            benutzerRepository.save(benutzer);
+        });
     }
 
     /**
      * Erstellt einen Token für Passwort-Reset.
      */
     public String erstellePasswortResetToken(Benutzer benutzer) {
-        String token = java.util.UUID.randomUUID().toString();
-        UserToken userToken = new UserToken(token, java.time.LocalDateTime.now().plusHours(2), UserTokenTyp.PASSWORD_RESET, benutzer);
-        userTokenRepository.save(userToken);
-        return token;
+        return createToken(benutzer, UserTokenTyp.PASSWORD_RESET, Duration.ofHours(2));
+    }
+
+    /**
+     * Findet einen Benutzer anhand der E-Mail-Adresse.
+     *
+     * @param email Die E-Mail-Adresse
+     * @return Benutzer oder null
+     */
+    @Transactional(readOnly = true)
+    public Benutzer findeBenutzerByEmail(String email) {
+        return benutzerRepository.findByEmail(email).orElse(null);
+    }
+
+    /**
+     * Findet einen Benutzer anhand der E-Mail-Adresse mit geladenen Mitgliedschaften.
+     *
+     * @param email Die E-Mail-Adresse
+     * @return Benutzer oder null
+     */
+    @Transactional(readOnly = true)
+    public Benutzer findeBenutzerByEmailWithMitgliedschaften(String email) {
+        return benutzerRepository.findByEmailWithMitgliedschaften(email).orElse(null);
     }
 
     /**
      * Setzt das Passwort anhand eines gültigen Reset-Tokens zurück.
      */
     public boolean resetPasswortMitToken(String token, String neuesPasswort) {
+        return validateAndProcessToken(token, UserTokenTyp.PASSWORD_RESET, benutzer -> {
+            benutzer.setPasswort(passwordEncoder.encode(neuesPasswort));
+            benutzerRepository.save(benutzer);
+        });
+    }
+
+    // ==================== Private Helper-Methoden ====================
+
+    /**
+     * Erstellt einen Token mit gegebenem Typ und Gültigkeitsdauer.
+     * Reduziert Code-Duplikation bei Token-Erstellung.
+     *
+     * @param benutzer Der Benutzer für den Token
+     * @param typ Der Token-Typ (VERIFICATION oder PASSWORD_RESET)
+     * @param validity Die Gültigkeitsdauer des Tokens
+     * @return Der generierte Token-String
+     */
+    private String createToken(Benutzer benutzer, UserTokenTyp typ, Duration validity) {
+        String token = java.util.UUID.randomUUID().toString();
+        LocalDateTime expiryDate = LocalDateTime.now().plus(validity);
+        UserToken userToken = new UserToken(token, expiryDate, typ, benutzer);
+        userTokenRepository.save(userToken);
+        return token;
+    }
+
+    /**
+     * Validiert einen Token und führt bei Erfolg die gegebene Aktion aus.
+     * Reduziert Code-Duplikation bei Token-Validierung.
+     *
+     * @param token Der zu validierende Token-String
+     * @param expectedType Der erwartete Token-Typ
+     * @param onSuccess Die auszuführende Aktion bei erfolgreichem Token
+     * @return true wenn Token gültig war und Aktion ausgeführt wurde, sonst false
+     */
+    private boolean validateAndProcessToken(String token, UserTokenTyp expectedType, Consumer<Benutzer> onSuccess) {
         UserToken userToken = userTokenRepository.findByToken(token).orElse(null);
-        if (userToken != null && userToken.getTyp() == UserTokenTyp.PASSWORD_RESET) {
-            if (userToken.getAblaufdatum().isAfter(java.time.LocalDateTime.now())) {
-                Benutzer benutzer = userToken.getBenutzer();
-                benutzer.setPasswort(passwordEncoder.encode(neuesPasswort));
-                userTokenRepository.delete(userToken);
-                benutzerRepository.save(benutzer);
-                return true;
-            } else {
-                userTokenRepository.delete(userToken);
-            }
+
+        if (userToken == null || userToken.getTyp() != expectedType) {
+            return false;
         }
-        return false;
+
+        // Token abgelaufen?
+        if (userToken.getAblaufdatum().isBefore(LocalDateTime.now())) {
+            userTokenRepository.delete(userToken);
+            return false;
+        }
+
+        // Token gültig - Aktion ausführen
+        Benutzer benutzer = userToken.getBenutzer();
+        onSuccess.accept(benutzer);
+        userTokenRepository.delete(userToken);
+        return true;
     }
 }

@@ -26,7 +26,6 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class DigitalesZertifikat {
 
-    @Getter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
@@ -59,13 +58,12 @@ public class DigitalesZertifikat {
     @Column(name = "gueltig_ab", nullable = false)
     private LocalDateTime gueltigSeit;
 
-    //Gültig bis (null = unbegrenzt gültig)
     @Column(name = "gueltig_bis")
     private LocalDateTime gueltigBis;
 
     @Column(nullable = false)
     @Builder.Default
-    private Boolean widerrufen = false;
+    private boolean widerrufen = false;
 
     @Column(name = "widerrufen_am")
     private LocalDateTime widerrufenAm;

@@ -6,8 +6,6 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
@@ -30,6 +28,7 @@ import de.suchalla.schiessbuch.service.DisziplinService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
 import de.suchalla.schiessbuch.service.email.NotificationService;
+import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,7 +75,7 @@ public class NeuerEintragView extends VerticalLayout {
         this.vereinsmitgliedschaftService = vereinsmitgliedschaftService;
         this.notificationService = notificationService;
 
-        this.currentUser = securityService.getAuthenticatedUser().orElse(null);
+        this.currentUser = securityService.getAuthenticatedUser();
 
         setSpacing(false);
         setPadding(false);
@@ -95,32 +94,17 @@ public class NeuerEintragView extends VerticalLayout {
         contentWrapper.setSpacing(false);
         contentWrapper.setPadding(false);
         contentWrapper.addClassName("content-wrapper");
-        contentWrapper.setMaxWidth("1200px"); // Formulare etwas schmaler
 
-        // Header-Bereich mit modernem Styling - gleiche Breite wie FormCard
-        Div header = new Div();
-        header.addClassName("gradient-header");
-        header.setWidthFull();
-
-        H2 title = new H2("Neuer Schießnachweis-Eintrag");
-        title.getStyle().set("margin", "0");
-        header.add(title);
+        // Header-Bereich mit modernem Styling
+        Div header = ViewComponentHelper.createGradientHeader("Neuer Schießnachweis-Eintrag");
         contentWrapper.add(header);
 
         // Info-Box direkt unter dem Header
-        Div infoBoxHeader = new Div();
-        infoBoxHeader.addClassName("info-box");
-        Icon infoIconHeader = VaadinIcon.INFO_CIRCLE.create();
-        infoIconHeader.setSize("20px");
-        Span infoTextHeader = new Span("Dokumentieren Sie Ihre Schießaktivität");
-        infoTextHeader.getStyle().set("color", "var(--lumo-primary-text-color)");
-        infoBoxHeader.add(infoIconHeader, infoTextHeader);
+        Div infoBoxHeader = ViewComponentHelper.createInfoBox("Dokumentieren Sie Ihre Schießaktivität");
         contentWrapper.add(infoBoxHeader);
 
         // Formular in Card-Layout
-        Div formCard = new Div();
-        formCard.addClassName("form-container");
-        formCard.setWidthFull();
+        Div formCard = ViewComponentHelper.createFormContainer();
 
         // Formular konfigurieren - nur wichtige Felder mit Icons
         datum.setValue(LocalDate.now());
@@ -147,7 +131,7 @@ public class NeuerEintragView extends VerticalLayout {
         disziplin.setEnabled(false);
         disziplin.setRequired(true);
         disziplin.setPlaceholder("Bitte zuerst Verband auswählen");
-        disziplin.setItemLabelGenerator(Disziplin::getName);
+        disziplin.setItemLabelGenerator(d -> d.getKennziffer() + (d.getProgramm() != null ? " - " + d.getProgramm() : ""));
 
         // Waffenart: OHNE Icon
         waffenart.setItems(Waffenart.values());
@@ -192,14 +176,8 @@ public class NeuerEintragView extends VerticalLayout {
         buttonLayout.setSpacing(true);
         buttonLayout.getStyle().set("margin-top", "var(--lumo-space-m)");
 
-        // Info-Box für Hinweise - jetzt ganz unten
-        Div infoBox = new Div();
-        infoBox.addClassName("info-box");
-        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
-        infoIcon.setSize("20px");
-        Span infoText = new Span("Alle mit * markierten Felder sind Pflichtfelder.");
-        infoText.getStyle().set("color", "var(--lumo-primary-text-color)");
-        infoBox.add(infoIcon, infoText);
+        // Info-Box für Hinweise
+        Div infoBox = ViewComponentHelper.createInfoBox("Alle mit * markierten Felder sind Pflichtfelder.");
 
         formCard.add(formLayout, buttonLayout, infoBox);
         contentWrapper.add(formCard);

@@ -1,13 +1,14 @@
 package de.suchalla.schiessbuch.repository;
 
 import de.suchalla.schiessbuch.model.entity.UserToken;
-import de.suchalla.schiessbuch.model.enums.UserTokenTyp;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
-import java.util.List;
 
 public interface UserTokenRepository extends JpaRepository<UserToken, Long> {
     Optional<UserToken> findByToken(String token);
-    List<UserToken> findByBenutzerIdAndTyp(Long benutzerId, UserTokenTyp typ);
+    // Löscht alle Tokens für einen gegebenen Benutzer (Spring Data erstellt die Implementierung)
+    void deleteAllByBenutzer(de.suchalla.schiessbuch.model.entity.Benutzer benutzer);
+    // Löscht alle Tokens für einen Benutzer anhand der Benutzer-ID (vermeidet Laden der Entity)
+    void deleteAllByBenutzerId(Long benutzerId);
 }
 

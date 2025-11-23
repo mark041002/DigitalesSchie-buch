@@ -14,10 +14,8 @@ import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.suchalla.schiessbuch.service.email.EmailService;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
-import de.suchalla.schiessbuch.repository.BenutzerRepository;
 import de.suchalla.schiessbuch.service.BenutzerService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,16 +27,13 @@ import java.util.Map;
 public class PasswortVergessenView extends VerticalLayout {
 
     private final BenutzerService benutzerService;
-    private final BenutzerRepository benutzerRepository;
     private final EmailService emailService;
 
     private final EmailField emailField = new EmailField("E-Mail-Adresse");
     private final Button sendenButton = new Button("Link zum Zurücksetzen senden");
 
-    @Autowired
-    public PasswortVergessenView(BenutzerService benutzerService, BenutzerRepository benutzerRepository, EmailService emailService) {
+    public PasswortVergessenView(BenutzerService benutzerService, EmailService emailService) {
         this.benutzerService = benutzerService;
-        this.benutzerRepository = benutzerRepository;
         this.emailService = emailService;
 
         setSizeFull();
@@ -84,7 +79,7 @@ public class PasswortVergessenView extends VerticalLayout {
 
         try {
             // Benutzer suchen
-            Benutzer benutzer = benutzerRepository.findByEmail(email).orElse(null);
+            Benutzer benutzer = benutzerService.findeBenutzerByEmail(email);
 
             // Aus Sicherheitsgründen immer eine Erfolgsmeldung anzeigen, auch wenn die E-Mail nicht existiert
             if (benutzer != null) {

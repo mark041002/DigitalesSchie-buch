@@ -4,138 +4,121 @@
 
 /* Header Desktop-Only Buttons - verstecken auf Mobile */
 .header-desktop-only {
-    display: inline-flex !important;
+    display: inline-flex;
 }
 
-/* Drawer selbst - feste Breite, kein overflow */
+/* Drawer Slot - Hintergrundfarbe für den gesamten Bereich */
+vaadin-app-layout [slot="drawer"] {
+    background: var(--lumo-base-color);
+    width: auto;
+    min-width: 280px;
+}
+
+/* Drawer selbst - dynamische Breite basierend auf Inhalt */
 vaadin-app-layout vaadin-drawer-toggle ~ [slot="drawer"] {
-    width: 100% !important;
-    max-width: 280px !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100% !important;
+    width: auto;
+    min-width: 280px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--lumo-base-color);
+}
+
+/* AppLayout Drawer Part */
+vaadin-app-layout::part(drawer) {
+    width: auto;
+    min-width: 280px;
+    background: var(--lumo-base-color);
 }
 
 /* Responsive Drawer Klasse - Flexbox Container */
 .responsive-drawer {
-    width: 100% !important;
-    max-width: 280px !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100% !important;
-    gap: 0 !important;
+    width: auto;
+    min-width: 280px;
+    padding: var(--lumo-space-m);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--lumo-base-color);
 }
 
-/* Alle direkten Kinder von responsive-drawer - kein Spacing */
+/* Alle direkten Kinder von responsive-drawer */
 .responsive-drawer > * {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    flex-shrink: 0 !important;
-}
-
-/* Der Container (navSections) soll wachsen und scrollen */
-.responsive-drawer > vaadin-vertical-layout {
-    flex: 1 1 auto !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    min-height: 0 !important;
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 /* Mobile User Section - standardmäßig versteckt (Desktop) */
 .mobile-user-section {
-    display: none !important;
+    display: none;
 }
 
-/* Alle SideNav Elemente - volle Breite */
+/* Alle SideNav Elemente */
 vaadin-side-nav {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    overflow: visible !important;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-/* SideNav Items - Text umbrechen statt abschneiden */
+/* SideNav Items */
 vaadin-side-nav-item {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    white-space: normal !important;
-    word-wrap: break-word !important;
-    overflow: visible !important;
+    width: 100%;
+    box-sizing: border-box;
+    white-space: nowrap;
 }
 
-/* SideNav Item Label - Text umbrechen */
-vaadin-side-nav-item::part(label) {
-    white-space: normal !important;
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
-    max-width: 100% !important;
-}
-
-/* SideNav Item Link */
-vaadin-side-nav-item a {
-    white-space: normal !important;
-    word-wrap: break-word !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-}
-
-/* Details Elemente in der Sidebar - kein individuelles Scrollen */
+/* Details Elemente in der Sidebar */
 vaadin-details {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    overflow: visible !important;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Details Summary */
 vaadin-details::part(summary) {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    white-space: normal !important;
-    word-wrap: break-word !important;
+    width: 100%;
+    box-sizing: border-box;
+    white-space: nowrap;
 }
 
-/* Details Content - kein Scrollen, volle Höhe */
+/* Details Content */
 vaadin-details::part(content) {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    overflow: visible !important;
-    max-height: none !important;
-    height: auto !important;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
+    max-height: none;
+    height: auto;
 }
 
-/* Details wenn geöffnet - kein max-height */
+/* Details wenn geöffnet */
 vaadin-details[opened]::part(content) {
-    max-height: none !important;
-    overflow: visible !important;
+    max-height: none;
+    overflow: visible;
 }
 
 /* Mobile Anpassungen */
 @media (max-width: 768px) {
     vaadin-app-layout vaadin-drawer-toggle ~ [slot="drawer"] {
-        max-width: 100% !important;
+        width: 100%;
+        max-width: 100%;
     }
 
     .responsive-drawer {
-        max-width: 100% !important;
+        width: 100%;
+        max-width: 100%;
     }
 
     /* Auf Mobile: Header Buttons verstecken */
     .header-desktop-only {
-        display: none !important;
+        display: none;
     }
 
     /* Auf Mobile: Mobile User Section anzeigen */
     .mobile-user-section {
-        display: flex !important;
-        flex-direction: column !important;
+        display: flex;
+        flex-direction: column;
     }
 }

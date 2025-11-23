@@ -10,7 +10,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -28,6 +27,7 @@ import de.suchalla.schiessbuch.model.entity.Disziplin;
 import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.service.DisziplinService;
 import de.suchalla.schiessbuch.service.VerbandService;
+import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 
@@ -50,8 +50,9 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
     private final VerbandService verbandService;
     private final Grid<Disziplin> grid = new Grid<>(Disziplin.class, false);
     private Div emptyStateMessage;
-    private final TextField nameField = new TextField("Name");
-    private final TextArea beschreibungField = new TextArea("Beschreibung");
+    private final TextField kennzifferField = new TextField("Kennziffer");
+    private final TextArea programmField = new TextArea("Programm / Beschreibung");
+    private final TextField waffeKlasseField = new TextField("Waffe/Klasse (z.B. über 9mm)");
     private Verband aktuellerVerband;
 
     public DisziplinenVerwaltungView(DisziplinService disziplinService, VerbandService verbandService) {
@@ -89,63 +90,54 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
     }
 
     private void createContent() {
-        VerticalLayout contentWrapper = new VerticalLayout();
-        contentWrapper.setSpacing(false);
-        contentWrapper.setPadding(false);
-        contentWrapper.addClassName("content-wrapper");
+        // Content-Wrapper für zentrierte Inhalte
+        VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
 
-        // Header-Bereich
-        Div header = new Div();
-        header.addClassName("gradient-header");
-        header.setWidthFull();
-        header.getStyle().set("display", "flex").set("justify-content", "space-between").set("align-items", "center");
+        // Header-Bereich mit Zurück-Button
+        Div headerContainer = new Div();
+        headerContainer.addClassName("gradient-header");
+        headerContainer.setWidthFull();
+        headerContainer.getStyle()
+                .set("display", "flex")
+                .set("justify-content", "space-between")
+                .set("align-items", "center");
 
         H2 title = new H2("Disziplinverwaltung");
         title.getStyle().set("margin", "0");
-        header.add(title);
 
         Button zurueckButton = new Button("Zurück", VaadinIcon.ARROW_LEFT.create());
         zurueckButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         zurueckButton.getStyle()
-            .set("background", "transparent")
-            .set("color", "white")
-            .set("border", "none")
-            .set("margin-right", "var(--lumo-space-m)");
+                .set("background", "transparent")
+                .set("color", "white")
+                .set("border", "none")
+                .set("margin-right", "var(--lumo-space-m)");
         zurueckButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("admin/verbaende")));
-        header.add(zurueckButton);
-        contentWrapper.add(header);
+
+        headerContainer.add(title, zurueckButton);
+        contentWrapper.add(headerContainer);
 
         // Info-Box
-        Div infoBox = new Div();
-        infoBox.addClassName("info-box");
-        infoBox.setWidthFull();
-        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
-        infoIcon.setSize("20px");
-        Paragraph beschreibungueberschrift = new Paragraph(
-                "Erstellen und verwalten Sie Schießdisziplinen für den Verband: " + (aktuellerVerband != null ? aktuellerVerband.getName() : "-")
+        Div infoBox = ViewComponentHelper.createInfoBox(
+                "Erstellen und verwalten Sie Schießdisziplinen für den Verband: " +
+                (aktuellerVerband != null ? aktuellerVerband.getName() : "-")
         );
-        beschreibungueberschrift.getStyle().set("color", "var(--lumo-primary-text-color)").set("margin", "0");
-        infoBox.add(infoIcon, beschreibungueberschrift);
         contentWrapper.add(infoBox);
 
-        // Formular-Container für manuelle Disziplin-Erstellung
-        Div formContainer = new Div();
-        formContainer.addClassName("form-container");
-        formContainer.setWidthFull();
-        formContainer.getStyle().set("margin-bottom", "var(--lumo-space-l)");
+        // Formular-Container
+        Div formContainer = ViewComponentHelper.createFormContainer();
 
         H3 erstellenTitle = new H3("Neue Disziplin erstellen");
         erstellenTitle.getStyle().set("margin-top", "0").set("margin-bottom", "var(--lumo-space-m)");
 
-        nameField.setRequired(true);
-        beschreibungField.setMaxLength(1000);
-        FormLayout formLayout = new FormLayout(nameField, beschreibungField);
-        formLayout.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("500px", 2)
-        );
+        FormLayout formLayout = ViewComponentHelper.createResponsiveFormLayout();
+        formLayout.add(kennzifferField, programmField, waffeKlasseField);
+
         Button speichernButton = new Button("Disziplin erstellen", e -> speichereDisziplin());
         speichernButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        formContainer.add(erstellenTitle, formLayout, speichernButton);
+        contentWrapper.add(formContainer);
         formContainer.add(erstellenTitle, formLayout, speichernButton);
         contentWrapper.add(formContainer);
 
@@ -159,9 +151,9 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
         csvTitle.getStyle().set("margin-top", "0").set("margin-bottom", "var(--lumo-space-m)");
 
         Paragraph csvInfo = new Paragraph(
-            "Format: Die CSV-Datei sollte zwei Spalten enthalten: Name,Beschreibung. " +
+            "Format: Die CSV-Datei sollte bis zu drei Spalten enthalten: Kennziffer,Programm,WaffeKlasse. " +
             "Die erste Zeile kann eine Überschrift sein (wird ignoriert). " +
-            "Beispiel: \"Luftgewehr 10m,Schießen mit Luftgewehr auf 10 Meter Distanz\""
+            "Beispiel: \"1114/1001,25m Schießen,über 9mm\""
         );
         csvInfo.getStyle()
             .set("color", "var(--lumo-secondary-text-color)")
@@ -174,54 +166,38 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
         uploadContainer.add(csvTitle, csvInfo, upload);
         contentWrapper.add(uploadContainer);
 
-        // Grid-Container mit weißem Hintergrund
-        Div gridContainer = new Div();
-        gridContainer.addClassName("grid-container");
-        gridContainer.setWidthFull();
-        gridContainer.getStyle()
-                .set("flex", "1 1 auto")
-                .set("display", "flex")
-                .set("flex-direction", "column")
-                .set("min-height", "0")
-                .set("overflow-x", "auto")
-                .set("overflow-y", "auto");
-        emptyStateMessage = new Div();
-        emptyStateMessage.addClassName("empty-state");
-        emptyStateMessage.setWidthFull();
-        emptyStateMessage.getStyle()
-                .set("text-align", "center")
-                .set("padding", "var(--lumo-space-xl)")
-                .set("color", "var(--lumo-secondary-text-color)");
-        Icon emptyIcon = VaadinIcon.TROPHY.create();
-        emptyIcon.setSize("48px");
-        emptyIcon.getStyle().set("margin-bottom", "var(--lumo-space-m)");
-        Paragraph emptyText = new Paragraph("Noch keine Disziplinen vorhanden.");
-        emptyText.getStyle().set("margin", "0");
-        emptyStateMessage.add(emptyIcon, emptyText);
+        // Grid-Container mit weißem Hintergrund (standardisiert)
+        Div gridContainer = ViewComponentHelper.createGridContainer();
+
+        emptyStateMessage = ViewComponentHelper.createEmptyStateMessage("Keine Disziplinen vorhanden.", VaadinIcon.TROPHY);
         emptyStateMessage.setVisible(false);
+
         grid.setHeight("100%");
         grid.setWidthFull();
-        grid.getStyle().set("min-height", "400px");
+        grid.setColumnReorderingAllowed(true);
         grid.addClassName("rounded-grid");
         grid.addColumn(Disziplin::getId)
                 .setHeader("ID")
                 .setWidth("80px")
-                .setAutoWidth(true)
                 .setFlexGrow(0)
                 .setTextAlign(ColumnTextAlign.END);
-        grid.addColumn(Disziplin::getName)
-                .setHeader("Name")
-                .setAutoWidth(true)
-                .setFlexGrow(1);
-        grid.addColumn(Disziplin::getBeschreibung)
-                .setHeader("Beschreibung")
-                .setAutoWidth(true)
-                .setFlexGrow(1);
+        grid.addColumn(Disziplin::getKennziffer)
+            .setHeader("Kennziffer")
+            .setFlexGrow(1);
+        grid.addColumn(d -> d.getProgramm() != null ? d.getProgramm() : "")
+            .setHeader("Programm")
+            .setFlexGrow(1);
         grid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen")
                 .setWidth("120px")
-                .setAutoWidth(true)
                 .setFlexGrow(0);
+
+                
+        grid.getColumns().forEach(c -> c.setAutoWidth(true));
+        grid.addThemeVariants(
+                com.vaadin.flow.component.grid.GridVariant.LUMO_ROW_STRIPES,
+                com.vaadin.flow.component.grid.GridVariant.LUMO_WRAP_CELL_CONTENT
+        );
 
         gridContainer.add(emptyStateMessage, grid);
         contentWrapper.add(gridContainer);
@@ -243,13 +219,15 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
                     if (line.trim().isEmpty() || line.toLowerCase().startsWith("name")) continue; // Überschrift oder leer
                     String[] parts = line.split(",");
                     if (parts.length < 1) continue;
-                    String name = parts[0].trim();
-                    String beschreibung = parts.length > 1 ? parts[1].trim() : "";
-                    if (!name.isEmpty()) {
+                    String kennziffer = parts[0].trim();
+                    String programm = parts.length > 1 ? parts[1].trim() : "";
+                    String waffeKlasse = parts.length > 2 ? parts[2].trim() : null;
+                    if (!kennziffer.isEmpty()) {
                         try {
                             Disziplin disziplin = Disziplin.builder()
-                                    .name(name)
-                                    .beschreibung(beschreibung)
+                                    .kennziffer(kennziffer)
+                                    .programm(programm)
+                                    .waffeKlasse(waffeKlasse)
                                     .verband(aktuellerVerband)
                                     .build();
                             disziplinService.erstelleDisziplin(disziplin);
@@ -282,34 +260,36 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
     }
 
     private void speichereDisziplin() {
-        if (nameField.isEmpty() || aktuellerVerband == null) {
-            Notification.show("Name ist erforderlich und ein Verband muss ausgewählt sein.")
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+        if (kennzifferField.isEmpty() || aktuellerVerband == null) {
+            Notification.show("Kennziffer ist erforderlich und ein Verband muss ausgewählt sein.")
+                .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return;
         }
         try {
             Disziplin disziplin = Disziplin.builder()
-                    .name(nameField.getValue())
-                    .beschreibung(beschreibungField.getValue())
-                    .verband(aktuellerVerband)
-                    .build();
+                .kennziffer(kennzifferField.getValue())
+                .programm(programmField.getValue())
+                .waffeKlasse(waffeKlasseField.getValue())
+                .verband(aktuellerVerband)
+                .build();
             disziplinService.erstelleDisziplin(disziplin);
             Notification.show("Disziplin erfolgreich erstellt")
-                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            nameField.clear();
-            beschreibungField.clear();
+                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            kennzifferField.clear();
+            programmField.clear();
+            waffeKlasseField.clear();
             updateGrid();
 
         } catch (Exception e) {
             Notification.show("Fehler: " + e.getMessage())
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
     }
 
     private void zeigeLoeschDialog(Disziplin disziplin) {
         ConfirmDialog dialog = new ConfirmDialog();
         dialog.setHeader("Disziplin löschen");
-        dialog.setText("Sind Sie sicher, dass Sie die Disziplin \"" + disziplin.getName() + "\" löschen möchten?");
+        dialog.setText("Sind Sie sicher, dass Sie die Disziplin \"" + disziplin.getKennziffer() + "\" löschen möchten?");
         dialog.setCancelable(true);
         dialog.setConfirmText("Löschen");
         dialog.setRejectText("Abbrechen");

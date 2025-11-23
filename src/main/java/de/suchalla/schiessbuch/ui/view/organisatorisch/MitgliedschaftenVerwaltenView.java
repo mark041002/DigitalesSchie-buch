@@ -8,9 +8,8 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -28,17 +27,19 @@ import de.suchalla.schiessbuch.mapper.VereinMapper;
 import de.suchalla.schiessbuch.model.dto.VereinsmigliedschaftDTO;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
-import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
+import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
 import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.PdfExportService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
+import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -61,16 +62,18 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     private final VereinMapper vereinMapper;
 
     private final Grid<VereinsmigliedschaftDTO> mitgliederGrid = new Grid<>(VereinsmigliedschaftDTO.class, false);
+    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private final TextField suchfeld = new TextField();
     private final DatePicker vonDatum = new DatePicker("Von");
     private final DatePicker bisDatum = new DatePicker("Bis");
     private final Button filterButton = new Button("Filtern");
     private HorizontalLayout filterLayout;
+    private Div emptyStateMessage;
     private Anchor pdfDownload;
 
     private Verein aktuellerVerein;
-    private MitgliedschaftStatus aktuellerStatus = MitgliedschaftStatus.AKTIV;
+    private MitgliedschaftsStatus aktuellerStatus = MitgliedschaftsStatus.AKTIV;
     private Tab aktuellerTab;
     private Tab alleTab;
     private Grid.Column<VereinsmigliedschaftDTO> statusColumn;
@@ -84,7 +87,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         this.vereinMapper = vereinMapper;
         this.pdfExportService = pdfExportService;
         this.vereinRepository = vereinRepository;
-        this.currentUser = securityService.getAuthenticatedUser().orElse(null);
+        this.currentUser = securityService.getAuthenticatedUser();
 
         setSpacing(false);
         setPadding(false);
@@ -124,58 +127,29 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         }
 
         // Content-Wrapper für zentrierte Inhalte
-        VerticalLayout contentWrapper = new VerticalLayout();
-        contentWrapper.setSpacing(false);
-        contentWrapper.setPadding(false);
-        contentWrapper.addClassName("content-wrapper");
+        VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
 
-        // Header-Bereich
-        Div header = new Div();
+        // Header-Bereich: Titel + Vereinsname rechts vom Titel
+        HorizontalLayout header = new HorizontalLayout();
         header.addClassName("gradient-header");
+        header.addClassName("header-inline-subtitle");
         header.setWidthFull();
-
         H2 title = new H2("Mitgliedsverwaltung");
         title.getStyle().set("margin", "0");
+        // Vereinsname als rechter Inhalt
+        Span vereinName = new Span(aktuellerVerein.getName());
+        vereinName.addClassName("subtitle");
 
-        Span vereinsName = new Span(aktuellerVerein.getName());
-        vereinsName.getStyle()
-                .set("font-size", "var(--lumo-font-size-m)")
-                .set("color", "white")
-                .set("font-weight", "500")
-                .set("margin-left", "auto");
-
-        HorizontalLayout headerContent = new HorizontalLayout(title, vereinsName);
-        headerContent.setWidthFull();
-        headerContent.setAlignItems(FlexComponent.Alignment.CENTER);
-        headerContent.setSpacing(true);
-        header.add(headerContent);
+        header.add(title);
+        header.expand(title);
+        header.add(vereinName);
+        header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
         contentWrapper.add(header);
 
         // Info-Box mit modernem Styling
-        Div infoBox = new Div();
-        infoBox.addClassName("info-box");
-        infoBox.setWidthFull();
-        infoBox.getStyle()
-                .set("background", "var(--lumo-primary-color-10pct)")
-                .set("border-left", "4px solid var(--lumo-primary-color)")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("padding", "var(--lumo-space-m)")
-                .set("margin-bottom", "var(--lumo-space-l)")
-                .set("box-shadow", "var(--lumo-box-shadow-xs)");
-        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
-        infoIcon.setSize("20px");
-        infoIcon.getStyle().set("margin-right", "var(--lumo-space-s)");
-        Paragraph beschreibung = new Paragraph(
+        Div infoBox = ViewComponentHelper.createInfoBox(
                 "Verwalten Sie die Mitgliedschaften Ihres Vereins. Genehmigen oder lehnen Sie Beitrittsanfragen ab und verwalten Sie aktive Mitglieder."
         );
-        beschreibung.getStyle()
-                .set("color", "var(--lumo-primary-text-color)")
-                .set("margin", "0")
-                .set("display", "inline");
-        HorizontalLayout infoContent = new HorizontalLayout(infoIcon, beschreibung);
-        infoContent.setAlignItems(FlexComponent.Alignment.START);
-        infoContent.setSpacing(false);
-        infoBox.add(infoContent);
         contentWrapper.add(infoBox);
 
         // Tabs-Container mit weißem Hintergrund
@@ -205,11 +179,11 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             aktuellerTab = selectedTab;
 
             if (selectedTab == beantragtTab) {
-                aktuellerStatus = MitgliedschaftStatus.BEANTRAGT;
+                aktuellerStatus = MitgliedschaftsStatus.BEANTRAGT;
             } else if (selectedTab == genehmigtTab) {
-                aktuellerStatus = MitgliedschaftStatus.AKTIV;
+                aktuellerStatus = MitgliedschaftsStatus.AKTIV;
             } else if (selectedTab == abgelehntTab) {
-                aktuellerStatus = MitgliedschaftStatus.ABGELEHNT;
+                aktuellerStatus = MitgliedschaftsStatus.ABGELEHNT;
             } else {
                 aktuellerStatus = null; // Alle
             }
@@ -240,11 +214,13 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         filterContainer.add(createFilterLayout());
         contentWrapper.add(filterContainer);
 
+        // Empty State Message
+        emptyStateMessage = ViewComponentHelper.createEmptyStateMessage("Noch keine Mitgliedschaften vorhanden.", VaadinIcon.USERS);
+        emptyStateMessage.setVisible(false);
+
         // Grid-Container
-        Div gridContainer = new Div();
-        gridContainer.addClassName("grid-container");
-        gridContainer.setWidthFull();
-        gridContainer.add(createGridLayout());
+        Div gridContainer = ViewComponentHelper.createGridContainer();
+        gridContainer.add(emptyStateMessage, createGridLayout());
         contentWrapper.add(gridContainer);
 
         add(contentWrapper);
@@ -264,10 +240,12 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         vonDatum.setValue(LocalDate.now().minusYears(1));
         vonDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
         vonDatum.setWidth("200px");
+        vonDatum.getStyle().set("padding-top", "0");
 
         bisDatum.setValue(LocalDate.now());
         bisDatum.setPrefixComponent(VaadinIcon.CALENDAR.create());
         bisDatum.setWidth("200px");
+        bisDatum.getStyle().set("padding-top", "0");
 
         filterButton.addClickListener(e -> updateGrid());
         filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -318,8 +296,8 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         layout.setPadding(false);
 
         // Grid konfigurieren
-        mitgliederGrid.setHeight("600px");
         mitgliederGrid.addClassName("rounded-grid");
+        mitgliederGrid.setColumnReorderingAllowed(true);
 
         mitgliederGrid.addColumn(dto -> (dto.getBenutzerVorname() + " " + dto.getBenutzerNachname()).trim())
                 .setHeader("Name")
@@ -328,10 +306,10 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         mitgliederGrid.addColumn(VereinsmigliedschaftDTO::getBenutzerEmail)
                 .setHeader("E-Mail")
                 .setAutoWidth(true);
-        mitgliederGrid.addColumn(VereinsmigliedschaftDTO::getBeitrittDatum)
-                .setHeader("Beitrittsdatum")
-                .setSortable(true)
-                .setAutoWidth(true);
+        mitgliederGrid.addColumn(dto -> dto.getBeitrittDatum() == null ? "" : dto.getBeitrittDatum().format(dateFormatter))
+            .setHeader("Beitrittsdatum")
+            .setSortable(true)
+            .setAutoWidth(true);
         mitgliederGrid.addColumn(this::getRolleText)
                 .setHeader("Rolle")
                 .setAutoWidth(true);
@@ -363,7 +341,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         layout.setWidth("100%");
 
         // Für beantragte Mitgliedschaften: Genehmigen/Ablehnen
-        if (dto.getStatus() == MitgliedschaftStatus.BEANTRAGT) {
+        if (dto.getStatus() == MitgliedschaftsStatus.BEANTRAGT) {
             Button genehmigenButton = new Button("Genehmigen", e -> genehmigen(dto.getId()));
             genehmigenButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_SMALL);
 
@@ -373,24 +351,28 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             layout.add(genehmigenButton, ablehnenButton);
         }
 
-        // Für aktive Mitgliedschaften: Aufseher-Status ändern, Entfernen (nur Vereinschef)
-        if (dto.getStatus() == MitgliedschaftStatus.AKTIV) {
+        // Für aktive Mitgliedschaften: Entfernen (nur Vereinschef)
+        // Aufseher-Verwaltung nur wenn NICHT im "Alle"-Tab
+        if (dto.getStatus() == MitgliedschaftsStatus.AKTIV) {
             boolean istVereinschef = currentUser.getVereinsmitgliedschaften().stream()
                     .anyMatch(m -> m.getVerein().getId().equals(aktuellerVerein.getId()) &&
                             Boolean.TRUE.equals(m.getIstVereinschef()));
 
             if (istVereinschef && !Boolean.TRUE.equals(dto.getIstVereinschef())) {
-                Button aufseherButton;
-                if (Boolean.TRUE.equals(dto.getIstAufseher())) {
-                    aufseherButton = new Button("Aufseher entziehen",
-                            e -> setzeAufseherStatus(dto.getId(), false));
-                    aufseherButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
-                } else {
-                    aufseherButton = new Button("Zu Aufseher ernennen",
-                            e -> setzeAufseherStatus(dto.getId(), true));
-                    aufseherButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+                // Aufseher-Buttons nur anzeigen, wenn NICHT im "Alle"-Tab
+                if (aktuellerTab != alleTab) {
+                    Button aufseherButton;
+                    if (Boolean.TRUE.equals(dto.getIstAufseher())) {
+                        aufseherButton = new Button("Aufseher entziehen",
+                                e -> setzeAufseherStatus(dto.getId(), false));
+                        aufseherButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
+                    } else {
+                        aufseherButton = new Button("Zu Aufseher ernennen",
+                                e -> setzeAufseherStatus(dto.getId(), true));
+                        aufseherButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+                    }
+                    layout.add(aufseherButton);
                 }
-                layout.add(aufseherButton);
 
                 Button entfernenButton = new Button("Entfernen", e -> mitgliedEntfernen(dto.getId()));
                 entfernenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
@@ -539,6 +521,11 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
 
             log.info("Finale Anzahl im Grid: {}", mitglieder.size());
             mitgliederGrid.setItems(mitglieder);
+
+            // Zeige/Verstecke Empty State Message
+            boolean isEmpty = mitglieder.isEmpty();
+            mitgliederGrid.setVisible(!isEmpty);
+            emptyStateMessage.setVisible(isEmpty);
         }
     }
 

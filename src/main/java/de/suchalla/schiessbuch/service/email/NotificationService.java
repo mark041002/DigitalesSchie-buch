@@ -7,6 +7,7 @@ import de.suchalla.schiessbuch.repository.VereinsmitgliedschaftRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -30,7 +31,9 @@ public class NotificationService {
     /**
      * Notifiziert Vereinschefs und Aufseher, dass ein Eintrag zur Signatur offen ist.
      * In realer Anwendung sollten hier die Rollen/Verknüpfung geprüft werden (Vereinschef-Rolle usw.).
+     * Diese Methode wird asynchron ausgeführt, um die Performance beim Erstellen von Einträgen zu verbessern.
      */
+    @Async
     public void notifySignatureRequest(SchiessnachweisEintrag eintrag) {
         Verein verein = eintrag.getSchiesstand() != null ? eintrag.getSchiesstand().getVerein() : null;
         if (verein == null) {
@@ -95,7 +98,9 @@ public class NotificationService {
 
     /**
      * Notifiziert Vereinschef, wenn eine Beitrittsanfrage für den Verein eingeht.
+     * Diese Methode wird asynchron ausgeführt, um die Performance zu verbessern.
      */
+    @Async
     public void notifyMembershipRequest(Verein verein, Benutzer antragsteller) {
         Map<String, Object> vars = new HashMap<>();
         vars.put("username", "Empfänger");
@@ -134,7 +139,9 @@ public class NotificationService {
 
     /**
      * Notifiziert den Schützen, dass sein Eintrag signiert wurde.
+     * Diese Methode wird asynchron ausgeführt, um die Performance zu verbessern.
      */
+    @Async
     public void notifyEntrySigned(SchiessnachweisEintrag eintrag) {
         Benutzer schuetze = eintrag.getSchuetze();
         if (schuetze != null && schuetze.isEmailNotificationsEnabled()) {

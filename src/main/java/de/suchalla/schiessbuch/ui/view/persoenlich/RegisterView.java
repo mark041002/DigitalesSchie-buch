@@ -172,10 +172,8 @@ public class RegisterView extends VerticalLayout {
                 log.info("Verifizierungs-E-Mail erfolgreich an {} versendet", benutzer.getEmail());
             } catch (Exception mailException) {
                 log.error("Fehler beim Versenden der Verifizierungs-E-Mail an {}", benutzer.getEmail(), mailException);
-                // E-Mail-Fehler blockieren nicht die Registrierung
             }
             
-            // Dialog anzeigen und zur Homepage weiterleiten
             zeigeVerifizierungsDialog(benutzer.getEmail());
 
         } catch (ValidationException e) {

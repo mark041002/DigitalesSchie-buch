@@ -8,76 +8,140 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository für digitale Zertifikate.
+ * Repository für {@link DigitalesZertifikat} Entitäten.
+ *
+ * Bietet Such- und Prüfmethoden für Zertifikate inkl. Varianten mit EAGER-Laden
+ * der zugehörigen Entitäten (Benutzer, Verein, Schießstand, übergeordnetes Zertifikat).
  *
  * @author Markus Suchalla
- * @version 1.0.0
+ * @version 1.0.2
  */
 @Repository
 public interface DigitalesZertifikatRepository extends JpaRepository<DigitalesZertifikat, Long> {
 
     /**
-     * Findet Zertifikat nach Typ (ROOT, VEREIN, AUFSEHER)
+     * Findet ein Zertifikat anhand seines Typs.
+     * Mögliche Typen: ROOT, VEREIN, AUFSEHER, SCHIESSTANDAUFSEHER u. a.
+     *
+     * @param zertifikatsTyp Der Zertifikatstyp
+     * @return Optional mit gefundenem Zertifikat
      */
     Optional<DigitalesZertifikat> findByZertifikatsTyp(String zertifikatsTyp);
 
     /**
-     * Findet Zertifikat nach Seriennummer
-     */
-    Optional<DigitalesZertifikat> findBySeriennummer(String seriennummer);
-
-    /**
-     * Findet Zertifikat nach Seriennummer mit Details
-     * (für öffentliche Verifizierung)
+     * Findet ein Zertifikat anhand der Seriennummer und lädt alle wichtigen
+     * Referenzen EAGER (Benutzer, Verein, Schießstand, Parent-Zertifikat).
+     * Wird u. a. für die öffentliche Verifizierung verwendet.
+     *
+     * @param seriennummer Die Seriennummer
+     * @return Optional mit Zertifikat inkl. Details
      */
     @Query("SELECT z FROM DigitalesZertifikat z LEFT JOIN FETCH z.benutzer LEFT JOIN FETCH z.verein LEFT JOIN FETCH z.schiesstand LEFT JOIN FETCH z.parentZertifikat WHERE z.seriennummer = :seriennummer")
     Optional<DigitalesZertifikat> findBySeriennummerWithDetails(String seriennummer);
 
     /**
-     * Findet Zertifikat für einen Benutzer (Aufseher)
+     * Findet ein Zertifikat für einen Benutzer (typischerweise Aufseher-Zertifikat).
+     *
+     * @param benutzer Der Benutzer
+     * @return Optional mit Zertifikat
      */
     Optional<DigitalesZertifikat> findByBenutzer(Benutzer benutzer);
 
     /**
-     * Findet Vereinszertifikat
+     * Findet ein Vereinszertifikat für den übergebenen Verein und Typ.
+     *
+     * @param verein          Der Verein
+     * @param zertifikatsTyp  Der Zertifikatstyp (z. B. "VEREIN")
+     * @return Optional mit Zertifikat
      */
     Optional<DigitalesZertifikat> findByVereinAndZertifikatsTyp(Verein verein, String zertifikatsTyp);
 
     /**
-     * Findet alle Zertifikate von Benutzer, Verein und Schießstand
+     * Findet alle Zertifikate eines Vereins.
+     *
+     * @param verein Der Verein
+     * @return Liste der Zertifikate des Vereins
      */
-    @Query("SELECT z FROM DigitalesZertifikat z LEFT JOIN FETCH z.benutzer LEFT JOIN FETCH z.verein LEFT JOIN FETCH z.schiesstand LEFT JOIN FETCH z.parentZertifikat")
-    List<DigitalesZertifikat> findAllWithDetails();
+    List<DigitalesZertifikat> findByVerein(Verein verein);
 
     /**
-     * Findet alle Zertifikate mit EAGER loading von Benutzer, Verein, Schießstand und Vereinsmitgliedschaften des Benutzers
+     * Findet alle Zertifikate eines Schießstands.
+     *
+     * @param schiesstand Der Schießstand
+     * @return Liste der Zertifikate des Schießstands
+     */
+    List<DigitalesZertifikat> findBySchiesstand(Schiesstand schiesstand);
+
+    /**
+     * Findet alle Zertifikate mit EAGER-Laden von Benutzer (inkl. Mitgliedschaften),
+     * Verein, Schießstand und Parent-Zertifikat.
+     *
+     * @return Liste aller Zertifikate inkl. Details
      */
     @Query("SELECT z FROM DigitalesZertifikat z LEFT JOIN FETCH z.benutzer b LEFT JOIN FETCH b.vereinsmitgliedschaften LEFT JOIN FETCH z.verein LEFT JOIN FETCH z.schiesstand LEFT JOIN FETCH z.parentZertifikat")
     List<DigitalesZertifikat> findAllWithDetailsAndMitgliedschaften();
 
     /**
-     * Prüft, ob ein Benutzer bereits ein Zertifikat hat
+     * Prüft, ob für den Benutzer bereits ein Zertifikat existiert.
+     *
+     * @param benutzer Der Benutzer
+     * @return true, wenn bereits ein Zertifikat existiert
      */
     boolean existsByBenutzer(Benutzer benutzer);
 
     /**
-     * Prüft, ob ein Verein bereits ein Zertifikat hat
+     * Prüft, ob für den Verein ein Zertifikat eines bestimmten Typs existiert.
+     *
+     * @param verein         Der Verein
+     * @param zertifikatsTyp Der Zertifikatstyp (z. B. "VEREIN")
+     * @return true, wenn ein entsprechendes Zertifikat existiert
      */
     boolean existsByVereinAndZertifikatsTyp(Verein verein, String zertifikatsTyp);
 
     /**
-     * Findet Zertifikat für einen Benutzer an einem Schießstand (Schießstandaufseher)
+     * Findet das Zertifikat für einen Benutzer an einem bestimmten Schießstand
+     * (Schießstandaufseher-Zertifikat).
+     *
+     * @param benutzer    Der Benutzer
+     * @param schiesstand Der Schießstand
+     * @return Optional mit Zertifikat
      */
     Optional<DigitalesZertifikat> findByBenutzerAndSchiesstand(Benutzer benutzer, Schiesstand schiesstand);
 
     /**
-     * Prüft, ob ein Benutzer bereits ein Zertifikat für einen Schießstand hat
+     * Prüft, ob ein Benutzer bereits ein Zertifikat für einen Schießstand besitzt.
+     *
+     * @param benutzer    Der Benutzer
+     * @param schiesstand Der Schießstand
+     * @return true, wenn bereits ein Zertifikat existiert
      */
     boolean existsByBenutzerAndSchiesstand(Benutzer benutzer, Schiesstand schiesstand);
 
+    /**
+     * Löscht alle Zertifikate eines Benutzers anhand der Benutzer-ID.
+     * Hilfreich beim Entfernen eines Benutzers, ohne die Entity zu laden.
+     */
+    void deleteAllByBenutzerId(Long benutzerId);
+
+    /**
+     * Findet alle gültigen (nicht widerrufenen) Zertifikate mit EAGER-Laden von
+     * Benutzer (inkl. Mitgliedschaften), Verein, Schießstand und Parent-Zertifikat.
+     *
+     * @return Liste gültiger Zertifikate inkl. Details
+     */
+    @Query("SELECT z FROM DigitalesZertifikat z LEFT JOIN FETCH z.benutzer b LEFT JOIN FETCH b.vereinsmitgliedschaften LEFT JOIN FETCH z.verein LEFT JOIN FETCH z.schiesstand LEFT JOIN FETCH z.parentZertifikat WHERE z.widerrufen = false OR z.widerrufen IS NULL")
+    List<DigitalesZertifikat> findAllGueltigeWithDetailsAndMitgliedschaften();
+
+    /**
+     * Findet alle widerrufenen Zertifikate mit EAGER-Laden von
+     * Benutzer (inkl. Mitgliedschaften), Verein, Schießstand und Parent-Zertifikat.
+     *
+     * @return Liste widerrufener Zertifikate inkl. Details
+     */
+    @Query("SELECT z FROM DigitalesZertifikat z LEFT JOIN FETCH z.benutzer b LEFT JOIN FETCH b.vereinsmitgliedschaften LEFT JOIN FETCH z.verein LEFT JOIN FETCH z.schiesstand LEFT JOIN FETCH z.parentZertifikat WHERE z.widerrufen = true")
+    List<DigitalesZertifikat> findAllWiderrufeneWithDetailsAndMitgliedschaften();
 }

@@ -1,0 +1,38 @@
+package de.suchalla.schiessbuch.model.dto;
+
+import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
+import lombok.*;
+
+import java.time.LocalDateTime;
+
+/**
+ * DTO für Benutzer-Daten ohne sensible Informationen.
+ * Das password-Feld der Entity wird aus Sicherheitsgründen nicht in dieses DTO gemappt.
+ *
+ * @author Markus Suchalla
+ * @version 1.0.0
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class BenutzerDTO {
+
+    private Long id;
+    private String vorname;
+    private String nachname;
+    private String email;
+    private BenutzerRolle rolle;
+    private boolean emailVerifiziert;
+    private boolean emailNotificationsEnabled;
+    private LocalDateTime erstelltAm;
+    private LocalDateTime aktualisiertAm;
+
+    /**
+     * Hilfsmethode für vollständigen Namen.
+     * @return Vorname + Nachname
+     */
+    public String getVollstaendigerName() {
+        return vorname + " " + nachname;
+    }
+}

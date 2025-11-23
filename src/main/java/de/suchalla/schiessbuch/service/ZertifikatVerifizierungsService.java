@@ -1,7 +1,6 @@
 package de.suchalla.schiessbuch.service;
 import de.suchalla.schiessbuch.mapper.DigitalesZertifikatMapper;
 import de.suchalla.schiessbuch.model.dto.DigitalesZertifikatDTO;
-import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,21 +41,6 @@ public class ZertifikatVerifizierungsService {
         // Zertifikat mit allen Details laden (EAGER loading von Benutzer und Verein)
         return zertifikatRepository.findBySeriennummerWithDetails(seriennummer)
                 .map(zertifikatMapper::toDTO)
-                .orElse(null);
-    }
-
-    /**
-     * Interne Methode für Services, die das vollständige Entity benötigen.
-     *
-     * @param seriennummer Die Seriennummer
-     * @return Das vollständige Entity
-     */
-    @Transactional(readOnly = true)
-    public DigitalesZertifikat verifizierInternal(String seriennummer) {
-        if (seriennummer == null || seriennummer.trim().isEmpty()) {
-            return null;
-        }
-        return zertifikatRepository.findBySeriennummerWithDetails(seriennummer)
                 .orElse(null);
     }
 

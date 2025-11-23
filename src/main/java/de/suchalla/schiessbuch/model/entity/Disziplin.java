@@ -28,12 +28,16 @@ public class Disziplin {
     @EqualsAndHashCode.Include
     private Long id;
 
-    @NotBlank(message = "Name darf nicht leer sein")
+    @NotBlank(message = "Kennziffer darf nicht leer sein")
     @Column(nullable = false, unique = true)
-    private String name;
+    @EqualsAndHashCode.Include
+    private String kennziffer;
 
     @Column(length = 1000)
-    private String beschreibung;
+    private String programm;
+
+    @Column(name = "waffe_klasse")
+    private String waffeKlasse;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verband_id")

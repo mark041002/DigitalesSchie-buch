@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -60,7 +61,6 @@ public class PdfExportService {
         log.info("Zeitraum: {} bis {}", von, bis);
         log.info("Anzahl Einträge: {}", eintraege.size());
 
-        // PKI-Zertifikat-Informationen loggen (DTOs haben zertifikatSeriennummer)
         for (SchiessnachweisEintragListDTO eintrag : eintraege) {
             log.info("Eintrag {}: Aufseher={}, Signiert am={}",
                 eintrag.getId(),
@@ -69,14 +69,17 @@ public class PdfExportService {
         }
         log.info("============================");
 
+        // Erstelle mutable Kopie für Sortierung (falls immutable Liste übergeben wurde)
+        List<SchiessnachweisEintragListDTO> sortierteEintraege = new ArrayList<>(eintraege);
+        
         // Sortiere Einträge nach Datum aufsteigend (nulls last)
-        eintraege.sort(Comparator.comparing(SchiessnachweisEintragListDTO::getDatum, Comparator.nullsLast(Comparator.naturalOrder())));
+        sortierteEintraege.sort(Comparator.comparing(SchiessnachweisEintragListDTO::getDatum, Comparator.nullsLast(Comparator.naturalOrder())));
 
         // Ermittelter Anzeige-Zeitraum basierend auf den tatsächlichen Einträgen (falls vorhanden)
         LocalDate displayVon = null;
         LocalDate displayBis = null;
-        if (!eintraege.isEmpty()) {
-            for (SchiessnachweisEintragListDTO e : eintraege) {
+        if (!sortierteEintraege.isEmpty()) {
+            for (SchiessnachweisEintragListDTO e : sortierteEintraege) {
                 if (e == null || e.getDatum() == null) continue;
                 LocalDate d = e.getDatum();
                 if (displayVon == null || d.isBefore(displayVon)) displayVon = d;
@@ -128,6 +131,12 @@ public class PdfExportService {
                 contentStream.showText("Exportiert am: " + LocalDate.now().format(DATE_FORMATTER));
                 contentStream.endText();
 
+                yPosition -= 20;
+                contentStream.beginText();
+                contentStream.newLineAtOffset(margin, yPosition);
+                contentStream.showText("Anzahl Einträge: " + sortierteEintraege.size());
+                contentStream.endText();
+
                 yPosition -= 30;
             }
 
@@ -138,7 +147,6 @@ public class PdfExportService {
             BaseTable table = new BaseTable(yPosition, yPosition - margin,
                     margin, tableWidth, leftMargin, document, page, true, true);
 
-            // Header (Zertifikat-SN entfernt, andere Spalten verbreitert)
             Row<PDPage> headerRow = table.createRow(20);
             Cell<PDPage> cell1 = headerRow.createCell(10, "Datum");
             cell1.setFont(PDType1Font.HELVETICA_BOLD);
@@ -156,7 +164,6 @@ public class PdfExportService {
             cell4.setFont(PDType1Font.HELVETICA_BOLD);
             cell4.setFontSize(10);
 
-            // Neue Spalten für Schütze-Export: Schüsse und Ergebnis
             Cell<PDPage> cellSchuesse = headerRow.createCell(8, "Schüsse");
             cellSchuesse.setFont(PDType1Font.HELVETICA_BOLD);
             cellSchuesse.setFontSize(10);
@@ -173,10 +180,8 @@ public class PdfExportService {
             cell7.setFont(PDType1Font.HELVETICA_BOLD);
             cell7.setFontSize(10);
 
-            // Map, um pro Aufseher die Seriennummern zu sammeln (für spätere Erweiterung)
             Map<String, Set<String>> aufseherToSns = new LinkedHashMap<>();
 
-            // Datenzeilen (jetzt mit DTOs - direkte Feldaufrufe)
             for (SchiessnachweisEintragListDTO eintrag : eintraege) {
                 Row<PDPage> row = table.createRow(15);
 
@@ -192,10 +197,12 @@ public class PdfExportService {
                 String aufseherName = eintrag.getAufseherVollstaendigerName();
                 row.createCell(15, aufseherName).setFontSize(9);
 
-                // Sammle Aufseher-Namen für PKI-Hinweis
+                // Sammle Aufseher-Namen und Seriennummern für PKI-Hinweis
                 if (aufseherName != null && !aufseherName.equals("-")) {
+                    String sn = eintrag.getZertifikatSeriennummer() != null ? 
+                            eintrag.getZertifikatSeriennummer() : "PKI-signiert";
                     aufseherToSns.computeIfAbsent(aufseherName, k -> new LinkedHashSet<>())
-                            .add("PKI-signiert");
+                            .add(sn);
                 }
 
                 String signiertAm = eintrag.getSigniertAm() != null ?
@@ -239,18 +246,11 @@ public class PdfExportService {
                     contentStream.endText();
                     footerY -= 12;
                 }
-
-                footerY -= 10;
-                contentStream.setFont(PDType1Font.HELVETICA, 8);
-                contentStream.beginText();
-                contentStream.newLineAtOffset(margin, footerY);
-                contentStream.showText("Anzahl Einträge: " + eintraege.size());
-                contentStream.endText();
             }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             document.save(outputStream);
-            log.info("PDF für {} mit {} Einträgen und PKI-Signaturinformationen erstellt (DTOs verwendet)", schuetze.getEmail(), eintraege.size());
+            log.info("PDF für {} mit {} Einträgen und PKI-Signaturinformationen erstellt (DTOs verwendet)", schuetze.getEmail(), sortierteEintraege.size());
             return outputStream.toByteArray();
         }
     }
@@ -267,14 +267,17 @@ public class PdfExportService {
         log.info("Zeitraum: {} bis {}", von, bis);
         log.info("Anzahl Einträge: {}", eintraege.size());
 
+        // Erstelle mutable Kopie für Sortierung
+        List<SchiessnachweisEintragListDTO> sortierteEintraege = new ArrayList<>(eintraege);
+        
         // Sortiere nach Datum
-        eintraege.sort(Comparator.comparing(SchiessnachweisEintragListDTO::getDatum, Comparator.nullsLast(Comparator.naturalOrder())));
+        sortierteEintraege.sort(Comparator.comparing(SchiessnachweisEintragListDTO::getDatum, Comparator.nullsLast(Comparator.naturalOrder())));
 
         // Ermittlung Zeitraum (wie in der anderen Methode)
         LocalDate displayVon = null;
         LocalDate displayBis = null;
-        if (!eintraege.isEmpty()) {
-            for (SchiessnachweisEintragListDTO e : eintraege) {
+        if (!sortierteEintraege.isEmpty()) {
+            for (SchiessnachweisEintragListDTO e : sortierteEintraege) {
                 if (e == null || e.getDatum() == null) continue;
                 LocalDate d = e.getDatum();
                 if (displayVon == null || d.isBefore(displayVon)) displayVon = d;
@@ -321,10 +324,15 @@ public class PdfExportService {
                 contentStream.showText("Exportiert am: " + LocalDate.now().format(DATE_FORMATTER));
                 contentStream.endText();
 
+                yPosition -= 20;
+                contentStream.beginText();
+                contentStream.newLineAtOffset(margin, yPosition);
+                contentStream.showText("Anzahl Einträge: " + sortierteEintraege.size());
+                contentStream.endText();
+
                 yPosition -= 30;
             }
 
-            // Tabelle: zusätzliche Spalte Schütze
             float tableWidth = pageWidth - (2 * margin);
             float leftMargin = (pageWidth - tableWidth) / 2f;
             BaseTable table = new BaseTable(yPosition, yPosition - margin,
@@ -376,7 +384,9 @@ public class PdfExportService {
                 String aufName = eintrag.getAufseherVollstaendigerName();
                 row.createCell(14, aufName).setFontSize(9);
                 if (aufName != null && !aufName.equals("-")) {
-                    aufseherToSns.computeIfAbsent(aufName, k -> new LinkedHashSet<>()).add("PKI-signiert");
+                    String sn = eintrag.getZertifikatSeriennummer() != null ? 
+                            eintrag.getZertifikatSeriennummer() : "PKI-signiert";
+                    aufseherToSns.computeIfAbsent(aufName, k -> new LinkedHashSet<>()).add(sn);
                 }
                 row.createCell(10, eintrag.getSigniertAm() != null ? eintrag.getSigniertAm().format(DATETIME_FORMATTER) : "-").setFontSize(8);
             }
@@ -411,17 +421,11 @@ public class PdfExportService {
                     contentStream.endText();
                     footerY -= 12;
                 }
-                footerY -= 10;
-                contentStream.setFont(PDType1Font.HELVETICA, 8);
-                contentStream.beginText();
-                contentStream.newLineAtOffset(margin, footerY);
-                contentStream.showText("Anzahl Einträge: " + eintraege.size());
-                contentStream.endText();
             }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             document.save(outputStream);
-            log.info("Eintragsverwaltungs-PDF für Schießstand {} erstellt ({} Einträge)", schiesstand != null ? schiesstand.getName() : "-", eintraege.size());
+            log.info("Eintragsverwaltungs-PDF für Schießstand {} erstellt ({} Einträge)", schiesstand != null ? schiesstand.getName() : "-", sortierteEintraege.size());
             return outputStream.toByteArray();
         }
     }
@@ -473,7 +477,6 @@ public class PdfExportService {
                 yPosition -= 10;
             }
 
-            // Tabelle erstellen
             float pageWidth2 = page.getMediaBox().getWidth();
             float tableWidth2 = pageWidth2 - (2 * margin);
             float leftMargin2 = (pageWidth2 - tableWidth2) / 2f;
@@ -481,7 +484,6 @@ public class PdfExportService {
             BaseTable table = new BaseTable(yPosition, yPosition - margin,
                     margin, tableWidth2, leftMargin2, document, page, true, true);
 
-            // Header
             Row<PDPage> headerRow = table.createRow(20);
             Cell<PDPage> cell1 = headerRow.createCell(35, "Name");
             cell1.setFont(PDType1Font.HELVETICA_BOLD);

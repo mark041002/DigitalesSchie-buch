@@ -8,20 +8,23 @@ import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
-import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
+import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
+import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
+import de.suchalla.schiessbuch.repository.BenutzerRepository;
 import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.repository.VereinsmitgliedschaftRepository;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import de.suchalla.schiessbuch.service.email.NotificationService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.dao.DataIntegrityViolationException;
 
 /**
  * Service für Vereinsmitgliedschaftsverwaltung.
@@ -32,11 +35,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class VereinsmitgliedschaftService {
 
     private final VereinsmitgliedschaftRepository mitgliedschaftRepository;
     private final VereinRepository vereinRepository;
     private final DigitalesZertifikatRepository zertifikatRepository;
+    private final BenutzerRepository benutzerRepository;
+    private final PkiService pkiService;
     private final NotificationService notificationService;
     private final VereinsmigliedschaftMapper vereinsmigliedschaftMapper;
     private final VerbandMapper verbandMapper;
@@ -50,6 +56,17 @@ public class VereinsmitgliedschaftService {
      * @throws IllegalArgumentException wenn der Verein nicht existiert oder bereits eine aktive Mitgliedschaft besteht
      */
     public Vereinsmitgliedschaft beantragenMitgliedschaft(Benutzer benutzer, Long vereinId) {
+        return beantragenMitgliedschaft(benutzer, vereinId, false);
+    }
+
+    /**
+     * Beantragt eine Vereinsmitgliedschaft mit Option, Benachrichtigung zu unterdrücken.
+     * @param benutzer Der Benutzer
+     * @param vereinId Die Vereins-ID
+     * @param suppressNotification Wenn true, wird keine Beitrittsanfrage-E-Mail verschickt
+     * @return Die erstellte Mitgliedschaft
+     */
+    public Vereinsmitgliedschaft beantragenMitgliedschaft(Benutzer benutzer, Long vereinId, boolean suppressNotification) {
         Verein verein = vereinRepository.findById(vereinId)
                 .orElseThrow(() -> new IllegalArgumentException("Verein nicht gefunden"));
 
@@ -59,13 +76,13 @@ public class VereinsmitgliedschaftService {
         if (!existierende.isEmpty()) {
             // Falls bereits eine aktive Mitgliedschaft existiert -> Abbruch
             boolean hatAktive = existierende.stream()
-                    .anyMatch(m -> m.getStatus() == MitgliedschaftStatus.AKTIV && Boolean.TRUE.equals(m.getAktiv()));
+                    .anyMatch(m -> m.getStatus() == MitgliedschaftsStatus.AKTIV && Boolean.TRUE.equals(m.getAktiv()));
             if (hatAktive) {
                 throw new IllegalArgumentException("Es besteht bereits eine aktive Mitgliedschaft für diesen Verein");
             }
             // Falls schon eine Anfrage besteht -> Abbruch
             boolean hatAnfrage = existierende.stream()
-                    .anyMatch(m -> m.getStatus() == MitgliedschaftStatus.BEANTRAGT);
+                    .anyMatch(m -> m.getStatus() == MitgliedschaftsStatus.BEANTRAGT);
             if (hatAnfrage) {
                 throw new IllegalArgumentException("Es besteht bereits eine offene Beitrittsanfrage für diesen Verein");
             }
@@ -75,44 +92,45 @@ public class VereinsmitgliedschaftService {
         Vereinsmitgliedschaft mitgliedschaft = Vereinsmitgliedschaft.builder()
                 .benutzer(benutzer)
                 .verein(verein)
-                .status(MitgliedschaftStatus.BEANTRAGT)
+                .status(MitgliedschaftsStatus.BEANTRAGT)
                 .beitrittDatum(LocalDate.now())
                 .aktiv(false)
                 .build();
 
+        Vereinsmitgliedschaft saved = null;
         try {
-            return mitgliedschaftRepository.save(mitgliedschaft);
+            saved = mitgliedschaftRepository.save(mitgliedschaft);
         } catch (DataIntegrityViolationException ex) {
             // Falls aufgrund konkurrierender Requests ein Duplikat in der DB entstanden ist,
             // laden wir die vorhandenen Einträge neu und reagieren entsprechend.
             existierende = mitgliedschaftRepository.findAllByBenutzerAndVerein(benutzer, verein);
             if (!existierende.isEmpty()) {
                 boolean hatAktive = existierende.stream()
-                        .anyMatch(m -> m.getStatus() == MitgliedschaftStatus.AKTIV && Boolean.TRUE.equals(m.getAktiv()));
+                        .anyMatch(m -> m.getStatus() == MitgliedschaftsStatus.AKTIV && Boolean.TRUE.equals(m.getAktiv()));
                 if (hatAktive) {
                     throw new IllegalArgumentException("Es besteht bereits eine aktive Mitgliedschaft für diesen Verein");
                 }
                 boolean hatAnfrage = existierende.stream()
-                        .anyMatch(m -> m.getStatus() == MitgliedschaftStatus.BEANTRAGT);
+                        .anyMatch(m -> m.getStatus() == MitgliedschaftsStatus.BEANTRAGT);
                 if (hatAnfrage) {
                     throw new IllegalArgumentException("Es besteht bereits eine offene Beitrittsanfrage für diesen Verein");
                 }
                 // Andernfalls geben wir den ersten gefundenen Datensatz zurück (Falle älterer, beendeter Einträge)
-                return existierende.get(0);
+                saved = existierende.get(0);
             }
             throw ex;
         }
-        finally {
-            // Benachrichtigung an Vereinschefs über neue Beitrittsanfrage
+
+        // Nur Benachrichtigung senden, wenn nicht unterdrückt
+        if (!suppressNotification) {
             try {
                 notificationService.notifyMembershipRequest(verein, benutzer);
             } catch (Exception nEx) {
-                // Nur loggen, Fehler in Notifikation sollen nicht den Flow abbrechen
-                // (DB-Operation ist bereits abgeschlossen)
-                org.slf4j.LoggerFactory.getLogger(VereinsmitgliedschaftService.class)
-                        .warn("Fehler beim Senden der Beitrittsanfrage-Benachrichtigung: {}", nEx.getMessage());
+                log.warn("Fehler beim Senden der Beitrittsanfrage-Benachrichtigung: {}", nEx.getMessage());
             }
         }
+
+        return saved;
     }
 
     /**
@@ -124,7 +142,7 @@ public class VereinsmitgliedschaftService {
         Vereinsmitgliedschaft mitgliedschaft = mitgliedschaftRepository.findById(mitgliedschaftId)
                 .orElseThrow(() -> new IllegalArgumentException("Mitgliedschaft nicht gefunden"));
 
-        mitgliedschaft.setStatus(MitgliedschaftStatus.AKTIV);
+        mitgliedschaft.setStatus(MitgliedschaftsStatus.AKTIV);
         mitgliedschaft.setAktiv(true);
 
         mitgliedschaftRepository.save(mitgliedschaft);
@@ -139,7 +157,7 @@ public class VereinsmitgliedschaftService {
         Vereinsmitgliedschaft mitgliedschaft = mitgliedschaftRepository.findById(mitgliedschaftId)
                 .orElseThrow(() -> new IllegalArgumentException("Mitgliedschaft nicht gefunden"));
 
-        mitgliedschaft.setStatus(MitgliedschaftStatus.ABGELEHNT);
+        mitgliedschaft.setStatus(MitgliedschaftsStatus.ABGELEHNT);
         mitgliedschaft.setAktiv(false);
 
         mitgliedschaftRepository.save(mitgliedschaft);
@@ -155,7 +173,7 @@ public class VereinsmitgliedschaftService {
         Vereinsmitgliedschaft mitgliedschaft = mitgliedschaftRepository.findById(mitgliedschaftId)
                 .orElseThrow(() -> new IllegalArgumentException("Mitgliedschaft nicht gefunden"));
 
-        mitgliedschaft.setStatus(MitgliedschaftStatus.ABGELEHNT);
+        mitgliedschaft.setStatus(MitgliedschaftsStatus.ABGELEHNT);
         mitgliedschaft.setAktiv(false);
         mitgliedschaft.setAblehnungsgrund(grund);
 
@@ -170,7 +188,7 @@ public class VereinsmitgliedschaftService {
      */
     @Transactional(readOnly = true)
     public List<VereinsmigliedschaftDTO> findeBeitrittsanfragen(Verein verein) {
-        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftStatus.BEANTRAGT);
+        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftsStatus.BEANTRAGT);
         return vereinsmigliedschaftMapper.toDTOList(entities);
     }
 
@@ -182,7 +200,7 @@ public class VereinsmitgliedschaftService {
      */
     @Transactional(readOnly = true)
     public List<VereinsmigliedschaftDTO> findeAktiveMitgliedschaften(Verein verein) {
-        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftStatus.AKTIV);
+        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftsStatus.AKTIV);
         return vereinsmigliedschaftMapper.toDTOList(entities);
     }
 
@@ -194,7 +212,7 @@ public class VereinsmitgliedschaftService {
      */
     @Transactional(readOnly = true)
     public List<Vereinsmitgliedschaft> findeAktiveMitgliedschaftenEntities(Verein verein) {
-        return mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftStatus.AKTIV);
+        return mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftsStatus.AKTIV);
     }
 
     /**
@@ -208,9 +226,6 @@ public class VereinsmitgliedschaftService {
         List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByBenutzer(benutzer);
         return vereinsmigliedschaftMapper.toDTOList(entities);
     }
-
-
-
 
     /**
      * Lässt einen Benutzer einem Verein beitreten (erstellt eine Beitrittsanfrage).
@@ -232,7 +247,7 @@ public class VereinsmitgliedschaftService {
         Vereinsmitgliedschaft mitgliedschaft = mitgliedschaftRepository.findById(mitgliedschaftId)
                 .orElseThrow(() -> new IllegalArgumentException("Mitgliedschaft nicht gefunden"));
 
-        mitgliedschaft.setStatus(MitgliedschaftStatus.VERLASSEN);
+        mitgliedschaft.setStatus(MitgliedschaftsStatus.VERLASSEN);
         mitgliedschaft.setAktiv(false);
         mitgliedschaft.setAustrittDatum(LocalDate.now());
 
@@ -249,24 +264,13 @@ public class VereinsmitgliedschaftService {
                 .orElseThrow(() -> new IllegalArgumentException("Mitgliedschaft nicht gefunden"));
 
         // Nur Mitgliedschaften mit Status VERLASSEN, ABGELEHNT oder BEENDET dürfen gelöscht werden
-        if (mitgliedschaft.getStatus() != MitgliedschaftStatus.VERLASSEN
-            && mitgliedschaft.getStatus() != MitgliedschaftStatus.ABGELEHNT
-            && mitgliedschaft.getStatus() != MitgliedschaftStatus.BEENDET) {
+        if (mitgliedschaft.getStatus() != MitgliedschaftsStatus.VERLASSEN
+            && mitgliedschaft.getStatus() != MitgliedschaftsStatus.ABGELEHNT
+            && mitgliedschaft.getStatus() != MitgliedschaftsStatus.BEENDET) {
             throw new IllegalArgumentException("Nur beendete, abgelehnte oder verlassene Mitgliedschaften können gelöscht werden");
         }
 
         mitgliedschaftRepository.deleteById(mitgliedschaftId);
-    }
-
-    /**
-     * Findet alle Mitgliedschaften eines Benutzers.
-     *
-     * @param benutzer Der Benutzer
-     * @return Liste der Mitgliedschaften als DTOs
-     */
-    @Transactional(readOnly = true)
-    public List<VereinsmigliedschaftDTO> findeMitgliedschaftenVonBenutzer(Benutzer benutzer) {
-        return findeMitgliedschaften(benutzer);
     }
 
     /**
@@ -293,7 +297,7 @@ public class VereinsmitgliedschaftService {
         Vereinsmitgliedschaft mitgliedschaft = mitgliedschaftRepository.findById(mitgliedschaftId)
                 .orElseThrow(() -> new IllegalArgumentException("Mitgliedschaft nicht gefunden"));
 
-        if (!mitgliedschaft.getAktiv() || mitgliedschaft.getStatus() != MitgliedschaftStatus.AKTIV) {
+        if (!mitgliedschaft.getAktiv() || mitgliedschaft.getStatus() != MitgliedschaftsStatus.AKTIV) {
             throw new IllegalArgumentException("Nur aktive Mitglieder können zu Aufsehern ernannt werden");
         }
 
@@ -324,7 +328,7 @@ public class VereinsmitgliedschaftService {
     public List<VerbandDTO> findeVerbaendeVonBenutzer(Benutzer benutzer) {
         List<de.suchalla.schiessbuch.model.entity.Verband> entities =
                 mitgliedschaftRepository.findByBenutzer(benutzer).stream()
-                .filter((Vereinsmitgliedschaft m) -> m.getStatus() == MitgliedschaftStatus.AKTIV && m.getAktiv())
+                .filter((Vereinsmitgliedschaft m) -> m.getStatus() == MitgliedschaftsStatus.AKTIV && m.getAktiv())
                 .flatMap((Vereinsmitgliedschaft m) -> m.getVerein().getVerbaende().stream())
                 .distinct()
                 .collect(java.util.stream.Collectors.toList());
@@ -340,7 +344,7 @@ public class VereinsmitgliedschaftService {
     @Transactional(readOnly = true)
     public List<de.suchalla.schiessbuch.model.entity.Verband> findeVerbaendeVonBenutzerEntities(Benutzer benutzer) {
         return mitgliedschaftRepository.findByBenutzer(benutzer).stream()
-                .filter((Vereinsmitgliedschaft m) -> m.getStatus() == MitgliedschaftStatus.AKTIV && m.getAktiv())
+                .filter((Vereinsmitgliedschaft m) -> m.getStatus() == MitgliedschaftsStatus.AKTIV && m.getAktiv())
                 .flatMap((Vereinsmitgliedschaft m) -> m.getVerein().getVerbaende().stream())
                 .distinct()
                 .collect(java.util.stream.Collectors.toList());
@@ -356,7 +360,7 @@ public class VereinsmitgliedschaftService {
         Vereinsmitgliedschaft mitgliedschaft = mitgliedschaftRepository.findById(mitgliedschaftId)
                 .orElseThrow(() -> new IllegalArgumentException("Mitgliedschaft nicht gefunden"));
 
-        mitgliedschaft.setStatus(MitgliedschaftStatus.BEENDET);
+        mitgliedschaft.setStatus(MitgliedschaftsStatus.BEENDET);
         mitgliedschaft.setAktiv(false);
         mitgliedschaft.setAustrittDatum(LocalDate.now());
 
@@ -383,25 +387,91 @@ public class VereinsmitgliedschaftService {
      * @return Liste der Mitgliedschaften als DTOs
      */
     @Transactional(readOnly = true)
-    public List<VereinsmigliedschaftDTO> findeMitgliedschaftenNachStatus(Verein verein, MitgliedschaftStatus status) {
+    public List<VereinsmigliedschaftDTO> findeMitgliedschaftenNachStatus(Verein verein, MitgliedschaftsStatus status) {
         List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, status);
         return vereinsmigliedschaftMapper.toDTOList(entities);
     }
 
 
     /**
-     * Setzt den Vereinschef für einen Verein. Alle anderen werden als nicht-Vereinschef markiert.
-     * @param neueChef Die Mitgliedschaft, die Vereinschef werden soll
+     * Setzt einen neuen Vereinschef für einen Verein.
+     * Alle anderen Mitglieder werden als nicht-Vereinschef markiert.
+     * Erstellt ein Zertifikat für den neuen Vereinschef und widerruft das alte.
+     *
+     * @param neueChef Die Mitgliedschaft, die zum Vereinschef ernannt werden soll
      * @param alleMitglieder Alle Mitgliedschaften des Vereins
      */
     public void setzeVereinschef(Vereinsmitgliedschaft neueChef, List<Vereinsmitgliedschaft> alleMitglieder) {
+        // Alten Vereinschef finden und Zertifikat widerrufen
         for (Vereinsmitgliedschaft mi : alleMitglieder) {
             if (Boolean.TRUE.equals(mi.getIstVereinschef())) {
                 mi.setIstVereinschef(false);
                 mitgliedschaftRepository.save(mi);
+
+                // Zertifikat des alten Vereinschefs widerrufen
+                Benutzer alterChefDetached = mi.getBenutzer();
+                if (alterChefDetached != null && alterChefDetached.getId() != null) {
+                    Benutzer alterChef = benutzerRepository.findById(alterChefDetached.getId()).orElse(alterChefDetached);
+
+                    Optional<DigitalesZertifikat> altesZertifikat = zertifikatRepository.findByBenutzer(alterChef);
+                    if (altesZertifikat.isPresent()) {
+                        DigitalesZertifikat zert = altesZertifikat.get();
+                        zert.setWiderrufen(true);
+                        zert.setWiderrufenAm(LocalDateTime.now());
+                        zert.setWiderrufsGrund("Vereinschef-Funktion beendet");
+                        zertifikatRepository.save(zert);
+                        log.info("Zertifikat von {} widerrufen (SN: {})", alterChef.getVollstaendigerName(), zert.getSeriennummer());
+                    }
+
+                    // Rolle auf SCHUETZE zurücksetzen, falls keine anderen Aufseherfunktionen
+                    List<Vereinsmitgliedschaft> mitgliedschaftenDesBenutzers = mitgliedschaftRepository.findByBenutzer(alterChef);
+                    boolean hatAndereAufseherFunktion = mitgliedschaftenDesBenutzers.stream()
+                            .anyMatch(m -> Boolean.TRUE.equals(m.getIstAufseher()));
+
+                    if (!hatAndereAufseherFunktion && alterChef.getRolle() == BenutzerRolle.VEREINS_CHEF) {
+                        alterChef.setRolle(BenutzerRolle.SCHUETZE);
+                        benutzerRepository.save(alterChef);
+                        log.info("Rolle von {} auf SCHUETZE zurückgesetzt", alterChef.getVollstaendigerName());
+                    }
+                }
             }
         }
+
+        // Neuen Vereinschef setzen
         neueChef.setIstVereinschef(true);
         mitgliedschaftRepository.save(neueChef);
+
+        // Zertifikat für neuen Vereinschef erstellen
+        Benutzer neuerChefDetached = neueChef.getBenutzer();
+        if (neuerChefDetached != null && neuerChefDetached.getId() != null) {
+            Benutzer neuerChef = benutzerRepository.findById(neuerChefDetached.getId()).orElse(neuerChefDetached);
+
+            Verein verein = mitgliedschaftRepository.findByBenutzer(neuerChef).stream()
+                    .map(Vereinsmitgliedschaft::getVerein)
+                    .findFirst()
+                    .orElse(null);
+
+            try {
+                // Prüfen, ob bereits ein Zertifikat existiert
+                Optional<DigitalesZertifikat> bestehendesZertifikat = zertifikatRepository.findByBenutzer(neuerChef);
+                if (bestehendesZertifikat.isEmpty()) {
+                    DigitalesZertifikat neuesZertifikat = pkiService.createAufseherCertificate(neuerChef, verein);
+                    log.info("Zertifikat für neuen Vereinschef {} erstellt (SN: {})", 
+                            neuerChef.getVollstaendigerName(), neuesZertifikat.getSeriennummer());
+                } else {
+                    log.info("Vereinschef {} hat bereits ein gültiges Zertifikat", neuerChef.getVollstaendigerName());
+                }
+            } catch (Exception e) {
+                log.error("Fehler beim Erstellen des Vereinschef-Zertifikats für {}", neuerChef.getVollstaendigerName(), e);
+                throw new RuntimeException("Zertifikat konnte nicht erstellt werden: " + e.getMessage(), e);
+            }
+
+            // Rolle auf VEREINS_CHEF setzen
+            if (neuerChef.getRolle() != BenutzerRolle.VEREINS_CHEF && neuerChef.getRolle() != BenutzerRolle.ADMIN) {
+                neuerChef.setRolle(BenutzerRolle.VEREINS_CHEF);
+                benutzerRepository.save(neuerChef);
+                log.info("Rolle von {} auf VEREINS_CHEF gesetzt", neuerChef.getVollstaendigerName());
+            }
+        }
     }
 }

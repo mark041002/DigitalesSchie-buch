@@ -3,7 +3,7 @@ package de.suchalla.schiessbuch.repository;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
-import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
+import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -48,7 +48,7 @@ public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmi
      * @return Liste der Mitgliedschaften
      */
     @EntityGraph(attributePaths = {"benutzer", "verein"})
-    List<Vereinsmitgliedschaft> findByVereinAndStatus(Verein verein, MitgliedschaftStatus status);
+    List<Vereinsmitgliedschaft> findByVereinAndStatus(Verein verein, MitgliedschaftsStatus status);
 
     /**
      * Findet alle Mitgliedschaften eines Vereins.

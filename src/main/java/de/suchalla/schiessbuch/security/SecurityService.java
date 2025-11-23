@@ -5,9 +5,13 @@ import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.repository.BenutzerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import java.util.Collections;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 /**
  * Service für Security-Utilities.
@@ -25,11 +29,12 @@ public class SecurityService {
     /**
      * Gibt den aktuell angemeldeten Benutzer zurück.
      *
-     * @return Optional mit aktuellem Benutzer
+     * @return Aktueller Benutzer oder null
      */
-    public Optional<Benutzer> getAuthenticatedUser() {
+    public Benutzer getAuthenticatedUser() {
         return authenticationContext.getAuthenticatedUser(UserDetails.class)
-                .flatMap(userDetails -> benutzerRepository.findByEmailWithMitgliedschaften(userDetails.getUsername()));
+                .flatMap(userDetails -> benutzerRepository.findByEmailWithMitgliedschaften(userDetails.getUsername()))
+                .orElse(null);
     }
 
     /**
@@ -37,5 +42,24 @@ public class SecurityService {
      */
     public void logout() {
         authenticationContext.logout();
+    }
+
+    /**
+     * Aktualisiert die Authentication im SecurityContext mit den Daten des gegebenen Benutzers.
+     * Dadurch bleibt der Benutzer eingeloggt, auch wenn sich z.B. die E-Mail bzw. der Username geändert hat.
+     *
+     * @param benutzer der aktualisierte Benutzer
+     */
+    public void refreshAuthentication(Benutzer benutzer) {
+        if (benutzer == null) return;
+
+        UserDetails userDetails = User.builder()
+                .username(benutzer.getEmail())
+                .password(benutzer.getPasswort())
+                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + benutzer.getRolle().name())))
+                .build();
+
+        Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword(), userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }

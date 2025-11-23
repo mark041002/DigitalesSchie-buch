@@ -66,7 +66,6 @@ public class Benutzer {
     @Builder.Default
     private boolean emailVerifiziert = false;
 
-    // Notification preferences: früher mehrere Flags, jetzt ein einziges Flag für alle E-Mail-Benachrichtigungen
     @Column(name = "email_notifications_enabled", nullable = false)
     @Builder.Default
     private boolean emailNotificationsEnabled = true;

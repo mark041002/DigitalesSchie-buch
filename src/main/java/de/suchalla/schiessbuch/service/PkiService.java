@@ -440,23 +440,6 @@ public class PkiService {
     }
 
     /**
-     * Verifiziert eine Signatur
-     */
-    public boolean verifySignature(String data, String signatureBase64, DigitalesZertifikat zertifikat) {
-        try {
-            X509Certificate cert = loadCertificateFromPEM(zertifikat.getZertifikatPEM());
-            Signature signature = Signature.getInstance("SHA256withRSA", "BC");
-            signature.initVerify(cert.getPublicKey());
-            signature.update(data.getBytes());
-            byte[] signatureBytes = java.util.Base64.getDecoder().decode(signatureBase64);
-            return signature.verify(signatureBytes);
-        } catch (Exception e) {
-            log.error("Fehler beim Verifizieren der Signatur", e);
-            return false;
-        }
-    }
-
-    /**
      * Konvertiert X509Certificate zu PEM-Format
      */
     private String convertToPEM(X509Certificate certificate) throws Exception {
@@ -493,7 +476,8 @@ public class PkiService {
     /**
      * Lädt X509Certificate aus PEM-Format
      */
-    private X509Certificate loadCertificateFromPEM(String pem) throws Exception {
+        @SuppressWarnings("unused")
+        private X509Certificate loadCertificateFromPEM(String pem) throws Exception {
         try (PemReader pemReader = new PemReader(new StringReader(pem))) {
             PemObject pemObject = pemReader.readPemObject();
             return (X509Certificate) java.security.cert.CertificateFactory

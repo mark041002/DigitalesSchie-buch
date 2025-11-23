@@ -23,7 +23,7 @@ import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.enums.SchiesstandTyp;
 import de.suchalla.schiessbuch.security.SecurityService;
-import de.suchalla.schiessbuch.service.DisziplinService;
+import de.suchalla.schiessbuch.service.SchiesstandService;
 import de.suchalla.schiessbuch.service.VerbandService;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
@@ -44,7 +44,7 @@ import java.util.Optional;
 @Slf4j
 public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnterObserver {
 
-    private final DisziplinService disziplinService;
+    private final SchiesstandService schiesstandService;
     private final VerbandService verbandService;
     private final Benutzer currentUser;
 
@@ -55,11 +55,11 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
     private Schiesstand aktuellerSchiesstand;
 
     public SchiesstandDetailsView(SecurityService securityService,
-                                  DisziplinService disziplinService,
+                                  SchiesstandService schiesstandService,
                                   VerbandService verbandService) {
-        this.disziplinService = disziplinService;
+        this.schiesstandService = schiesstandService;
         this.verbandService = verbandService;
-        this.currentUser = securityService.getAuthenticatedUser().orElse(null);
+        this.currentUser = securityService.getAuthenticatedUser();
 
         setSpacing(false);
         setPadding(false);
@@ -78,7 +78,7 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
         if (schiesstandIdParam.isPresent()) {
             try {
                 Long schiesstandId = Long.parseLong(schiesstandIdParam.get());
-                Optional<Schiesstand> schiesstandOptional = disziplinService.findeSchiesstand(schiesstandId);
+                Optional<Schiesstand> schiesstandOptional = schiesstandService.findeSchiesstand(schiesstandId);
                 if (schiesstandOptional.isPresent()) {
                     aktuellerSchiesstand = schiesstandOptional.get();
                     ladeSchiesstanddaten();
@@ -207,7 +207,7 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
             return;
         }
 
-        List<Schiesstand> schiesstaende = disziplinService.findeAlleSchiesstaendeEntities();
+        List<Schiesstand> schiesstaende = schiesstandService.findeAlleSchiesstaendeEntities();
         schiesstaende.stream()
                 .filter(s -> s.getAufseher() != null && s.getAufseher().getId().equals(currentUser.getId()))
                 .findFirst()
@@ -243,7 +243,7 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
             aktuellerSchiesstand.setAdresse(adresseField.getValue());
             aktuellerSchiesstand.setVerein(vereinComboBox.getValue());
 
-            disziplinService.aktualisiereSchiesstand(aktuellerSchiesstand);
+            schiesstandService.aktualisiereSchiesstand(aktuellerSchiesstand);
 
             Notification.show("Schießstanddaten erfolgreich gespeichert")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -257,4 +257,3 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
     }
 
 }
-

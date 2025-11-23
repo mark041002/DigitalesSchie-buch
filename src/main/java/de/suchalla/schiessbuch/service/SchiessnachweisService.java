@@ -1,13 +1,13 @@
 package de.suchalla.schiessbuch.service;
 
 import de.suchalla.schiessbuch.mapper.SchiessnachweisEintragMapper;
-import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragDetailDTO;
 import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
 import de.suchalla.schiessbuch.model.enums.EintragStatus;
 import de.suchalla.schiessbuch.repository.SchiessnachweisEintragRepository;
+import de.suchalla.schiessbuch.repository.SchiesstandRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Service für Schießnachweis-Einträge.
@@ -29,6 +28,7 @@ import java.util.Optional;
 public class SchiessnachweisService {
 
     private final SchiessnachweisEintragRepository eintragRepository;
+    private final SchiesstandRepository schiesstandRepository;
     private final SchiessnachweisEintragMapper eintragMapper;
 
     /**
@@ -39,18 +39,6 @@ public class SchiessnachweisService {
     public void erstelleEintrag(SchiessnachweisEintrag eintrag) {
         eintrag.setStatus(EintragStatus.UNSIGNIERT);
         eintragRepository.save(eintrag);
-    }
-
-    /**
-     * Findet einen Eintrag anhand der ID und gibt ihn als DetailDTO zurück.
-     *
-     * @param id Die Eintrags-ID
-     * @return Optional mit Eintrag als DetailDTO
-     */
-    @Transactional(readOnly = true)
-    public Optional<SchiessnachweisEintragDetailDTO> findeEintragMitVerein(Long id) {
-        return eintragRepository.findById(id)
-                .map(eintragMapper::toDetailDTO);
     }
 
     /**
@@ -107,14 +95,17 @@ public class SchiessnachweisService {
     }
 
     /**
-     * Findet alle Einträge an einem Schießstand als ListDTOs.
+     * Findet alle Einträge an einem Schießstand.
      *
      * @param schiesstand Der Schießstand
-     * @return Liste der Einträge als ListDTOs
+     * @return Liste der Einträge
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintragListDTO> findeEintraegeAnSchiesstand(Schiesstand schiesstand) {
-        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchiesstand(schiesstand);
+        // Lade Schiesstand neu aus DB, um LazyInitializationException zu vermeiden
+        Schiesstand managedSchiesstand = schiesstandRepository.findById(schiesstand.getId())
+                .orElse(schiesstand);
+        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchiesstand(managedSchiesstand);
         return eintragMapper.toListDTOList(entities);
     }
 

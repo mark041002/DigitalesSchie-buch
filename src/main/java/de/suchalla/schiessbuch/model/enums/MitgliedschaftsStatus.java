@@ -6,7 +6,7 @@ package de.suchalla.schiessbuch.model.enums;
  * @author Markus Suchalla
  * @version 1.0.0
  */
-public enum MitgliedschaftStatus {
+public enum MitgliedschaftsStatus {
     BEANTRAGT("Beantragt"),
     AKTIV("Aktiv"),
     ABGELEHNT("Abgelehnt"),
@@ -15,7 +15,7 @@ public enum MitgliedschaftStatus {
 
     private final String bezeichnung;
 
-    MitgliedschaftStatus(String bezeichnung) {
+    MitgliedschaftsStatus(String bezeichnung) {
         this.bezeichnung = bezeichnung;
     }
 

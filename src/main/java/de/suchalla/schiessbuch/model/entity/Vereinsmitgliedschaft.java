@@ -1,6 +1,6 @@
 package de.suchalla.schiessbuch.model.entity;
 
-import de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus;
+import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -30,44 +30,36 @@ public class Vereinsmitgliedschaft {
     @EqualsAndHashCode.Include
     private Long id;
 
-    @Getter
     @NotNull(message = "Benutzer darf nicht leer sein")
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "benutzer_id", nullable = false)
     private Benutzer benutzer;
 
-    @Getter
     @NotNull(message = "Verein darf nicht leer sein")
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "verein_id", nullable = false)
     private Verein verein;
 
-    // Explizite Getter für statische Analyse / Tools (Lombok generiert sie zur Laufzeit).
-    @Getter
     @NotNull(message = "Status darf nicht leer sein")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private MitgliedschaftStatus status = MitgliedschaftStatus.BEANTRAGT;
+    private MitgliedschaftsStatus status = MitgliedschaftsStatus.BEANTRAGT;
 
-    @Getter
     @Column(name = "beitritt_datum", nullable = false)
     private LocalDate beitrittDatum;
 
     @Column(name = "austritt_datum")
     private LocalDate austrittDatum;
 
-    @Getter
     @Column(name = "ist_aufseher", nullable = false)
     @Builder.Default
     private Boolean istAufseher = false;
 
-    @Getter
     @Column(name = "ist_vereinschef", nullable = false)
     @Builder.Default
     private Boolean istVereinschef = false;
 
-    @Getter
     @Column(nullable = false)
     @Builder.Default
     private Boolean aktiv = true;

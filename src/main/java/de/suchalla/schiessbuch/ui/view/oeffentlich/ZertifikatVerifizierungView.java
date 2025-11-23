@@ -4,11 +4,9 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -17,8 +15,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
 import de.suchalla.schiessbuch.service.ZertifikatVerifizierungsService;
+import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,45 +54,20 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
         getElement().getThemeList().add("zertifikat-verifizierung-view");
 
         // Content-Wrapper für zentrierte Inhalte
-        VerticalLayout contentWrapper = new VerticalLayout();
-        contentWrapper.setSpacing(false);
-        contentWrapper.setPadding(false);
-        contentWrapper.addClassName("content-wrapper");
+        VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
 
         // Header-Bereich
-        Div header = new Div();
-        header.addClassName("gradient-header");
-        header.setWidthFull();
-
-        H2 title = new H2("Zertifikat verifizieren");
-        title.getStyle().set("margin", "0");
-
-        header.add(title);
+        Div header = ViewComponentHelper.createGradientHeader("Zertifikat verifizieren");
         contentWrapper.add(header);
 
         // Info-Box mit modernem Styling
-        Div infoBox = new Div();
-        infoBox.addClassName("info-box");
-
-        // Icon hinzufügen
-        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
-        infoIcon.addClassName("info-icon");
-        infoBox.add(infoIcon);
-
-        Paragraph beschreibung = new Paragraph(
-                "Geben Sie die Seriennummer eines Zertifikats und optional ein Datum ein, um zu prüfen, " +
-                        "ob das Zertifikat zu diesem Zeitpunkt gültig war oder ist. Diese Funktion steht allen " +
-                        "Personen zur Verfügung, um nachzuvollziehen, wer einen Schießnachweis bestätigt hat."
+        Div infoBox = ViewComponentHelper.createInfoBox(
+                "Geben Sie die Seriennummer eines Zertifikats und optional ein Datum ein, um zu prüfen, ob das Zertifikat zu diesem Zeitpunkt gültig war oder ist."
         );
-        beschreibung.addClassName("info-description");
-        infoBox.add(beschreibung);
         contentWrapper.add(infoBox);
 
         // Formular-Container
-        Div formContainer = new Div();
-        formContainer.addClassName("form-container");
-        formContainer.setWidthFull();
-        formContainer.getStyle().set("margin-bottom", "var(--lumo-space-l)");
+        Div formContainer = ViewComponentHelper.createFormContainer();
 
         // Eingabefeld für Seriennummer
         seriennummerField = new TextField("Zertifikat-Seriennummer");

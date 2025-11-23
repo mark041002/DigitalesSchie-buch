@@ -2,12 +2,8 @@ package de.suchalla.schiessbuch.ui.view.organisatorisch;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -21,17 +17,15 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
-import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.VereinService;
-import de.suchalla.schiessbuch.service.VerbandService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
+import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,7 +42,6 @@ import java.util.Optional;
 public class VereinDetailsView extends VerticalLayout implements BeforeEnterObserver {
 
     private final VereinService vereinService;
-    private final VerbandService verbandService;
     private final VereinsmitgliedschaftService mitgliedschaftService;
     private final VereinRepository vereinRepository;
     private final Benutzer currentUser;
@@ -57,20 +50,17 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
     private final TextField vereinsNummerField = new TextField("Vereinsnummer");
     private final TextField adresseField = new TextField("Adresse");
     private final TextArea beschreibungField = new TextArea("Beschreibung");
-    private final MultiSelectComboBox<Verband> verbaendeField = new MultiSelectComboBox<>("Verbände");
 
     private Verein aktuellerVerein;
 
     public VereinDetailsView(SecurityService securityService,
                              VereinService vereinService,
-                             VerbandService verbandService,
                              VereinsmitgliedschaftService mitgliedschaftService,
                              VereinRepository vereinRepository) {
         this.vereinService = vereinService;
-        this.verbandService = verbandService;
         this.mitgliedschaftService = mitgliedschaftService;
         this.vereinRepository = vereinRepository;
-        this.currentUser = securityService.getAuthenticatedUser().orElse(null);
+        this.currentUser = securityService.getAuthenticatedUser();
 
         setSpacing(false);
         setPadding(false);
@@ -89,9 +79,9 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
         if (vereinIdParam.isPresent()) {
             try {
                 Long vereinId = Long.parseLong(vereinIdParam.get());
-                Optional<Verein> vereinOptional = verbandService.findeVerein(vereinId);
-                if (vereinOptional.isPresent()) {
-                    aktuellerVerein = vereinOptional.get();
+                Verein verein = vereinRepository.findById(vereinId).orElse(null);
+                if (verein != null) {
+                    aktuellerVerein = verein;
                     ladeVereinsdaten();
                 } else {
                     Notification.show("Verein nicht gefunden").addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -110,53 +100,25 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
      */
     private void createContent() {
         // Content-Wrapper für zentrierte Inhalte
-        VerticalLayout contentWrapper = new VerticalLayout();
-        contentWrapper.setSpacing(false);
-        contentWrapper.setPadding(false);
-        contentWrapper.addClassName("content-wrapper");
+        VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
 
         // Header-Bereich
-        Div header = new Div();
-        header.addClassName("gradient-header");
-        header.setWidthFull();
-
-        H2 title = new H2("Vereinsdetails bearbeiten");
-        title.getStyle().set("margin", "0");
-        header.add(title);
+        Div header = ViewComponentHelper.createGradientHeader("Vereinsdetails bearbeiten");
         contentWrapper.add(header);
 
-        // Info-Box mit modernem Styling und 100% Breite
-        Div infoBox = new Div();
-        infoBox.addClassName("info-box");
-        infoBox.setWidthFull();
-        infoBox.getStyle()
-                .set("background", "var(--lumo-primary-color-10pct)")
-                .set("border-left", "4px solid var(--lumo-primary-color)")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("padding", "var(--lumo-space-m)")
-                .set("margin-bottom", "var(--lumo-space-l)")
-                .set("box-shadow", "var(--lumo-box-shadow-xs)");
-        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
-        infoIcon.setSize("20px");
-        Paragraph description = new Paragraph(
+        // Info-Box mit modernem Styling
+        Div infoBox = ViewComponentHelper.createInfoBox(
                 "Hier können Sie die Details Ihres Vereins bearbeiten und verwalten. Änderungen werden sofort gespeichert."
         );
-        description.getStyle()
-                .set("color", "var(--lumo-primary-text-color)")
-                .set("margin", "0");
-        infoBox.add(infoIcon, description);
         contentWrapper.add(infoBox);
 
         // Form-Container mit weißem Hintergrund und modernen Styles
-        Div formContainer = new Div();
-        formContainer.addClassName("form-container");
-        formContainer.setWidthFull();
+        Div formContainer = ViewComponentHelper.createFormContainer();
         formContainer.getStyle()
                 .set("background", "white")
                 .set("border-radius", "var(--lumo-border-radius-m)")
                 .set("box-shadow", "var(--lumo-box-shadow-xs)")
                 .set("padding", "var(--lumo-space-m)")
-                .set("margin-bottom", "var(--lumo-space-l)")
                 .set("box-sizing", "border-box");
 
         // Formular
@@ -167,19 +129,13 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
         adresseField.setWidthFull();
         beschreibungField.setWidthFull();
         beschreibungField.setHeight("150px");
-        verbaendeField.setRequired(true);
-        verbaendeField.setItems(verbandService.findeAlleVerbaendeEntities());
-        verbaendeField.setItemLabelGenerator(Verband::getName);
-        verbaendeField.setPlaceholder("Verbände auswählen...");
-        verbaendeField.setWidthFull();
-        formLayout.add(nameField, vereinsNummerField, adresseField, beschreibungField, verbaendeField);
+        formLayout.add(nameField, vereinsNummerField, adresseField, beschreibungField);
         formLayout.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0", 1),
                 new FormLayout.ResponsiveStep("500px", 2)
         );
         formLayout.setColspan(adresseField, 2);
         formLayout.setColspan(beschreibungField, 2);
-        formLayout.setColspan(verbaendeField, 2);
 
         // Buttons mit Icons
         Button speichernButton = new Button("Speichern", e -> speichereVereinsdaten());
@@ -211,8 +167,6 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
         adresseField.setValue(aktuellerVerein.getAdresse() != null ? aktuellerVerein.getAdresse() : "");
         beschreibungField.setValue(aktuellerVerein.getBeschreibung() != null ?
                 aktuellerVerein.getBeschreibung() : "");
-        verbaendeField.setValue(aktuellerVerein.getVerbaende() != null ?
-                aktuellerVerein.getVerbaende() : new HashSet<>());
     }
 
     /**
@@ -223,16 +177,14 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
             return;
         }
 
-        mitgliedschaftService.findeMitgliedschaften(currentUser).stream()
+            mitgliedschaftService.findeMitgliedschaften(currentUser).stream()
                 .filter(m -> Boolean.TRUE.equals(m.getIstVereinschef()))
                 .findFirst()
                 .ifPresent(dto -> {
                     Long vereinId = dto.getVereinId();
                     aktuellerVerein = vereinRepository.findById(vereinId).orElse(null);
                     ladeVereinsdaten();
-                });
-
-        if (aktuellerVerein == null) {
+                });        if (aktuellerVerein == null) {
             Notification.show("Kein Verein gefunden, bei dem Sie Vereinschef sind")
                     .addThemeVariants(NotificationVariant.LUMO_WARNING);
         }
@@ -254,18 +206,12 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
             return;
         }
 
-        if (verbaendeField.getValue() == null || verbaendeField.getValue().isEmpty()) {
-            Notification.show("Mindestens ein Verband ist erforderlich")
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-            return;
-        }
 
         try {
             aktuellerVerein.setName(nameField.getValue());
             aktuellerVerein.setVereinsNummer(vereinsNummerField.getValue());
             aktuellerVerein.setAdresse(adresseField.getValue());
             aktuellerVerein.setBeschreibung(beschreibungField.getValue());
-            aktuellerVerein.setVerbaende(verbaendeField.getValue());
 
             vereinService.aktualisiereVerein(aktuellerVerein);
 

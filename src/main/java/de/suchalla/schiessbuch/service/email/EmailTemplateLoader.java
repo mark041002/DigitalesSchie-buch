@@ -14,12 +14,16 @@ public class EmailTemplateLoader {
                 log.error("Template nicht gefunden: /templates/{}", templateName);
                 return "";
             }
-            String template = new Scanner(is, StandardCharsets.UTF_8).useDelimiter("\\A").next();
-            log.debug("Template {} geladen", templateName);
-            for (Map.Entry<String, Object> entry : variables.entrySet()) {
-                template = template.replace("{{" + entry.getKey() + "}}", entry.getValue().toString());
+            try (Scanner scanner = new Scanner(is, StandardCharsets.UTF_8)) {
+                String template = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
+                log.debug("Template {} geladen", templateName);
+                if (variables != null) {
+                    for (Map.Entry<String, Object> entry : variables.entrySet()) {
+                        template = template.replace("{{" + entry.getKey() + "}}", entry.getValue().toString());
+                    }
+                }
+                return template;
             }
-            return template;
         } catch (Exception e) {
             log.error("Fehler beim Laden des Templates {}: {}", templateName, e.getMessage(), e);
             return "";

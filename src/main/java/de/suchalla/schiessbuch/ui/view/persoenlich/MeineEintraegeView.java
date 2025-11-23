@@ -24,12 +24,16 @@ import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.PdfExportService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
+import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import de.suchalla.schiessbuch.service.VereinService;
+import de.suchalla.schiessbuch.service.VerbandService;
+import de.suchalla.schiessbuch.model.entity.Verband;
 import jakarta.annotation.security.PermitAll;
 
 import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 import java.util.Objects;
@@ -50,8 +54,10 @@ public class MeineEintraegeView extends VerticalLayout {
     private final SchiessnachweisService schiessnachweisService;
     private final PdfExportService pdfExportService;
     private final VereinService vereinService;
+        private final VerbandService verbandService;
 
     private final Grid<SchiessnachweisEintragListDTO> grid = new Grid<>(SchiessnachweisEintragListDTO.class, false);
+        private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private final DatePicker vonDatum = new DatePicker("Von");
     private final DatePicker bisDatum = new DatePicker("Bis");
     private Div emptyStateMessage;
@@ -61,15 +67,18 @@ public class MeineEintraegeView extends VerticalLayout {
     private Tab signiertTab;
     private Tab aktuellerTab;
     private ComboBox<String> vereinFilter;
+        private ComboBox<String> verbandFilter;
 
-    public MeineEintraegeView(SecurityService securityService,
-                              SchiessnachweisService schiessnachweisService,
-                              PdfExportService pdfExportService,
-                              VereinService vereinService) {
+        public MeineEintraegeView(SecurityService securityService,
+                                                          SchiessnachweisService schiessnachweisService,
+                                                          PdfExportService pdfExportService,
+                                                          VereinService vereinService,
+                                                          VerbandService verbandService) {
         this.schiessnachweisService = schiessnachweisService;
         this.pdfExportService = pdfExportService;
         this.vereinService = vereinService;
-        this.currentUser = securityService.getAuthenticatedUser().orElse(null);
+                this.verbandService = verbandService;
+        this.currentUser = securityService.getAuthenticatedUser();
 
         setSpacing(false);
         setPadding(false);
@@ -85,10 +94,8 @@ public class MeineEintraegeView extends VerticalLayout {
      */
     private void createContent() {
         // Content-Wrapper für zentrierte Inhalte
-        VerticalLayout contentWrapper = new VerticalLayout();
-        contentWrapper.setSpacing(false);
-        contentWrapper.setPadding(false);
-        contentWrapper.addClassName("content-wrapper");
+        VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
+        contentWrapper.setSizeFull();
 
         // Header-Bereich
         HorizontalLayout header = new HorizontalLayout();
@@ -116,16 +123,7 @@ public class MeineEintraegeView extends VerticalLayout {
         contentWrapper.add(header);
 
         // Info-Box separat unter dem Header
-        Div infoBox = new Div();
-        infoBox.addClassName("info-box");
-        infoBox.setWidthFull();
-        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
-        infoIcon.setSize("20px");
-        com.vaadin.flow.component.html.Paragraph beschreibung = new com.vaadin.flow.component.html.Paragraph(
-                "Filtern Sie Ihre Einträge nach Datum oder exportieren Sie diese als PDF-Datei."
-        );
-        beschreibung.getStyle().set("margin", "0");
-        infoBox.add(infoIcon, beschreibung);
+        Div infoBox = ViewComponentHelper.createInfoBox("Filtern Sie Ihre Einträge nach Datum oder exportieren Sie diese als PDF-Datei.");
         contentWrapper.add(infoBox);
 
         // Tabs für Status-Filter
@@ -156,6 +154,13 @@ public class MeineEintraegeView extends VerticalLayout {
 
         bisDatum.setWidth("200px");
 
+        // Verband-Filter (anfangs leer -> zeigt alle)
+        verbandFilter = new ComboBox<>("Verband");
+        verbandFilter.setWidth("250px");
+        verbandFilter.setPlaceholder("");
+        verbandFilter.setAllowCustomValue(false);
+        verbandFilter.addValueChangeListener(e -> updateGrid());
+
         // Vereinsfilter (anfangs leer -> zeigt alle)
         vereinFilter = new ComboBox<>("Verein");
         vereinFilter.setWidth("250px");
@@ -176,7 +181,7 @@ public class MeineEintraegeView extends VerticalLayout {
         pdfDownload.add(pdfButton);
 
         // Alles in einem HorizontalLayout nebeneinander
-        HorizontalLayout filterLayout = new HorizontalLayout(vonDatum, bisDatum, vereinFilter, filterButton, pdfDownload);
+        HorizontalLayout filterLayout = new HorizontalLayout(vonDatum, bisDatum, verbandFilter, vereinFilter, filterButton, pdfDownload);
         filterLayout.setAlignItems(FlexComponent.Alignment.END);
         filterLayout.setSpacing(true);
         filterLayout.setWidthFull();
@@ -186,57 +191,47 @@ public class MeineEintraegeView extends VerticalLayout {
         contentWrapper.add(filterBox);
 
         // Grid-Container mit weißem Hintergrund
-        Div gridContainer = new Div();
-        gridContainer.addClassName("grid-container");
-        gridContainer.setWidthFull();
+        Div gridContainer = ViewComponentHelper.createGridContainer();
 
         // Grid mit modernem Styling - jetzt mit DTOs (flache Struktur)
-        grid.setHeight("600px");
         grid.addClassName("rounded-grid");
-        grid.addColumn(SchiessnachweisEintragListDTO::getDatum)
+        grid.setSizeFull();
+        grid.addColumn(dto -> dto.getDatum() == null ? "" : dto.getDatum().format(dateFormatter))
                 .setHeader("Datum")
-                .setSortable(true)
-                .setAutoWidth(true);
+                .setSortable(true);
 
         grid.addColumn(SchiessnachweisEintragListDTO::getDisziplinName)
-                .setHeader("Disziplin")
-                .setAutoWidth(true)
-                .setFlexGrow(1);
+                .setHeader("Disziplin");
 
         // Vereinsspalte anzeigen (direkt aus DTO)
         grid.addColumn(eintrag -> eintrag.getVereinName() != null ? eintrag.getVereinName() : "-")
-                .setHeader("Verein")
-                .setAutoWidth(true);
+                .setHeader("Verein");
 
         grid.addColumn(SchiessnachweisEintragListDTO::getKaliber)
-                .setHeader("Kaliber")
-                .setAutoWidth(true);
-
+                .setHeader("Kaliber");
+                
         grid.addColumn(SchiessnachweisEintragListDTO::getWaffenart)
-                .setHeader("Waffenart")
-                .setAutoWidth(true);
-
+                .setHeader("Waffenart");
+                
         grid.addColumn(SchiessnachweisEintragListDTO::getAnzahlSchuesse)
                 .setHeader("Schüsse")
-                .setAutoWidth(true)
                 .setTextAlign(ColumnTextAlign.END);
 
         grid.addColumn(SchiessnachweisEintragListDTO::getErgebnis)
                 .setHeader("Ergebnis")
-                .setAutoWidth(true)
                 .setTextAlign(ColumnTextAlign.END);
 
         grid.addComponentColumn(this::createStatusBadge)
-                .setHeader("Status")
-                .setAutoWidth(true);
+                .setHeader("Status");
 
         grid.addColumn(SchiessnachweisEintragListDTO::getAufseherVollstaendigerName)
-                .setHeader("Aufseher")
-                .setAutoWidth(true);
+                .setHeader("Aufseher");
 
         grid.addComponentColumn(this::createActionButtons)
-                .setHeader("Aktionen")
-                .setAutoWidth(true);
+                .setHeader("Aktionen");
+
+        grid.getColumns().forEach(c -> c.setAutoWidth(true));
+        grid.getColumns().forEach(c -> c.setFlexGrow(1));
 
         grid.addThemeVariants(
                 com.vaadin.flow.component.grid.GridVariant.LUMO_ROW_STRIPES,
@@ -244,21 +239,15 @@ public class MeineEintraegeView extends VerticalLayout {
         );
 
         // Empty State Message erstellen
-        emptyStateMessage = new Div();
-        emptyStateMessage.setText("Keine Einträge im ausgewählten Zeitraum gefunden. Erstellen Sie einen neuen Eintrag über den Button oben.");
-        emptyStateMessage.getStyle()
-                .set("text-align", "center")
-                .set("padding", "var(--lumo-space-xl)")
-                .set("color", "var(--lumo-secondary-text-color)")
-                .set("font-size", "var(--lumo-font-size-m)")
-                .set("background", "var(--lumo-contrast-5pct)")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("border", "2px dashed var(--lumo-contrast-20pct)")
-                .set("margin", "var(--lumo-space-m)");
+        emptyStateMessage = ViewComponentHelper.createEmptyStateMessage(
+                "Keine Einträge im ausgewählten Zeitraum gefunden. Erstellen Sie einen neuen Eintrag über den Button oben.",
+                VaadinIcon.BOOK
+        );
         emptyStateMessage.setVisible(false);
 
         gridContainer.add(grid, emptyStateMessage);
         contentWrapper.add(gridContainer);
+        contentWrapper.expand(gridContainer);
         add(contentWrapper);
 
         // Vereinsfilter und andere Optionen laden (über Service)
@@ -327,13 +316,33 @@ public class MeineEintraegeView extends VerticalLayout {
             }
             // Bei 'Alle' keine Statusfilterung
 
-            // Vereinsfilter anwenden (jetzt direkt über DTO-Felder)
-            String vereinFilterValue = vereinFilter.getValue();
-            if (vereinFilterValue != null && !vereinFilterValue.isEmpty()) {
-                eintraege = eintraege.stream()
-                        .filter(e -> e.getVereinName() != null && e.getVereinName().equals(vereinFilterValue))
-                        .toList();
-            }
+                        // Vereinsfilter anwenden (jetzt direkt über DTO-Felder)
+                        String vereinFilterValue = vereinFilter.getValue();
+                        if (vereinFilterValue != null && !vereinFilterValue.isEmpty()) {
+                                eintraege = eintraege.stream()
+                                                .filter(e -> e.getVereinName() != null && e.getVereinName().equals(vereinFilterValue))
+                                                .toList();
+                        }
+
+                        // Verband-Filter anwenden: finde Vereine des ausgewählten Verbands und filtere nach vereinId
+                        String verbandFilterValue = verbandFilter.getValue();
+                        if (verbandFilterValue != null && !verbandFilterValue.isEmpty()) {
+                                Verband selected = verbandService.findeAlleVerbaendeEntities().stream()
+                                                .filter(v -> v.getName() != null && v.getName().equals(verbandFilterValue))
+                                                .findFirst().orElse(null);
+                                if (selected != null) {
+                                        Set<Long> vereinIds = verbandService.findeVereineVonVerband(selected).stream()
+                                                        .map(v -> v.getId())
+                                                        .filter(Objects::nonNull)
+                                                        .collect(Collectors.toSet());
+
+                                        eintraege = eintraege.stream()
+                                                        .filter(e -> e.getVereinId() != null && vereinIds.contains(e.getVereinId()))
+                                                        .toList();
+                                } else {
+                                        eintraege = List.of();
+                                }
+                        }
 
             grid.setItems(eintraege);
 
@@ -345,9 +354,7 @@ public class MeineEintraegeView extends VerticalLayout {
     }
 
     /**
-     * Aktualisiert die Filteroptionen für Status und Schießstand basierend auf den vorhandenen Einträgen.
-     *
-     * @param eintraege Die Liste der Einträge
+     * Aktualisiert die Filteroptionen für den Vereins-Filter basierend auf den vorhandenen Vereinen.
      */
     private void updateFilterOptions() {
         // Lade Vereinsnamen sicher über den Service, um LazyInitializationExceptions zu vermeiden
@@ -357,6 +364,12 @@ public class MeineEintraegeView extends VerticalLayout {
 
         // Setze Items; nicht vorauswählen (leer bleibt, zeigt alle)
         vereinFilter.setItems(vereinNames);
+        // Verbandnamen ebenfalls laden (anfangs leer -> zeigt alle)
+        Set<String> verbandNames = verbandService.findeAlleVerbaendeEntities().stream()
+                .map(Verband::getName)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
+        verbandFilter.setItems(verbandNames);
     }
 
     /**
@@ -431,18 +444,5 @@ public class MeineEintraegeView extends VerticalLayout {
         return badge;
     }
 
-    /**
-     * Gibt den deutschen Text für einen Status zurück.
-     *
-     * @param status Der Status
-     * @return Deutscher Statustext
-     */
-    private String getStatusText(de.suchalla.schiessbuch.model.enums.EintragStatus status) {
-        return switch (status) {
-            case OFFEN -> "Offen";
-            case UNSIGNIERT -> "Unsigniert";
-            case SIGNIERT -> "Signiert";
-            case ABGELEHNT -> "Abgelehnt";
-        };
-    }
+
 }

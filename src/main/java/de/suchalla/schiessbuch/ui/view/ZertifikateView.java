@@ -6,10 +6,8 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -25,13 +23,14 @@ import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.repository.BenutzerRepository;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
+import de.suchalla.schiessbuch.service.BenutzerService;
+import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import jakarta.annotation.security.RolesAllowed;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -46,6 +45,7 @@ import java.util.List;
 public class ZertifikateView extends VerticalLayout {
     private final DigitalesZertifikatRepository zertifikatRepository;
     private final BenutzerRepository benutzerRepository;
+    private final BenutzerService benutzerService;
     private Tab gueltigTab;
     private Tab widerrufenTab;
     private Tab aktuellerTab;
@@ -53,9 +53,11 @@ public class ZertifikateView extends VerticalLayout {
     private Div emptyStateMessage;
 
     public ZertifikateView(DigitalesZertifikatRepository zertifikatRepository,
-                          BenutzerRepository benutzerRepository) {
+                          BenutzerRepository benutzerRepository,
+                          BenutzerService benutzerService) {
         this.zertifikatRepository = zertifikatRepository;
         this.benutzerRepository = benutzerRepository;
+        this.benutzerService = benutzerService;
         setSpacing(false);
         setPadding(false);
         setSizeFull();
@@ -66,39 +68,17 @@ public class ZertifikateView extends VerticalLayout {
 
     private void createContent() {
         // Content-Wrapper für zentrierte Inhalte
-        VerticalLayout contentWrapper = new VerticalLayout();
-        contentWrapper.setSpacing(false);
-        contentWrapper.setPadding(false);
+        VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
         contentWrapper.setSizeFull();
-        contentWrapper.addClassName("content-wrapper");
 
         // Header-Bereich
-        Div header = new Div();
-        header.addClassName("gradient-header");
-        header.setWidthFull();
-
-        H2 title = new H2("Zertifikatsverwaltung");
-        title.getStyle().set("margin", "0");
-
-        header.add(title);
+        Div header = ViewComponentHelper.createGradientHeader("Zertifikatsverwaltung");
         contentWrapper.add(header);
 
         // Info-Box mit modernem Styling
-        Div infoBox = new Div();
-        infoBox.addClassName("info-box");
-        infoBox.setWidthFull();
-
-        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
-        infoIcon.setSize("20px");
-
-        Paragraph beschreibung = new Paragraph(
+        Div infoBox = ViewComponentHelper.createInfoBox(
                 "Verwalten Sie Zertifikate für Benutzer und Vereine."
         );
-        beschreibung.getStyle()
-                .set("color", "var(--lumo-primary-text-color)")
-                .set("margin", "0");
-
-        infoBox.add(infoIcon, beschreibung);
         contentWrapper.add(infoBox);
 
         // Tabs für Status-Filter
@@ -114,41 +94,17 @@ public class ZertifikateView extends VerticalLayout {
         contentWrapper.add(tabs);
 
         // Grid-Container mit weißem Hintergrund
-        Div gridContainer = new Div();
-        gridContainer.addClassName("grid-container");
-        gridContainer.setWidthFull();
-        gridContainer.getStyle()
-                .set("flex", "1 1 auto")
-                .set("display", "flex")
-                .set("flex-direction", "column")
-                .set("min-height", "0")
-                .set("overflow-x", "auto")
-                .set("overflow-y", "auto");
+        Div gridContainer = ViewComponentHelper.createGridContainer();
 
         // Empty State Message
-        emptyStateMessage = new Div();
-        emptyStateMessage.addClassName("empty-state");
-        emptyStateMessage.setWidthFull();
-        emptyStateMessage.getStyle()
-                .set("text-align", "center")
-                .set("padding", "var(--lumo-space-xl)")
-                .set("color", "var(--lumo-secondary-text-color)");
-
-        Icon emptyIcon = VaadinIcon.DIPLOMA.create();
-        emptyIcon.setSize("48px");
-        emptyIcon.getStyle().set("margin-bottom", "var(--lumo-space-m)");
-
-        Paragraph emptyText = new Paragraph("Noch keine Zertifikate vorhanden.");
-        emptyText.getStyle().set("margin", "0");
-
-        emptyStateMessage.add(emptyIcon, emptyText);
+        emptyStateMessage = ViewComponentHelper.createEmptyStateMessage(
+                "Noch keine Zertifikate vorhanden.", VaadinIcon.DIPLOMA
+        );
         emptyStateMessage.setVisible(false);
 
-        // Grid
-        grid.setWidthFull();
         grid.addClassName("rounded-grid");
         grid.setColumnReorderingAllowed(true);
-        // Höhe wird dynamisch in updateGrid() gesetzt
+        grid.setSizeFull();
 
         grid.addColumn(zertifikat -> {
             if (zertifikat.getBenutzer() != null) {
@@ -207,6 +163,7 @@ public class ZertifikateView extends VerticalLayout {
 
         gridContainer.add(grid, emptyStateMessage);
         contentWrapper.add(gridContainer);
+        contentWrapper.expand(gridContainer);
         add(contentWrapper);
     }
 
@@ -231,7 +188,7 @@ public class ZertifikateView extends VerticalLayout {
     private Span createStatusBadge(DigitalesZertifikat zertifikat) {
         Span badge = new Span();
 
-        if (zertifikat.getWiderrufen()) {
+        if (zertifikat.isWiderrufen()) {
             badge.setText("Widerrufen");
             badge.getElement().getThemeList().add("badge error");
             badge.getStyle()
@@ -309,7 +266,6 @@ public class ZertifikateView extends VerticalLayout {
                 return;
             }
 
-            // Markiere Zertifikat als widerrufen
             zertifikat.setWiderrufen(true);
             zertifikat.setWiderrufenAm(LocalDateTime.now());
             zertifikat.setWiderrufsGrund(grund != null && !grund.isBlank() ? grund : "Vom Administrator widerrufen");
@@ -386,7 +342,7 @@ public class ZertifikateView extends VerticalLayout {
             return;
         }
 
-        Benutzer aktuellerBenutzer = benutzerRepository.findByEmailWithMitgliedschaften(username).orElse(null);
+        Benutzer aktuellerBenutzer = benutzerService.findeBenutzerByEmailWithMitgliedschaften(username);
         if (aktuellerBenutzer == null) {
             grid.setItems(List.of());
             grid.setVisible(false);
@@ -394,32 +350,22 @@ public class ZertifikateView extends VerticalLayout {
             return;
         }
 
-        boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
-        boolean isVereinschef = auth.getAuthorities().stream()
-                .anyMatch(a -> "ROLE_VEREINS_CHEF".equals(a.getAuthority()));
-        boolean isAufseher = auth.getAuthorities().stream()
-                .anyMatch(a -> "ROLE_AUFSEHER".equals(a.getAuthority()));
-        boolean isSchiesstandAufseher = auth.getAuthorities().stream()
-                .anyMatch(a -> "ROLE_SCHIESSSTAND_AUFSEHER".equals(a.getAuthority()));
+        // Admin sieht alle Zertifikate
+        boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
-        List<DigitalesZertifikat> zertifikate = new ArrayList<>();
-        List<DigitalesZertifikat> alleZertifikate = zertifikatRepository.findAllWithDetailsAndMitgliedschaften();
-
+        List<DigitalesZertifikat> zertifikate;
         if (aktuellerTab == gueltigTab) {
-            // Zeige alle gültigen Zertifikate
-            for (DigitalesZertifikat z : alleZertifikate) {
-                if (!Boolean.TRUE.equals(z.getWiderrufen())) {
-                    zertifikate.add(z);
-                }
-            }
+            zertifikate = zertifikatRepository.findAllGueltigeWithDetailsAndMitgliedschaften();
         } else {
-            // Zeige alle widerrufenen Zertifikate
-            for (DigitalesZertifikat z : alleZertifikate) {
-                if (Boolean.TRUE.equals(z.getWiderrufen())) {
-                    zertifikate.add(z);
-                }
-            }
+            zertifikate = zertifikatRepository.findAllWiderrufeneWithDetailsAndMitgliedschaften();
+        }
+
+        // Für Nicht-Admins: Filtere Zertifikate nach Zugehörigkeit
+        if (!isAdmin) {
+            zertifikate = zertifikate.stream()
+                    .filter(z -> istZertifikatZugaenglich(z, aktuellerBenutzer))
+                    .toList();
         }
 
         grid.setItems(zertifikate);
@@ -428,19 +374,35 @@ public class ZertifikateView extends VerticalLayout {
         boolean isEmpty = zertifikate.isEmpty();
         grid.setVisible(!isEmpty);
         emptyStateMessage.setVisible(isEmpty);
+    }
 
-        if (!isEmpty) {
-            int anzahlEintraege = zertifikate.size();
-            int zeilenHoehe = 53;
-            int headerHoehe = 56;
-            int minHoehe = 200;
-            int maxHoehe = 800;
-            int berechneteHoehe = headerHoehe + (anzahlEintraege * zeilenHoehe);
-            int tatsaechlicheHoehe = Math.max(minHoehe, Math.min(maxHoehe, berechneteHoehe));
-
-            grid.setHeight(tatsaechlicheHoehe + "px");
-            grid.getStyle().remove("min-height");
+    private boolean istZertifikatZugaenglich(DigitalesZertifikat zertifikat, Benutzer benutzer) {
+        // Eigene Zertifikate
+        if (zertifikat.getBenutzer() != null && zertifikat.getBenutzer().getId().equals(benutzer.getId())) {
+            return true;
         }
+
+        // Zertifikate von Vereinen/Schießständen, in denen der Benutzer Aufseher oder Vereinschef ist
+        if (benutzer.getVereinsmitgliedschaften() != null) {
+            for (var mitgliedschaft : benutzer.getVereinsmitgliedschaften()) {
+                if (Boolean.TRUE.equals(mitgliedschaft.getIstVereinschef()) || Boolean.TRUE.equals(mitgliedschaft.getIstAufseher())) {
+                    Verein vereinDesMitglieds = mitgliedschaft.getVerein();
+                    
+                    // Prüfe ob Zertifikat zu diesem Verein gehört
+                    if (zertifikat.getVerein() != null && zertifikat.getVerein().getId().equals(vereinDesMitglieds.getId())) {
+                        return true;
+                    }
+                    
+                    // Prüfe ob Zertifikat zu einem Schießstand dieses Vereins gehört
+                    if (zertifikat.getSchiesstand() != null && zertifikat.getSchiesstand().getVerein() != null 
+                            && zertifikat.getSchiesstand().getVerein().getId().equals(vereinDesMitglieds.getId())) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private String formatDatum(java.time.LocalDateTime datum) {
@@ -457,7 +419,7 @@ public class ZertifikateView extends VerticalLayout {
 
         layout.add(new Paragraph("Seriennummer: " + (zertifikat.getSeriennummer() != null ? zertifikat.getSeriennummer() : "-")));
         layout.add(new Paragraph("Typ: " + (zertifikat.getZertifikatsTyp() != null ? zertifikat.getZertifikatsTyp() : "-")));
-        layout.add(new Paragraph("Status: " + (zertifikat.getWiderrufen() ? "Widerrufen" : "Gültig")));
+        layout.add(new Paragraph("Status: " + (zertifikat.isWiderrufen() ? "Widerrufen" : "Gültig")));
         layout.add(new Paragraph("Gültig seit: " + formatDatum(zertifikat.getGueltigSeit())));
         layout.add(new Paragraph("Widerrufen am: " + (zertifikat.getWiderrufenAm() != null ? formatDatum(zertifikat.getWiderrufenAm()) : "-")));
         layout.add(new Paragraph("Widerrufsgrund: " + (zertifikat.getWiderrufsGrund() != null ? zertifikat.getWiderrufsGrund() : "-")));

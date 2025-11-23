@@ -10,6 +10,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import de.suchalla.schiessbuch.ui.view.oeffentlich.ZertifikatVerifizierungView;
 
 /**
  * Login-View für die Anwendung.
@@ -54,8 +55,9 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
         H1 title = new H1("Digitales Schießbuch");
 
         RouterLink registerLink = new RouterLink("Noch kein Konto? Jetzt registrieren", RegisterView.class);
+        RouterLink verifyCertLink = new RouterLink("Zertifikat verifizieren", ZertifikatVerifizierungView.class);
 
-        add(title, loginForm, registerLink);
+        add(title, loginForm, registerLink, verifyCertLink);
     }
 
     @Override

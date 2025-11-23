@@ -4,7 +4,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -20,10 +19,13 @@ import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.BenutzerService;
+import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.PermitAll;
 import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.HasComponents;
+import java.util.Optional;
 
 /**
  * View für Benutzerprofil.
@@ -52,7 +54,7 @@ public class ProfilView extends VerticalLayout {
     public ProfilView(SecurityService securityService, BenutzerService benutzerService) {
         this.securityService = securityService;
         this.benutzerService = benutzerService;
-        this.currentUser = securityService.getAuthenticatedUser().orElse(null);
+        this.currentUser = securityService.getAuthenticatedUser();
 
         setSpacing(false);
         setPadding(false);
@@ -72,34 +74,14 @@ public class ProfilView extends VerticalLayout {
         contentWrapper.setSpacing(false);
         contentWrapper.setPadding(false);
         contentWrapper.addClassName("content-wrapper");
-        contentWrapper.setMaxWidth("1000px");
 
         // Header-Bereich mit modernem Styling
-        Div header = new Div();
-        header.addClassName("gradient-header");
-        header.setWidthFull();
-
-        H2 title = new H2("Mein Profil");
-        title.getStyle().set("margin", "0");
-
-        header.add(title);
+        Div header = ViewComponentHelper.createGradientHeader("Mein Profil");
         contentWrapper.add(header);
 
         // Info-Box mit modernem Styling
-        Div infoBox = new Div();
-        infoBox.addClassName("info-box");
-        infoBox.setWidthFull();
-        infoBox.getStyle()
-                .set("margin-bottom", "var(--lumo-space-l)");
-        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
-        infoIcon.setSize("20px");
-        com.vaadin.flow.component.html.Paragraph beschreibung = new com.vaadin.flow.component.html.Paragraph(
-                "Verwalten Sie Ihre persönlichen Daten und Sicherheitseinstellungen."
-        );
-        beschreibung.getStyle()
-                .set("color", "var(--lumo-primary-text-color)")
-                .set("margin", "0");
-        infoBox.add(infoIcon, beschreibung);
+        Div infoBox = ViewComponentHelper.createInfoBox("Verwalten Sie Ihre persönlichen Daten und Sicherheitseinstellungen.");
+        infoBox.getStyle().set("margin-bottom", "var(--lumo-space-l)");
         contentWrapper.add(infoBox);
 
         // Profilinformationen
@@ -123,9 +105,7 @@ public class ProfilView extends VerticalLayout {
     }
 
     private Div createInfoCard() {
-        Div card = new Div();
-        card.addClassName("form-container");
-        card.setWidthFull();
+        Div card = ViewComponentHelper.createFormContainer();
 
         H3 cardTitle = new H3("Benutzerinformationen");
         cardTitle.getStyle()
@@ -141,12 +121,36 @@ public class ProfilView extends VerticalLayout {
 
     // Hilfsmethode: Info-Card erneuern (bekommt aktuellen nameEditMode/emailEditMode Zustand)
     private void refreshInfoCard() {
-        int idx = getChildren().toList().indexOf(infoCard);
-        if (idx < 0) idx = 0;
-        remove(infoCard);
-        infoCard = createInfoCard();
-        infoCard.getStyle().set("margin-bottom", "var(--lumo-space-l)");
-        addComponentAtIndex(idx, infoCard);
+        if (infoCard == null) {
+            return;
+        }
+
+        // Try to find the actual parent container of the infoCard and operate on it
+        Optional<Component> parentOpt = infoCard.getParent();
+        if (parentOpt.isPresent() && parentOpt.get() instanceof HasComponents) {
+            Component parentComp = parentOpt.get();
+            int idx = parentComp.getChildren().toList().indexOf(infoCard);
+            if (idx < 0) idx = 0;
+            HasComponents parent = (HasComponents) parentComp;
+            parent.remove(infoCard);
+            infoCard = createInfoCard();
+            infoCard.getStyle().set("margin-bottom", "var(--lumo-space-l)");
+            // Recompute size and add back at same index if possible
+            int childCount = parentComp.getChildren().toList().size();
+            if (idx <= childCount) {
+                parent.addComponentAtIndex(idx, infoCard);
+            } else {
+                parent.add(infoCard);
+            }
+        } else {
+            // Fallback to operate on this layout if parent not available
+            int idx = getChildren().toList().indexOf(infoCard);
+            if (idx < 0) idx = 0;
+            remove(infoCard);
+            infoCard = createInfoCard();
+            infoCard.getStyle().set("margin-bottom", "var(--lumo-space-l)");
+            addComponentAtIndex(idx, infoCard);
+        }
     }
 
     private Div createNameRow(Div card) {
@@ -202,14 +206,43 @@ public class ProfilView extends VerticalLayout {
                             .addThemeVariants(NotificationVariant.LUMO_ERROR);
                     return;
                 }
-                currentUser.setVorname(neuerName.split(" ")[0]);
-                if (neuerName.split(" ").length > 1) {
-                    currentUser.setNachname(neuerName.substring(neuerName.indexOf(' ') + 1));
+                // Lade Benutzer neu aus DB, um Detached-State-Fehler zu vermeiden
+                Benutzer benutzerToUpdate = benutzerService.findeBenutzerByEmailWithMitgliedschaften(currentUser.getEmail());
+                if (benutzerToUpdate == null) {
+                    Notification.show("Benutzer nicht gefunden")
+                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    return;
                 }
-                benutzerService.aktualisiereBenutzer(currentUser);
+                benutzerToUpdate.setVorname(neuerName.split(" ")[0]);
+                if (neuerName.split(" ").length > 1) {
+                    benutzerToUpdate.setNachname(neuerName.substring(neuerName.indexOf(' ') + 1));
+                }
+                benutzerService.aktualisiereBenutzer(benutzerToUpdate);
+                // Aktualisiere auch das lokale currentUser-Objekt
+                currentUser.setVorname(benutzerToUpdate.getVorname());
+                currentUser.setNachname(benutzerToUpdate.getNachname());
                 Notification.show("Name erfolgreich geändert")
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 nameEditMode = false;
+                // Aktualisiere Header-Label (MainLayout) oder lade Seite neu als Fallback
+                try {
+                    getUI().ifPresent(ui -> {
+                        boolean updated = ui.getChildren()
+                                .filter(c -> c instanceof MainLayout)
+                                .findFirst()
+                                .map(c -> {
+                                    ((MainLayout) c).updateUsername(benutzerToUpdate.getVollstaendigerName());
+                                    return true;
+                                }).orElse(false);
+
+                        if (!updated) {
+                            ui.getPage().reload();
+                        }
+                    });
+                } catch (Exception ignored) {
+                    // Falls irgendwas schiefgeht, reload als Sicherheit
+                    getUI().ifPresent(ui -> ui.getPage().reload());
+                }
                 refreshInfoCard();
             });
             speichern.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -276,8 +309,25 @@ public class ProfilView extends VerticalLayout {
                             .addThemeVariants(NotificationVariant.LUMO_ERROR);
                     return;
                 }
-                currentUser.setEmail(neueEmail);
-                benutzerService.aktualisiereBenutzer(currentUser);
+                // Lade Benutzer neu aus DB, um Detached-State-Fehler zu vermeiden
+                Benutzer benutzerToUpdate = benutzerService.findeBenutzerByEmailWithMitgliedschaften(currentUser.getEmail());
+                if (benutzerToUpdate == null) {
+                    Notification.show("Benutzer nicht gefunden")
+                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    return;
+                }
+                benutzerToUpdate.setEmail(neueEmail);
+                benutzerService.aktualisiereBenutzer(benutzerToUpdate);
+                // Aktualisiere auch das lokale currentUser-Objekt
+                currentUser.setEmail(benutzerToUpdate.getEmail());
+                // Aktualisiere die Authentication, damit der Benutzer eingeloggt bleibt
+                try {
+                    securityService.refreshAuthentication(benutzerToUpdate);
+                } catch (Exception ex) {
+                    // Falls Aktualisierung fehlschlägt, fallback: einfach melden, aber nicht automatisch ausloggen
+                    Notification.show("Warnung: Anmeldung konnte nicht aktualisiert werden. Bitte neu einloggen.")
+                            .addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+                }
                 Notification.show("E-Mail erfolgreich geändert")
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 emailEditMode = false;
@@ -294,28 +344,44 @@ public class ProfilView extends VerticalLayout {
         notifRow.getStyle()
                 .set("display", "flex")
                 .set("gap", "var(--lumo-space-m)")
-                .set("flex-direction", "column")
+                .set("align-items", "center")
                 .set("padding", "var(--lumo-space-s)")
                 .set("background", "var(--lumo-contrast-5pct)")
                 .set("border-radius", "var(--lumo-border-radius-m)")
                 .set("margin-top", "var(--lumo-space-s)");
 
-        H3 notifTitle = new H3("E-Mail-Benachrichtigungen");
-        notifTitle.getStyle().set("margin", "0");
+        Div notifContent = new Div();
+        notifContent.getStyle()
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("gap", "var(--lumo-space-s)")
+                .set("flex-grow", "1");
+
+        Icon notifIcon = VaadinIcon.BELL.create();
+        notifIcon.setSize("20px");
+        notifIcon.getStyle()
+                .set("color", "var(--lumo-primary-color)")
+                .set("flex-shrink", "0");
 
         Checkbox cbEmailNotifications = new Checkbox("E-Mail-Benachrichtigungen aktivieren");
         try {
             cbEmailNotifications.setValue(Boolean.TRUE.equals(currentUser.isEmailNotificationsEnabled()));
         } catch (Exception ignored) { cbEmailNotifications.setValue(true); }
 
-        FormLayout form = new FormLayout();
-        form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
-        form.add(cbEmailNotifications);
+        notifContent.add(notifIcon, cbEmailNotifications);
 
-        Button savePrefs = new Button("Einstellungen speichern", e -> {
-            currentUser.setEmailNotificationsEnabled(cbEmailNotifications.getValue());
+        Button savePrefs = new Button("Einstellung speichern", e -> {
+            // Lade Benutzer neu aus DB, um Detached-State-Fehler zu vermeiden
+            Benutzer benutzerToUpdate = benutzerService.findeBenutzerByEmailWithMitgliedschaften(currentUser.getEmail());
+            if (benutzerToUpdate == null) {
+                Notification.show("Benutzer nicht gefunden").addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
+            benutzerToUpdate.setEmailNotificationsEnabled(cbEmailNotifications.getValue());
             try {
-                benutzerService.aktualisiereBenutzer(currentUser);
+                benutzerService.aktualisiereBenutzer(benutzerToUpdate);
+                // Aktualisiere auch das lokale currentUser-Objekt
+                currentUser.setEmailNotificationsEnabled(benutzerToUpdate.isEmailNotificationsEnabled());
                 Notification.show("Einstellungen gespeichert").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             } catch (Exception ex) {
                 Notification.show("Fehler beim Speichern: " + ex.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -324,17 +390,16 @@ public class ProfilView extends VerticalLayout {
             refreshInfoCard();
         });
         savePrefs.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        savePrefs.getStyle().set("flex-shrink", "0");
 
-        notifRow.add(notifTitle, form, savePrefs);
+        notifRow.add(notifContent, savePrefs);
 
         container.add(emailRow, notifRow);
         return container;
     }
 
     private Div createPasswortCard() {
-        Div card = new Div();
-        card.addClassName("form-container");
-        card.setWidthFull();
+        Div card = ViewComponentHelper.createFormContainer();
 
         H3 cardTitle = new H3("Passwort ändern");
         cardTitle.getStyle()
@@ -424,6 +489,15 @@ public class ProfilView extends VerticalLayout {
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             neuesPasswortField.clear();
             passwortBestaetigenField.clear();
+            // Nach Passwortänderung Authentication aktualisieren, damit Session gültig bleibt
+            try {
+                Benutzer updated = benutzerService.findeBenutzerByEmailWithMitgliedschaften(currentUser.getEmail());
+                if (updated != null) {
+                    securityService.refreshAuthentication(updated);
+                    // Synchronisiere das lokale currentUser-Objekt
+                    currentUser.setPasswort(updated.getPasswort());
+                }
+            } catch (Exception ignored) { }
         } catch (Exception e) {
             Notification.show("Fehler: " + e.getMessage())
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);

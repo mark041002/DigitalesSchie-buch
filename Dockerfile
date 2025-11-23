@@ -1,5 +1,5 @@
 # Schritt 1: Java-Anwendung bauen
-FROM maven:3.9-eclipse-temurin-17 AS build
+FROM maven:3.9-eclipse-temurin-21 AS build
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY vite.config.ts .
 RUN mvn clean package -Pproduction -DskipTests
 
 # Schritt 2: Nur das fertige JAR in kleines Image packen
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 

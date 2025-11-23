@@ -68,6 +68,22 @@
     margin-top: var(--lumo-space-xs);
 }
 
+/* Inline subtitle variant: place the subtitle on the right side of the title
+   when the header container has the modifier class 'header-inline-subtitle'. */
+.gradient-header.header-inline-subtitle {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-m);
+}
+.gradient-header.header-inline-subtitle .subtitle {
+    display: inline-block;
+    margin-top: 0;
+    margin-left: 0;
+    font-weight: 500;
+    color: #ffffff;
+    opacity: 0.95;
+}
+
 /* Info Box */
 .info-box {
     width: 100%;
@@ -206,3 +222,17 @@
     align-items: center;
     gap: 0.5em;
 }
+
+/* Grid cell alignment helpers */
+.align-numeric {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.align-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+

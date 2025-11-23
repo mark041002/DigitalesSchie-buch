@@ -11,7 +11,7 @@ Markus Suchalla
 ## Technologie-Stack
 
 ### Backend
-- **Java 17** - Programmiersprache
+- **Java 21** - Programmiersprache
 - **Spring Boot 3.x** - Application Framework
 - **Spring Data JPA** - Datenzugriff und Persistenz
 - **Spring Security** - Authentifizierung und Autorisierung

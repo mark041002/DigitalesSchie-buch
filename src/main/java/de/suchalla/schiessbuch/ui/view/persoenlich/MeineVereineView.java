@@ -21,9 +21,11 @@ import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
+import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.VerbandService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
+import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.PermitAll;
 
@@ -59,7 +61,7 @@ public class MeineVereineView extends VerticalLayout {
         this.mitgliedschaftService = mitgliedschaftService;
         this.verbandService = verbandService;
 
-        this.currentUser = securityService.getAuthenticatedUser().orElse(null);
+        this.currentUser = securityService.getAuthenticatedUser();
 
         setSpacing(false);
         setPadding(false);
@@ -75,10 +77,8 @@ public class MeineVereineView extends VerticalLayout {
      */
     private void createContent() {
         // Content-Wrapper für zentrierte Inhalte
-        VerticalLayout contentWrapper = new VerticalLayout();
-        contentWrapper.setSpacing(false);
-        contentWrapper.setPadding(false);
-        contentWrapper.addClassName("content-wrapper");
+        VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
+        contentWrapper.setSizeFull();
 
         // Header-Bereich wie bei "Meine Einträge"
         HorizontalLayout header = new HorizontalLayout();
@@ -118,22 +118,16 @@ public class MeineVereineView extends VerticalLayout {
         infoBox.add(infoIcon, beschreibung);
         contentWrapper.add(infoBox);
 
-        // Grid-Container mit weißem Hintergrund
-        Div gridContainer = new Div();
-        gridContainer.addClassName("grid-container");
-        gridContainer.setWidthFull();
+        // Grid-Container mit weißem Hintergrund (standardisiert)
+        Div gridContainer = ViewComponentHelper.createGridContainer();
 
         // Grid mit modernem Styling
-        grid.setHeight("600px");
         grid.addClassName("rounded-grid");
+        grid.setSizeFull();
         grid.addColumn(mitgliedschaft -> mitgliedschaft.getVerein().getName())
                 .setHeader("Verein")
-                .setAutoWidth(true)
                 .setFlexGrow(1);
 
-        // (Verbände-Spalte entfernt; ein Verein kann mehreren Verbänden angehören)
-
-        // Rolle als einfache Textspalte (nicht als ComponentColumn mit Div/Span)
         grid.addColumn(mitgliedschaft -> {
             if (mitgliedschaft == null) return "";
             if (Boolean.TRUE.equals(mitgliedschaft.getIstVereinschef())) return "Vereinschef";
@@ -141,7 +135,6 @@ public class MeineVereineView extends VerticalLayout {
             else return "Schütze";
         })
                 .setHeader("Rolle")
-                .setAutoWidth(true)
                 .setTextAlign(ColumnTextAlign.START);
 
         // Beitrittsdatum formatiert als dd.MM.yyyy
@@ -151,7 +144,6 @@ public class MeineVereineView extends VerticalLayout {
             return d == null ? "Unbekannt" : d.format(dateFormatter);
         })
                 .setHeader("Beitrittsdatum")
-                .setAutoWidth(true)
                 .setTextAlign(ColumnTextAlign.START);
 
         // Status als einfache Textspalte (nicht als ComponentColumn mit Div/Span)
@@ -166,12 +158,12 @@ public class MeineVereineView extends VerticalLayout {
             };
         })
                 .setHeader("Status")
-                .setAutoWidth(true)
                 .setTextAlign(ColumnTextAlign.START);
 
         grid.addComponentColumn(this::createActionButtons)
-                .setHeader("Aktionen")
-                .setAutoWidth(true);
+                .setHeader("Aktionen");
+
+        grid.getColumns().forEach(c -> c.setAutoWidth(true));
 
         grid.addThemeVariants(
                 com.vaadin.flow.component.grid.GridVariant.LUMO_ROW_STRIPES,
@@ -179,21 +171,15 @@ public class MeineVereineView extends VerticalLayout {
         );
 
         // Empty State Message erstellen
-        emptyStateMessage = new Div();
-        emptyStateMessage.setText("Sie sind noch keinem Verein beigetreten. Verwenden Sie den Button oben, um einem Verein beizutreten.");
-        emptyStateMessage.getStyle()
-                .set("text-align", "center")
-                .set("padding", "var(--lumo-space-xl)")
-                .set("color", "var(--lumo-secondary-text-color)")
-                .set("font-size", "var(--lumo-font-size-m)")
-                .set("background", "var(--lumo-contrast-5pct)")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("border", "2px dashed var(--lumo-contrast-20pct)")
-                .set("margin", "var(--lumo-space-m)");
+        emptyStateMessage = ViewComponentHelper.createEmptyStateMessage(
+                "Sie sind noch keinem Verein beigetreten. Verwenden Sie den Button oben, um einem Verein beizutreten.",
+                VaadinIcon.GROUP
+        );
         emptyStateMessage.setVisible(false);
 
         gridContainer.add(grid, emptyStateMessage);
         contentWrapper.add(gridContainer);
+        contentWrapper.expand(gridContainer);
         add(contentWrapper);
     }
 
@@ -267,10 +253,10 @@ public class MeineVereineView extends VerticalLayout {
             verlassenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
             verlassenButton.addClickListener(e -> vereinVerlassen(mitgliedschaft));
             return verlassenButton;
-        } else if (mitgliedschaft.getStatus() == de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus.VERLASSEN
-                || mitgliedschaft.getStatus() == de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus.ABGELEHNT
-                || mitgliedschaft.getStatus() == de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus.BEENDET
-                || mitgliedschaft.getStatus() == de.suchalla.schiessbuch.model.enums.MitgliedschaftStatus.BEANTRAGT) {
+        } else if (mitgliedschaft.getStatus() == MitgliedschaftsStatus.VERLASSEN
+                || mitgliedschaft.getStatus() == MitgliedschaftsStatus.ABGELEHNT
+                || mitgliedschaft.getStatus() == MitgliedschaftsStatus.BEENDET
+                || mitgliedschaft.getStatus() == MitgliedschaftsStatus.BEANTRAGT) {
             Button loeschenButton = new Button("Löschen", new Icon(VaadinIcon.TRASH));
             loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
             loeschenButton.getElement().setAttribute("title", "Eintrag endgültig löschen");
@@ -290,8 +276,12 @@ public class MeineVereineView extends VerticalLayout {
                 return;
             }
 
-            Verein verein = verbandService.findeVereinByVereinsNummer(vereinsNummer)
-                    .orElseThrow(() -> new IllegalArgumentException("Verein nicht gefunden"));
+            Verein verein = verbandService.findeVereinByVereinsNummer(vereinsNummer);
+            
+            if (verein == null) {
+                Notification.show("Verein nicht gefunden").addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
 
             // Verein gefunden, Verband wird automatisch aus dem Verein bestimmt
             mitgliedschaftService.vereinBeitreten(currentUser, verein);

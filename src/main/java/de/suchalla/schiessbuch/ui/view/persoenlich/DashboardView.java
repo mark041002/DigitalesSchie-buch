@@ -2,7 +2,6 @@ package de.suchalla.schiessbuch.ui.view.persoenlich;
 
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -18,6 +17,7 @@ import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
+import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.PermitAll;
 
@@ -25,11 +25,6 @@ import java.util.List;
 
 /**
  * Dashboard-View als Startseite.
- *
- * Responsive: Schnellzugriff-Buttons nebeneinander (wrap bei kleinem Viewport).
- *
- * @author Markus Suchalla
- * @version 1.0.3 (responsive Schnellzugriff inline)
  */
 @Route(value = "", layout = MainLayout.class)
 @PageTitle("Dashboard | Digitales Schießbuch")
@@ -66,7 +61,7 @@ public class DashboardView extends VerticalLayout {
      * Erstellt den Dashboard-Inhalt.
      */
     private void createContent() {
-        Benutzer currentUser = securityService.getAuthenticatedUser().orElse(null);
+        Benutzer currentUser = securityService.getAuthenticatedUser();
 
         if (currentUser == null) {
             createGuestContent();
@@ -74,13 +69,10 @@ public class DashboardView extends VerticalLayout {
         }
 
         // Content-Wrapper für zentrierte Inhalte
-        VerticalLayout contentWrapper = new VerticalLayout();
-        contentWrapper.setSpacing(false);
-        contentWrapper.setPadding(false);
-        contentWrapper.addClassName("content-wrapper");
-
+        VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
+        
         // Willkommens-Header
-        Div header = createWelcomeHeader(currentUser);
+        Div header = ViewComponentHelper.createGradientHeader("Willkommen zurück, " + currentUser.getVorname() + "!");
         header.getStyle().set("margin-bottom", "var(--lumo-space-l)");
         header.setWidthFull();
         contentWrapper.add(header);
@@ -115,17 +107,6 @@ public class DashboardView extends VerticalLayout {
         add(title, subtitle);
     }
 
-    private Div createWelcomeHeader(Benutzer user) {
-        Div header = new Div();
-        header.addClassName("gradient-header");
-        header.setWidthFull();
-
-        H2 greeting = new H2("Willkommen zurück, " + user.getVorname() + "!");
-        greeting.getStyle().set("margin", "0");
-
-        header.add(greeting);
-        return header;
-    }
 
     private Div createStatsGrid(Benutzer user) {
         Div grid = new Div();
@@ -264,11 +245,12 @@ public class DashboardView extends VerticalLayout {
                 .set("overflow", "hidden");
 
         // Überschrift für den Schnellzugriff-Bereich
-        H3 title = new H3("Schnellzugriff");
+        H2 title = new H2("Schnellzugriff");
         title.getStyle()
                 .set("margin-top", "0")
                 .set("margin-bottom", "var(--lumo-space-m)")
-                .set("color", "var(--lumo-primary-text-color)");
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("text-align", "center");
 
         // Actions als flexible Zeile: nebeneinander auf breiten Bildschirmen, wrap auf schmalen
         Div actionsGrid = new Div();

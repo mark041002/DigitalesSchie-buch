@@ -7,6 +7,12 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entity-Klasse für Benutzer-Tokens (Passwort-Reset, E-Mail-Verifizierung).
+ *
+ * @author Markus Suchalla
+ * @version 1.0.0
+ */
 @Entity
 @Setter
 @Getter

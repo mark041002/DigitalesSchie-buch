@@ -3,8 +3,9 @@ package de.suchalla.schiessbuch.ui.view.organisatorisch;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
@@ -19,8 +20,11 @@ import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.DisziplinService;
 import de.suchalla.schiessbuch.service.VerbandService;
+import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
+import de.suchalla.schiessbuch.service.VereinService;
+import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
-import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 
 import java.util.List;
 import com.vaadin.flow.component.html.Span;
@@ -28,52 +32,77 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
 /**
- * View für Sportverbände - zeigt alle Verbände und deren Disziplinen.
- *
- * @author Markus Suchalla
- * @version 1.0.0
+ * Organisatorische View für Sportverbände - sichtbar für Vereinschefs und Admins.
  */
-@Route(value = "verbaende", layout = MainLayout.class)
-@PageTitle("Schützenverbände | Digitales Schießbuch")
-@PermitAll
+@Route(value = "organisatorisch/verbaende", layout = MainLayout.class)
+@PageTitle("Verbände | Digitales Schießbuch")
+@RolesAllowed({"VEREINS_CHEF", "ADMIN"})
 public class VerbaendeView extends VerticalLayout {
 
     private final VerbandService verbandService;
     private final DisziplinService disziplinService;
     private final SecurityService securityService;
+    private final VereinsmitgliedschaftService mitgliedschaftService;
+    private final VereinService vereinService;
 
     private final Grid<Verband> grid = new Grid<>(Verband.class, false);
+    private Div emptyStateMessage;
 
     public VerbaendeView(VerbandService verbandService,
                          DisziplinService disziplinService,
-                         SecurityService securityService) {
+                         SecurityService securityService,
+                         VereinsmitgliedschaftService mitgliedschaftService,
+                         VereinService vereinService) {
         this.verbandService = verbandService;
         this.disziplinService = disziplinService;
         this.securityService = securityService;
+        this.mitgliedschaftService = mitgliedschaftService;
+        this.vereinService = vereinService;
 
-        setSpacing(true);
-        setPadding(true);
+        setSpacing(false);
+        setPadding(false);
+        setSizeFull();
+        addClassName("view-container");
 
         createContent();
         updateGrid();
     }
 
-    /**
-     * Erstellt den Inhalt der View.
-     */
     private void createContent() {
-        add(new H2("Schützenverbände"));
-        add(new Paragraph("Hier sehen Sie alle verfügbaren Schützenverbände. Sie können einem Verband beitreten oder austreten."));
+        VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
+        contentWrapper.setSizeFull();
 
-        // Grid konfigurieren
-        grid.addColumn(Verband::getName).setHeader("Verbandsname").setSortable(true);
-        grid.addColumn(Verband::getBeschreibung).setHeader("Beschreibung");
-        grid.addColumn(verband -> verband.getVereine().size())
+        Div header = ViewComponentHelper.createGradientHeader("Schützenverbände");
+        contentWrapper.add(header);
+
+        Div infoBox = ViewComponentHelper.createInfoBox(
+                "Hier sehen Sie alle verfügbaren Schützenverbände. Sie können einem Verband beitreten oder austreten."
+        );
+        contentWrapper.add(infoBox);
+
+        // Empty State Message
+        emptyStateMessage = ViewComponentHelper.createEmptyStateMessage(
+                "Noch keine Verbände vorhanden.", VaadinIcon.RECORDS
+        );
+        emptyStateMessage.setVisible(false);
+
+        // Grid-Container
+        Div gridContainer = ViewComponentHelper.createGridContainer();
+
+        grid.setColumnReorderingAllowed(true);
+        grid.addClassName("rounded-grid");
+        grid.setSizeFull();
+
+        grid.addColumn(Verband::getName).setHeader("Verbandsname").setSortable(true).setFlexGrow(1);
+        grid.addColumn(Verband::getBeschreibung).setHeader("Beschreibung").setFlexGrow(2);
+        grid.addColumn(verband -> verband.getVereine() == null ? 0 : verband.getVereine().size())
                 .setHeader("Anzahl Vereine")
-                .setClassNameGenerator(item -> "align-numeric");
-        // Status-Spalte: zeigt mit Icon an, ob der aktuelle Benutzer beigetreten ist
+                .setFlexGrow(0)
+                .setTextAlign(ColumnTextAlign.END)
+                .setWidth("140px");
+
         grid.addComponentColumn(verband -> {
-            Benutzer currentUser = securityService.getAuthenticatedUser().orElse(null);
+            Benutzer currentUser = securityService.getAuthenticatedUser();
             if (currentUser == null) {
                 return new Span("");
             }
@@ -82,61 +111,85 @@ public class VerbaendeView extends VerticalLayout {
             icon.getStyle().set("color", istMitglied ? "var(--lumo-success-text-color)" : "var(--lumo-error-text-color)");
             icon.getElement().setProperty("title", istMitglied ? "Beigetreten" : "Nicht beigetreten");
             return icon;
-        }).setHeader("Beigetreten");
+          }).setHeader("Beigetreten")
+            .setTextAlign(ColumnTextAlign.CENTER)
+            .setFlexGrow(0)
+            .setWidth("120px");
+
         grid.addComponentColumn(this::createActionButtons)
             .setHeader("Aktionen")
             .setWidth("260px")
-            .setFlexGrow(0)
-            .setClassNameGenerator(item -> "actions-cell-padding");
+            .setFlexGrow(0);
 
-        add(grid);
+        grid.getColumns().forEach(c -> c.setAutoWidth(true));
+        grid.addThemeVariants(
+                com.vaadin.flow.component.grid.GridVariant.LUMO_ROW_STRIPES,
+                com.vaadin.flow.component.grid.GridVariant.LUMO_WRAP_CELL_CONTENT
+        );
+
+        gridContainer.add(emptyStateMessage, grid);
+        contentWrapper.add(gridContainer);
+        contentWrapper.expand(gridContainer);
+        add(contentWrapper);
     }
 
-    /**
-     * Erstellt Aktions-Buttons für Grid-Zeilen.
-     *
-     * @param verband Der Verband
-     * @return Button-Layout
-     */
     private HorizontalLayout createActionButtons(Verband verband) {
         Button disziplinenButton = new Button("Disziplinen", e -> zeigeDisziplinen(verband));
-        disziplinenButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
+        disziplinenButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_PRIMARY);
 
         HorizontalLayout layout = new HorizontalLayout(disziplinenButton);
 
-        Benutzer currentUser = securityService.getAuthenticatedUser().orElse(null);
+        Benutzer currentUser = securityService.getAuthenticatedUser();
 
         if (currentUser != null) {
-            boolean istMitglied = verbandService.istMitgliedImVerband(currentUser, verband.getId());
-            if (istMitglied) {
-                Button austrittButton = new Button("Austreten", e -> {
-                    verbandService.austretenAusVerband(currentUser, verband.getId());
-                    Notification.show("Sie haben den Verband verlassen.").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                    // Grid neu laden, damit Status- und Aktionsspalte aktualisiert werden
-                    updateGrid();
-                });
-                austrittButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-                austrittButton.addClassName("table-delete-btn");
-                layout.add(austrittButton);
-            } else {
-                Button beitretenButton = new Button("Beitreten", e -> {
-                    verbandService.beitretenZuVerband(currentUser, verband.getId());
-                    Notification.show("Sie sind dem Verband beigetreten.").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                    // Grid neu laden, damit Status- und Aktionsspalte aktualisiert werden
-                    updateGrid();
-                });
-                beitretenButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_SMALL);
-                layout.add(beitretenButton);
+            // Ermittle Verein, bei dem der Benutzer Vereinschef ist (falls vorhanden)
+            var chefMitgliedschaft = mitgliedschaftService.findeMitgliedschaften(currentUser).stream()
+                    .filter(m -> Boolean.TRUE.equals(m.getIstVereinschef()))
+                    .findFirst();
+
+            if (chefMitgliedschaft.isPresent()) {
+                Long vereinId = chefMitgliedschaft.get().getVereinId();
+                de.suchalla.schiessbuch.model.entity.Verein verein = verbandService.findeVerein(vereinId);
+                if (verein != null) {
+                    boolean vereinHatVerband = verein.getVerbaende() != null && verein.getVerbaende().stream()
+                            .anyMatch(v -> v.getId() != null && v.getId().equals(verband.getId()));
+
+                    if (vereinHatVerband) {
+                        Button entferneVonVerein = new Button("Aus Verein entfernen", e -> {
+                            try {
+                                verein.getVerbaende().removeIf(v -> v.getId() != null && v.getId().equals(verband.getId()));
+                                vereinService.aktualisiereVerein(verein);
+                                Notification.show("Verband aus Ihrem Verein entfernt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                                updateGrid();
+                            } catch (Exception ex) {
+                                Notification.show("Fehler: " + ex.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                            }
+                        });
+                        entferneVonVerein.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+                        layout.add(entferneVonVerein);
+                    } else {
+                        Button fuegeZuVereinHinzu = new Button("Für Verein hinzufügen", e -> {
+                            try {
+                                if (verein.getVerbaende() == null) {
+                                    verein.setVerbaende(new java.util.HashSet<>());
+                                }
+                                verein.getVerbaende().add(verband);
+                                vereinService.aktualisiereVerein(verein);
+                                Notification.show("Verband zum Verein hinzugefügt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                                updateGrid();
+                            } catch (Exception ex) {
+                                Notification.show("Fehler: " + ex.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                            }
+                        });
+                        fuegeZuVereinHinzu.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+                        layout.add(fuegeZuVereinHinzu);
+                    }
+                }
             }
         }
         return layout;
     }
 
-    /**
-     * Zeigt die Disziplinen eines Verbands in einem Dialog.
-     *
-     * @param verband Der Verband
-     */
     private void zeigeDisziplinen(Verband verband) {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Disziplinen von " + verband.getName());
@@ -146,7 +199,6 @@ public class VerbaendeView extends VerticalLayout {
         layout.setSpacing(true);
         layout.setPadding(true);
 
-        // Verwende die Service-Methode, die nach Verband-ID filtert
         List<Disziplin> disziplinen = disziplinService.findeDisziplinenVonVerbandEntities(verband.getId());
 
         if (disziplinen.isEmpty()) {
@@ -156,11 +208,12 @@ public class VerbaendeView extends VerticalLayout {
             layout.add(title);
 
             Grid<Disziplin> disziplinGrid = new Grid<>(Disziplin.class, false);
-            disziplinGrid.addColumn(Disziplin::getName).setHeader("Name");
-            disziplinGrid.addColumn(Disziplin::getBeschreibung).setHeader("Beschreibung");
+            disziplinGrid.addColumn(Disziplin::getKennziffer).setHeader("Kennziffer");
+            disziplinGrid.addColumn(d -> d.getProgramm() != null ? d.getProgramm() : "").setHeader("Programm");
             disziplinGrid.setItems(disziplinen);
             disziplinGrid.setAllRowsVisible(true);
 
+            disziplinGrid.getColumns().forEach(c -> c.setAutoWidth(true));
             layout.add(disziplinGrid);
         }
 
@@ -172,14 +225,15 @@ public class VerbaendeView extends VerticalLayout {
         dialog.open();
     }
 
-    /**
-     * Aktualisiert das Grid.
-     */
     private void updateGrid() {
-        List<Verband> verbaende = verbandService.findeAlleVerbaendeMitVereinenEntities(); // EAGER laden!
+        List<Verband> verbaende = verbandService.findeAlleVerbaendeMitVereinenEntities();
         grid.setItems(verbaende);
-        // Wichtig: Grid komplett neu rendern, damit Status und Buttons aktualisiert werden
         grid.recalculateColumnWidths();
         grid.getDataProvider().refreshAll();
+
+        // Zeige/Verstecke Empty State Message
+        boolean isEmpty = verbaende.isEmpty();
+        grid.setVisible(!isEmpty);
+        emptyStateMessage.setVisible(isEmpty);
     }
 }

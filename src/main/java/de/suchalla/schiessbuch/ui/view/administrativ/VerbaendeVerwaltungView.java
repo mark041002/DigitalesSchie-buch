@@ -7,10 +7,7 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -23,6 +20,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.component.UI;
 import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.service.VerbandService;
+import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 
@@ -30,9 +28,6 @@ import java.util.List;
 
 /**
  * View für Verbandsverwaltung (nur für Admins).
- *
- * @author Markus Suchalla
- * @version 1.0.1
  */
 @Route(value = "admin/verbaende", layout = MainLayout.class)
 @PageTitle("Verbände | Digitales Schießbuch")
@@ -60,45 +55,20 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
 
     private void createContent() {
         // Content-Wrapper für zentrierte Inhalte
-        VerticalLayout contentWrapper = new VerticalLayout();
-        contentWrapper.setSpacing(false);
-        contentWrapper.setPadding(false);
-        contentWrapper.addClassName("content-wrapper");
+        VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
 
         // Header-Bereich
-        Div header = new Div();
-        header.addClassName("gradient-header");
-        header.setWidthFull();
-
-        H2 title = new H2("Verbandsverwaltung");
-        title.getStyle().set("margin", "0");
-
-        header.add(title);
+        Div header = ViewComponentHelper.createGradientHeader("Verbandsverwaltung");
         contentWrapper.add(header);
 
         // Info-Box mit modernem Styling
-        Div infoBox = new Div();
-        infoBox.addClassName("info-box");
-        infoBox.setWidthFull();
-
-        Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
-        infoIcon.setSize("20px");
-
-        Paragraph beschreibung = new Paragraph(
+        Div infoBox = ViewComponentHelper.createInfoBox(
                 "Erstellen und verwalten Sie Verbände im System. Jeder Verband kann mehrere Vereine enthalten."
         );
-        beschreibung.getStyle()
-                .set("color", "var(--lumo-primary-text-color)")
-                .set("margin", "0");
-
-        infoBox.add(infoIcon, beschreibung);
         contentWrapper.add(infoBox);
 
         // Formular-Container
-        Div formContainer = new Div();
-        formContainer.addClassName("form-container");
-        formContainer.setWidthFull();
-        formContainer.getStyle().set("margin-bottom", "var(--lumo-space-l)");
+        Div formContainer = ViewComponentHelper.createFormContainer();
 
         H3 erstellenTitle = new H3("Neuen Verband erstellen");
         erstellenTitle.getStyle().set("margin-top", "0").set("margin-bottom", "var(--lumo-space-m)");
@@ -107,11 +77,8 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         nameField.setRequired(true);
         beschreibungField.setMaxLength(1000);
 
-        FormLayout formLayout = new FormLayout(nameField, beschreibungField);
-        formLayout.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("500px", 2)
-        );
+        FormLayout formLayout = ViewComponentHelper.createResponsiveFormLayout();
+        formLayout.add(nameField, beschreibungField);
 
         Button speichernButton = new Button("Verband erstellen", e -> speichereVerband());
         speichernButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -120,67 +87,40 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         contentWrapper.add(formContainer);
 
         // Grid-Container mit weißem Hintergrund
-        Div gridContainer = new Div();
-        gridContainer.addClassName("grid-container");
-        gridContainer.setWidthFull();
-        gridContainer.getStyle()
-                .set("flex", "1 1 auto")
-                .set("display", "flex")
-                .set("flex-direction", "column")
-                .set("min-height", "0")
-                .set("overflow-x", "auto")
-                .set("overflow-y", "auto");
+        Div gridContainer = ViewComponentHelper.createGridContainer();
 
         // Empty State Message
-        emptyStateMessage = new Div();
-        emptyStateMessage.addClassName("empty-state");
-        emptyStateMessage.setWidthFull();
-        emptyStateMessage.getStyle()
-                .set("text-align", "center")
-                .set("padding", "var(--lumo-space-xl)")
-                .set("color", "var(--lumo-secondary-text-color)");
-
-        Icon emptyIcon = VaadinIcon.INSTITUTION.create();
-        emptyIcon.setSize("48px");
-        emptyIcon.getStyle().set("margin-bottom", "var(--lumo-space-m)");
-
-        Paragraph emptyText = new Paragraph("Noch keine Verbände vorhanden.");
-        emptyText.getStyle().set("margin", "0");
-
-        emptyStateMessage.add(emptyIcon, emptyText);
+        emptyStateMessage = ViewComponentHelper.createEmptyStateMessage("Noch keine Verbände vorhanden.", VaadinIcon.INSTITUTION);
         emptyStateMessage.setVisible(false);
 
         // Grid
-        grid.setHeight("100%");
-        grid.setWidthFull();
-        grid.getStyle()
-                .set("min-height", "400px");
         grid.addClassName("rounded-grid");
-
+        grid.setColumnReorderingAllowed(true);
         grid.addColumn(Verband::getId)
                 .setHeader("ID")
                 .setWidth("80px")
-                .setAutoWidth(true)
                 .setFlexGrow(0)
                 .setTextAlign(ColumnTextAlign.END);
 
         grid.addColumn(Verband::getName)
                 .setHeader("Name")
-                .setAutoWidth(true)
                 .setFlexGrow(1);
 
         grid.addColumn(Verband::getBeschreibung)
                 .setHeader("Beschreibung")
-                .setAutoWidth(true)
                 .setFlexGrow(1);
 
         // Aktionen-Spalte mit Details und Löschen Buttons
         grid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen")
                 .setWidth("200px")
-                .setAutoWidth(true)
                 .setFlexGrow(0);
 
+        grid.getColumns().forEach(c -> c.setAutoWidth(true));
+        grid.addThemeVariants(
+                com.vaadin.flow.component.grid.GridVariant.LUMO_ROW_STRIPES,
+                com.vaadin.flow.component.grid.GridVariant.LUMO_WRAP_CELL_CONTENT
+        );
 
         gridContainer.add(emptyStateMessage, grid);
         contentWrapper.add(gridContainer);
