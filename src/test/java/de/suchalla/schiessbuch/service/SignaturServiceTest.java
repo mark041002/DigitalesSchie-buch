@@ -44,6 +44,9 @@ class SignaturServiceTest {
 
     @Mock
     private ZertifikatVerifizierungsService zertifikatVerifizierungsService;
+    
+        @Mock
+        private de.suchalla.schiessbuch.service.email.EmailService notificationService;
 
     @InjectMocks
     private SignaturService signaturService;

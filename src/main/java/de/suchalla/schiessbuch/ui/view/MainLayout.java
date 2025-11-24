@@ -55,6 +55,8 @@ public class MainLayout extends AppLayout {
         createDrawer();
     }
 
+    
+
     /**
      * Erstellt den Header mit modernem Design.
      */
@@ -310,7 +312,7 @@ public class MainLayout extends AppLayout {
                 .set("color", "var(--lumo-error-text-color)")
                 .set("justify-content", "flex-start");
 
-                mobileSection.add(profilButtonMobile, logoutButton);
+                                                                mobileSection.add(profilButtonMobile, logoutButton);
         return mobileSection;
     }
 

@@ -38,6 +38,9 @@ class VerbandServiceTest {
     private VereinsmitgliedschaftRepository mitgliedschaftRepository;
 
     @Mock
+    private DisziplinRepository disziplinRepository;
+
+    @Mock
     private VereinsmitgliedschaftService vereinsmitgliedschaftService;
 
     @Mock
@@ -144,6 +147,7 @@ class VerbandServiceTest {
 
     @Test
     void testLoescheVerband() {
+        when(disziplinRepository.findByVerbandId(1L)).thenReturn(List.of());
         doNothing().when(verbandRepository).deleteById(1L);
 
         service.loescheVerband(1L);
@@ -166,12 +170,14 @@ class VerbandServiceTest {
         verein.getMitgliedschaften().add(aktiveMitgliedschaft);
 
         when(vereinRepository.findById(1L)).thenReturn(Optional.of(verein));
+        when(zertifikatRepository.findByVerein(verein)).thenReturn(List.of());
+        when(mitgliedschaftRepository.save(any(Vereinsmitgliedschaft.class))).thenReturn(aktiveMitgliedschaft);
 
-        assertThrows(IllegalStateException.class, () -> {
-            service.loescheVerein(1L);
-        });
+        // Der Service markiert Mitgliedschaften als inaktiv und löscht dann den Verein
+        service.loescheVerein(1L);
 
-        verify(vereinRepository, never()).delete(any());
+        verify(mitgliedschaftRepository).save(aktiveMitgliedschaft);
+        verify(vereinRepository).delete(verein);
     }
 }
 

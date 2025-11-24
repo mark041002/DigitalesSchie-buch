@@ -222,6 +222,15 @@ public class BenutzerService {
     private String createToken(Benutzer benutzer, UserTokenTyp typ, Duration validity) {
         String token = java.util.UUID.randomUUID().toString();
         LocalDateTime expiryDate = LocalDateTime.now().plus(validity);
+        // Falls bereits ein Token für diesen Benutzer existiert (Unique-Constraint auf benutzer_id),
+        // dann löschen wir es zuerst, bevor wir einen neuen Token anlegen. Das verhindert
+        // SQL-Fehler beim Insert (duplicate key on benutzer_id).
+        if (benutzer != null && benutzer.getId() != null) {
+            userTokenRepository.deleteAllByBenutzerId(benutzer.getId());
+        } else if (benutzer != null) {
+            userTokenRepository.deleteAllByBenutzer(benutzer);
+        }
+
         UserToken userToken = new UserToken(token, expiryDate, typ, benutzer);
         userTokenRepository.save(userToken);
         return token;

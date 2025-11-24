@@ -10,7 +10,7 @@ import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.repository.VereinsmitgliedschaftRepository;
-import de.suchalla.schiessbuch.service.email.NotificationService;
+import de.suchalla.schiessbuch.service.email.EmailService;
 import de.suchalla.schiessbuch.testutil.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class VereinsmitgliedschaftServiceTest {
     private DigitalesZertifikatRepository zertifikatRepository;
 
     @Mock
-    private NotificationService notificationService;
+    private EmailService notificationService;
 
     @Mock
     private VereinsmigliedschaftMapper vereinsmigliedschaftMapper;

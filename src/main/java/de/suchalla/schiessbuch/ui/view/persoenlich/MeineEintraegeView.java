@@ -196,7 +196,7 @@ public class MeineEintraegeView extends VerticalLayout {
         // Grid mit modernem Styling - jetzt mit DTOs (flache Struktur)
         grid.addClassName("rounded-grid");
         grid.setSizeFull();
-        grid.addColumn(dto -> dto.getDatum() == null ? "" : dto.getDatum().format(dateFormatter))
+        grid.addColumn(dto -> dto.getDatum() == null ? "" : dateFormatter.format(dto.getDatum()))
                 .setHeader("Datum")
                 .setSortable(true);
 

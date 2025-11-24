@@ -14,7 +14,7 @@ import de.suchalla.schiessbuch.repository.BenutzerRepository;
 import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.repository.VereinsmitgliedschaftRepository;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
-import de.suchalla.schiessbuch.service.email.NotificationService;
+import de.suchalla.schiessbuch.service.email.EmailService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -43,9 +43,9 @@ public class VereinsmitgliedschaftService {
     private final DigitalesZertifikatRepository zertifikatRepository;
     private final BenutzerRepository benutzerRepository;
     private final PkiService pkiService;
-    private final NotificationService notificationService;
     private final VereinsmigliedschaftMapper vereinsmigliedschaftMapper;
     private final VerbandMapper verbandMapper;
+    private final EmailService notificationService;
 
     /**
      * Beantragt eine Vereinsmitgliedschaft.
@@ -284,6 +284,18 @@ public class VereinsmitgliedschaftService {
         return mitgliedschaftRepository.findByBenutzer(benutzer).stream()
                 .filter(m -> Boolean.TRUE.equals(m.getAktiv()))
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Findet alle Mitgliedschaften eines Benutzers als Entities (inkl. Anfragen und beendete Mitgliedschaften).
+     * Diese Methode liefert alle Status zurück und wird von UI-Views verwendet, die auch BEANTRAGT/ABGELEHNT sehen sollen.
+     *
+     * @param benutzer Der Benutzer
+     * @return Liste aller Mitgliedschaften als Entities
+     */
+    @Transactional(readOnly = true)
+    public List<Vereinsmitgliedschaft> findeAlleMitgliedschaftenVonBenutzerEntities(Benutzer benutzer) {
+        return mitgliedschaftRepository.findByBenutzer(benutzer);
     }
 
     /**

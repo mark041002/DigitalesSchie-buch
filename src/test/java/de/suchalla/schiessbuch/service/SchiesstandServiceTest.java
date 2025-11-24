@@ -26,6 +26,18 @@ class SchiesstandServiceTest {
     @Mock
     private SchiesstandRepository schiesstandRepository;
 
+    @Mock
+    private de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository zertifikatRepository;
+
+    @Mock
+    private de.suchalla.schiessbuch.repository.SchiessnachweisEintragRepository eintragRepository;
+
+    @Mock
+    private de.suchalla.schiessbuch.repository.BenutzerRepository benutzerRepository;
+
+    @Mock
+    private PkiService pkiService;
+
     @InjectMocks
     private SchiesstandService service;
 
@@ -81,6 +93,8 @@ class SchiesstandServiceTest {
     void testLoescheSchiesstandOhneEintraege() {
         schiesstand.setEintraege(new HashSet<>());
         when(schiesstandRepository.findById(1L)).thenReturn(Optional.of(schiesstand));
+        when(zertifikatRepository.findBySchiesstand(schiesstand)).thenReturn(List.of());
+        when(eintragRepository.findBySchiesstand(schiesstand)).thenReturn(List.of());
         doNothing().when(schiesstandRepository).delete(schiesstand);
 
         service.loescheSchiesstand(1L);
@@ -92,12 +106,13 @@ class SchiesstandServiceTest {
     void testLoescheSchiesstandMitEintraegenWirftException() {
         schiesstand.setEintraege(new HashSet<>(Arrays.asList(new de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag())));
         when(schiesstandRepository.findById(1L)).thenReturn(Optional.of(schiesstand));
+        when(zertifikatRepository.findBySchiesstand(schiesstand)).thenReturn(List.of());
+        when(eintragRepository.findBySchiesstand(schiesstand)).thenReturn(List.of(new de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag()));
 
-        assertThrows(IllegalStateException.class, () -> {
-            service.loescheSchiesstand(1L);
-        });
+        // Der Service löscht jetzt Einträge, wirft keine Exception mehr
+        service.loescheSchiesstand(1L);
 
-        verify(schiesstandRepository, never()).delete(any());
+        verify(schiesstandRepository).delete(schiesstand);
     }
 
     @Test

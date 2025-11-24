@@ -3,7 +3,6 @@ package de.suchalla.schiessbuch.ui.view.oeffentlich;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
@@ -12,7 +11,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Disziplin;
 import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.security.SecurityService;
@@ -23,9 +21,6 @@ import de.suchalla.schiessbuch.ui.view.MainLayout;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 import java.util.List;
-import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
 
 /**
  * Öffentliche Ansicht für Sportverbände - zeigt alle Verbände und deren Disziplinen.
@@ -38,7 +33,6 @@ public class VerbaendeView extends VerticalLayout {
 
     private final VerbandService verbandService;
     private final DisziplinService disziplinService;
-    private final SecurityService securityService;
 
     private final Grid<Verband> grid = new Grid<>(Verband.class, false);
 
@@ -47,7 +41,6 @@ public class VerbaendeView extends VerticalLayout {
                          SecurityService securityService) {
         this.verbandService = verbandService;
         this.disziplinService = disziplinService;
-        this.securityService = securityService;
 
         setSpacing(true);
         setPadding(true);
@@ -72,21 +65,6 @@ public class VerbaendeView extends VerticalLayout {
 
         grid.addColumn(Verband::getName).setHeader("Verbandsname").setSortable(true).setFlexGrow(1);
         grid.addColumn(Verband::getBeschreibung).setHeader("Beschreibung").setFlexGrow(2);
-
-        grid.addComponentColumn(verband -> {
-            Benutzer currentUser = securityService.getAuthenticatedUser();
-            if (currentUser == null) {
-                return new Span("");
-            }
-            boolean istMitglied = verbandService.istMitgliedImVerband(currentUser, verband.getId());
-            Icon icon = istMitglied ? VaadinIcon.CHECK.create() : VaadinIcon.CLOSE.create();
-            icon.getStyle().set("color", istMitglied ? "var(--lumo-success-text-color)" : "var(--lumo-error-text-color)");
-            icon.getElement().setProperty("title", istMitglied ? "Beigetreten" : "Nicht beigetreten");
-            return icon;
-          }).setHeader("Beigetreten")
-            .setTextAlign(ColumnTextAlign.CENTER)
-            .setFlexGrow(0)
-            .setWidth("120px");
 
         grid.addComponentColumn(this::createActionButtons)
             .setHeader("Aktionen")

@@ -27,7 +27,7 @@ import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.DisziplinService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
-import de.suchalla.schiessbuch.service.email.NotificationService;
+import de.suchalla.schiessbuch.service.email.EmailService;
 import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +51,7 @@ public class NeuerEintragView extends VerticalLayout {
     private final SchiessnachweisService schiessnachweisService;
     private final DisziplinService disziplinService;
     private final VereinsmitgliedschaftService vereinsmitgliedschaftService;
-    private final NotificationService notificationService;
+    private final EmailService notificationService;
 
     private final DatePicker datum = new DatePicker("Datum");
     private final ComboBox<Schiesstand> schiesstand = new ComboBox<>("Schießstand");
@@ -69,7 +69,7 @@ public class NeuerEintragView extends VerticalLayout {
                             DisziplinService disziplinService,
                             VereinsmitgliedschaftService vereinsmitgliedschaftService,
                             SecurityService securityService,
-                            NotificationService notificationService) {
+                            EmailService notificationService) {
         this.schiessnachweisService = schiessnachweisService;
         this.disziplinService = disziplinService;
         this.vereinsmitgliedschaftService = vereinsmitgliedschaftService;

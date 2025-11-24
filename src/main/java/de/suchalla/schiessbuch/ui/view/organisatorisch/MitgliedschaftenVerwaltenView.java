@@ -22,6 +22,9 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.server.StreamResource;
 import de.suchalla.schiessbuch.mapper.VereinMapper;
 import de.suchalla.schiessbuch.model.dto.VereinsmigliedschaftDTO;
@@ -53,7 +56,7 @@ import java.util.stream.Collectors;
 @PageTitle("Mitgliedsverwaltung | Digitales Schießbuch")
 @RolesAllowed({"VEREINS_CHEF", "AUFSEHER", "SCHIESSSTAND_AUFSEHER", "ADMIN"})
 @Slf4j
-public class MitgliedschaftenVerwaltenView extends VerticalLayout {
+public class MitgliedschaftenVerwaltenView extends VerticalLayout implements BeforeEnterObserver {
 
     private final VereinsmitgliedschaftService mitgliedschaftService;
     private final PdfExportService pdfExportService;
@@ -63,6 +66,12 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
 
     private final Grid<VereinsmigliedschaftDTO> mitgliederGrid = new Grid<>(VereinsmigliedschaftDTO.class, false);
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
+    // Tabs as class fields so we can select them from beforeEnter
+    private Tab genehmigtTab;
+    private Tab beantragtTab;
+    private Tab abgelehntTab;
+    private Tabs tabs;
 
     private final TextField suchfeld = new TextField();
     private final DatePicker vonDatum = new DatePicker("Von");
@@ -77,6 +86,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
     private Tab aktuellerTab;
     private Tab alleTab;
     private Grid.Column<VereinsmigliedschaftDTO> statusColumn;
+    private Grid.Column<VereinsmigliedschaftDTO> rolleColumn;
 
     public MitgliedschaftenVerwaltenView(SecurityService securityService,
                                          VereinsmitgliedschaftService mitgliedschaftService,
@@ -158,15 +168,15 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         tabsContainer.setWidthFull();
 
         // Tabs fÃ¼r Status-Filter
-        Tab genehmigtTab = new Tab("Aktive Mitglieder");
-        Tab beantragtTab = new Tab("Zur Genehmigung");
-        Tab abgelehntTab = new Tab("Abgelehnte");
+        genehmigtTab = new Tab("Aktive Mitglieder");
+        beantragtTab = new Tab("Zur Genehmigung");
+        abgelehntTab = new Tab("Abgelehnte");
         alleTab = new Tab("Alle");
 
         // Setze initialen Tab
         aktuellerTab = genehmigtTab;
 
-        Tabs tabs = new Tabs(genehmigtTab, beantragtTab, abgelehntTab, alleTab);
+        tabs = new Tabs(genehmigtTab, beantragtTab, abgelehntTab, alleTab);
         tabs.setWidthFull();
 
         // CSS fÃ¼r grÃ¶ÃŸeren Indikator-Balken
@@ -194,6 +204,10 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             // Zeige/Verstecke Status-Spalte
             if (statusColumn != null) {
                 statusColumn.setVisible(selectedTab == alleTab);
+            }
+            // Zeige/Verstecke Rollenspalte (bei 'Zur Genehmigung' und 'Abgelehnte' ausblenden)
+            if (rolleColumn != null) {
+                rolleColumn.setVisible(!(selectedTab == beantragtTab || selectedTab == abgelehntTab));
             }
 
             updateGrid();
@@ -225,6 +239,30 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
 
         add(contentWrapper);
         updateGrid();
+    }
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        QueryParameters queryParams = event.getLocation().getQueryParameters();
+        if (queryParams.getParameters().containsKey("tab")) {
+            String tab = queryParams.getParameters().get("tab").get(0);
+            if (tabs != null && beantragtTab != null) {
+                if ("beantragt".equalsIgnoreCase(tab) || "zur_genehmigung".equalsIgnoreCase(tab) || "zurGenehmigung".equalsIgnoreCase(tab)) {
+                    tabs.setSelectedTab(beantragtTab);
+                    aktuellerStatus = MitgliedschaftsStatus.BEANTRAGT;
+                    updateFilterLayout(false);
+                    if (statusColumn != null) statusColumn.setVisible(false);
+                    if (rolleColumn != null) rolleColumn.setVisible(true);
+                    updateGrid();
+                } else if ("alle".equalsIgnoreCase(tab)) {
+                    tabs.setSelectedTab(alleTab);
+                    aktuellerStatus = null;
+                    updateFilterLayout(true);
+                    if (statusColumn != null) statusColumn.setVisible(true);
+                    updateGrid();
+                }
+            }
+        }
     }
 
     /**
@@ -306,13 +344,20 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         mitgliederGrid.addColumn(VereinsmigliedschaftDTO::getBenutzerEmail)
                 .setHeader("E-Mail")
                 .setAutoWidth(true);
-        mitgliederGrid.addColumn(dto -> dto.getBeitrittDatum() == null ? "" : dto.getBeitrittDatum().format(dateFormatter))
-            .setHeader("Beitrittsdatum")
+        mitgliederGrid.addColumn(dto -> {
+                if (dto == null) return "";
+                // Bei abgelehnten Einträgen, falls ein Austrittsdatum vorhanden ist, dieses anzeigen
+                if (dto.getStatus() == MitgliedschaftsStatus.ABGELEHNT && dto.getAustrittDatum() != null) {
+                    return dateFormatter.format(dto.getAustrittDatum());
+                }
+                return dto.getBeitrittDatum() == null ? "" : dateFormatter.format(dto.getBeitrittDatum());
+            })
+            .setHeader("Datum")
             .setSortable(true)
             .setAutoWidth(true);
-        mitgliederGrid.addColumn(this::getRolleText)
-                .setHeader("Rolle")
-                .setAutoWidth(true);
+        rolleColumn = mitgliederGrid.addColumn(this::getRolleText)
+            .setHeader("Rolle")
+            .setAutoWidth(true);
 
         // Status-Spalte with reference
         statusColumn = mitgliederGrid.addColumn(this::getStatusText)
@@ -341,9 +386,10 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
         layout.setWidth("100%");
 
         // Für beantragte Mitgliedschaften: Genehmigen/Ablehnen
-        if (dto.getStatus() == MitgliedschaftsStatus.BEANTRAGT) {
+            if (dto.getStatus() == MitgliedschaftsStatus.BEANTRAGT) {
             Button genehmigenButton = new Button("Genehmigen", e -> genehmigen(dto.getId()));
-            genehmigenButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_SMALL);
+            // Einheitliches Design: weißer Text auf blauem Hintergrund (Primary)
+            genehmigenButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
             Button ablehnenButton = new Button("Ablehnen", e -> zeigeAblehnungsDialog(dto.getId()));
             ablehnenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
@@ -378,6 +424,14 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
                 entfernenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
                 layout.add(entfernenButton);
             }
+        }
+
+        // Für abgelehnte Mitgliedschaften: Lösch-Button
+        if (dto.getStatus() == MitgliedschaftsStatus.ABGELEHNT) {
+            Button loeschenButton = new Button("Löschen", e -> loescheMitgliedschaft(dto.getId()));
+            loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+            loeschenButton.getElement().setAttribute("title", "Eintrag endgültig löschen");
+            layout.add(loeschenButton);
         }
 
         return layout;
@@ -478,6 +532,23 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout {
             log.info("Mitglied entfernt (ID: {})", mitgliedschaftId);
         } catch (Exception e) {
             log.error("Fehler beim Entfernen des Mitglieds", e);
+            Notification.show("Fehler: " + e.getMessage())
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
+    }
+
+    /**
+     * Löscht eine Mitgliedschaft endgültig (nur zulässig für ABGELEHNT/VERLASSEN/BEENDET).
+     */
+    private void loescheMitgliedschaft(Long mitgliedschaftId) {
+        try {
+            mitgliedschaftService.loescheMitgliedschaft(mitgliedschaftId);
+            Notification.show("Mitgliedschaft gelöscht")
+                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            updateGrid();
+            log.info("Mitgliedschaft gelöscht (ID: {})", mitgliedschaftId);
+        } catch (Exception e) {
+            log.error("Fehler beim Löschen der Mitgliedschaft", e);
             Notification.show("Fehler: " + e.getMessage())
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }

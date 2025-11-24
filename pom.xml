@@ -19,9 +19,9 @@
     <description>Webbasierte Schießnachweisverwaltung</description>
 
     <properties>
-        <java.version>21</java.version>
-        <vaadin.version>24.3.0</vaadin.version>
-        <bouncycastle.version>1.77</bouncycastle.version>
+        <java.version>23</java.version>
+        <vaadin.version>24.5.8</vaadin.version>
+        <bouncycastle.version>1.79</bouncycastle.version>
         <mockito.version>5.20.0</mockito.version>
         <byte-buddy.version>1.18.1</byte-buddy.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -65,6 +65,13 @@
         <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-spring-boot-starter</artifactId>
+            <exclusions>
+                <!-- Copilot in Production deaktiviert -->
+                <exclusion>
+                    <groupId>com.vaadin</groupId>
+                    <artifactId>copilot</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Validation -->
@@ -206,8 +213,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <source>23</source>
+                    <target>23</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>

@@ -6,7 +6,7 @@ import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import de.suchalla.schiessbuch.repository.SchiessnachweisEintragRepository;
-import de.suchalla.schiessbuch.service.email.NotificationService;
+import de.suchalla.schiessbuch.service.email.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,7 +29,7 @@ public class SignaturService {
     private final DigitalesZertifikatRepository zertifikatRepository;
     private final SchiessnachweisEintragRepository eintragRepository;
     private final SchiessnachweisService schiessnachweisService;
-    private final NotificationService notificationService;
+    private final EmailService notificationService;
 
     /**
      * Signiert einen Schießnachweis-Eintrag anhand der ID.
@@ -97,7 +97,7 @@ public class SignaturService {
                 "ID:%d|Schuetze:%s|Datum:%s|Disziplin:%s|Schiesstand:%s|AnzahlSchuesse:%d|Ergebnis:%s|Kaliber:%s|Waffenart:%s",
                 eintrag.getId(),
                 eintrag.getSchuetze().getEmail(),
-                eintrag.getDatum().format(dateFormatter),
+                dateFormatter.format(eintrag.getDatum()),
                 eintrag.getDisziplin().getKennziffer(),
                 eintrag.getSchiesstand().getName(),
                 eintrag.getAnzahlSchuesse() != null ? eintrag.getAnzahlSchuesse() : 0,

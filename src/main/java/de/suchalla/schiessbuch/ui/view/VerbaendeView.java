@@ -77,7 +77,7 @@ public class VerbaendeView extends VerticalLayout {
         grid.addColumn(Verband::getBeschreibung).setHeader("Beschreibung");
         grid.addColumn(verband -> verband.getVereine().size())
                 .setHeader("Anzahl Vereine")
-                .setClassNameGenerator(item -> "align-numeric");
+                .setPartNameGenerator(item -> "align-numeric");
         // Status-Spalte: zeigt mit Icon an, ob der aktuelle Benutzer beigetreten ist
         grid.addComponentColumn(verband -> {
             Benutzer currentUser = securityService.getAuthenticatedUser();

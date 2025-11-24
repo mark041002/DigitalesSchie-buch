@@ -141,10 +141,6 @@ public class RegisterView extends VerticalLayout {
         );
     }
 
-    private String getBaseUrl() {
-        return "http://localhost:8000";
-    }
-
     /**
      * Führt die Registrierung durch.
      */
@@ -160,14 +156,12 @@ public class RegisterView extends VerticalLayout {
             benutzer.setEmailVerifiziert(false);
             benutzerService.registriereBenutzer(benutzer);
             
-            // Verifizierungslink generieren und E-Mail versenden (mit Fehlerbehandlung)
+            // Verifizierungs-Token generieren und E-Mail versenden (E-Mail-Service baut den Link)
             String token = benutzerService.erstelleVerifizierungsToken(benutzer);
-            String link = getBaseUrl() + "/email-verifizieren?token=" + token;
-            
             try {
                 Map<String, Object> vars = new HashMap<>();
                 vars.put("username", benutzer.getVollstaendigerName());
-                vars.put("verificationLink", link);
+                vars.put("token", token);
                 emailService.sendMail(benutzer.getEmail(), "Digitales Schießbuch - E-Mail bestätigen", "verification.html", vars);
                 log.info("Verifizierungs-E-Mail erfolgreich an {} versendet", benutzer.getEmail());
             } catch (Exception mailException) {

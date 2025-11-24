@@ -117,7 +117,7 @@ public class MitgliederVerwaltungView extends VerticalLayout {
                 .setFlexGrow(0)
                 .setResizable(true);
 
-        grid.addColumn(b -> b.getErstelltAm() != null ? b.getErstelltAm().toLocalDate().format(dateFormatter) : "-")
+        grid.addColumn(b -> b.getErstelltAm() != null ? dateFormatter.format(b.getErstelltAm().toLocalDate()) : "-")
             .setHeader("Erstellt")
             .setFlexGrow(0)
             .setResizable(true);

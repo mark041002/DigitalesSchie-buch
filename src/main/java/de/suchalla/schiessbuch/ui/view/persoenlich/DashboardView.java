@@ -266,8 +266,9 @@ public class DashboardView extends VerticalLayout {
 
         // Zusätzliche Buttons für Vereinschef
         if (user.getRolle() == BenutzerRolle.VEREINS_CHEF) {
-            actionsGrid.add(createActionButton("Alle Mitglieder", VaadinIcon.USERS, "vereinsmitglieder"));
-            actionsGrid.add(createActionButton("Eintragsverwaltung", VaadinIcon.RECORDS, "eintraege-verwaltung"));
+                        actionsGrid.add(createActionButton("Alle Mitglieder", VaadinIcon.USERS, "mitgliedsverwaltung"));
+                        actionsGrid.add(createActionButton("Beitrittsanfragen", VaadinIcon.USER_CHECK, "mitgliedsverwaltung?tab=beantragt"));
+                        actionsGrid.add(createActionButton("Eintragsverwaltung", VaadinIcon.RECORDS, "eintraege-verwaltung"));
         }
 
         // Eintragsverwaltung-Button für Aufseher und Admin

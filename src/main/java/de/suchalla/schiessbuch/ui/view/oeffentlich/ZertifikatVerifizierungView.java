@@ -237,7 +237,7 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
             Span pruefzeitLabel = new Span("Geprüft zum Zeitpunkt: ");
             pruefzeitLabel.getStyle().set("font-weight", "600");
 
-            Span pruefzeitWert = new Span(pruefZeitpunkt.format(dateFormatter) + " Uhr");
+            Span pruefzeitWert = new Span(dateFormatter.format(pruefZeitpunkt) + " Uhr");
             pruefzeitDiv.add(pruefzeitLabel, pruefzeitWert);
 
             // Zertifikatsdetails
@@ -355,8 +355,8 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
         if (dt == null) {
             return "Unbekannt";
         }
-        try {
-            return dt.format(dateFormatter) + " Uhr";
+            try {
+            return dateFormatter.format(dt) + " Uhr";
         } catch (Exception e) {
             log.warn("Fehler beim Formatieren des Datums: {}", e.getMessage());
             return "Unbekannt";

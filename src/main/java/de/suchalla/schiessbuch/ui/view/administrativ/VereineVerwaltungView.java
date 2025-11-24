@@ -169,7 +169,7 @@ public class VereineVerwaltungView extends VerticalLayout {
                     return layout;
                 }).setHeader("Aktionen")
                 .setFlexGrow(0)
-                .setClassNameGenerator(item -> "actions-cell-padding");
+                .setPartNameGenerator(item -> "actions-cell-padding");
         
         grid.getColumns().forEach(c -> c.setAutoWidth(true));
         grid.addThemeVariants(

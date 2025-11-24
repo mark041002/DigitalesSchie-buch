@@ -7,7 +7,6 @@ import de.suchalla.schiessbuch.testutil.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -22,13 +21,17 @@ import static org.mockito.Mockito.*;
 class NotificationServiceTest {
 
     @Mock
-    private EmailService emailService;
+    private jakarta.mail.internet.MimeMessage mimeMessage; // placeholder to satisfy injection if needed
+
+    @Mock
+    private org.springframework.mail.javamail.JavaMailSender mailSender;
 
     @Mock
     private VereinsmitgliedschaftRepository mitgliedschaftRepository;
 
-    @InjectMocks
-    private NotificationService notificationService;
+    private EmailService emailService;
+
+    private EmailService spyService;
 
     private Benutzer schuetze;
     private Benutzer chef;
@@ -38,7 +41,9 @@ class NotificationServiceTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(notificationService, "baseUrl", "http://localhost:8000");
+        emailService = new EmailService(mailSender, mitgliedschaftRepository);
+        spyService = org.mockito.Mockito.spy(emailService);
+        ReflectionTestUtils.setField(spyService, "configuredBaseUrl", "http://localhost:8000");
 
         schuetze = TestDataFactory.createBenutzer(1L, "schuetze@example.com");
         chef = TestDataFactory.createBenutzer(2L, "chef@example.com");
@@ -57,20 +62,20 @@ class NotificationServiceTest {
 
         when(mitgliedschaftRepository.findByVereinAndIstVereinschef(verein, true)).thenReturn(Arrays.asList(chefMitgliedschaft));
         when(mitgliedschaftRepository.findByVereinAndIstAufseher(verein, true)).thenReturn(Arrays.asList());
-        doNothing().when(emailService).sendMail(anyString(), anyString(), anyString(), anyMap());
+        org.mockito.Mockito.doNothing().when(spyService).sendMail(anyString(), anyString(), anyString(), anyMap());
 
-        notificationService.notifySignatureRequest(eintrag);
+        spyService.notifySignatureRequest(eintrag);
 
-        verify(emailService, times(1)).sendMail(eq("chef@example.com"), anyString(), anyString(), anyMap());
+        org.mockito.Mockito.verify(spyService, times(1)).sendMail(eq("chef@example.com"), anyString(), anyString(), anyMap());
     }
 
     @Test
     void testNotifySignatureRequestOhneVerein() {
         eintrag.setSchiesstand(null);
 
-        notificationService.notifySignatureRequest(eintrag);
+        spyService.notifySignatureRequest(eintrag);
 
-        verify(emailService, never()).sendMail(anyString(), anyString(), anyString(), anyMap());
+        org.mockito.Mockito.verify(spyService, never()).sendMail(anyString(), anyString(), anyString(), anyMap());
     }
 
     @Test
@@ -79,30 +84,30 @@ class NotificationServiceTest {
         chefMitgliedschaft.setIstVereinschef(true);
 
         when(mitgliedschaftRepository.findByVereinAndIstVereinschef(verein, true)).thenReturn(Arrays.asList(chefMitgliedschaft));
-        doNothing().when(emailService).sendMail(anyString(), anyString(), anyString(), anyMap());
+        org.mockito.Mockito.doNothing().when(spyService).sendMail(anyString(), anyString(), anyString(), anyMap());
 
-        notificationService.notifyMembershipRequest(verein, schuetze);
+        spyService.notifyMembershipRequest(verein, schuetze);
 
-        verify(emailService, times(1)).sendMail(eq("chef@example.com"), anyString(), anyString(), anyMap());
+        org.mockito.Mockito.verify(spyService, times(1)).sendMail(eq("chef@example.com"), anyString(), anyString(), anyMap());
     }
 
     @Test
     void testNotifyEntrySigned() {
         schuetze.setEmailNotificationsEnabled(true);
-        doNothing().when(emailService).sendMail(anyString(), anyString(), anyString(), anyMap());
+        org.mockito.Mockito.doNothing().when(spyService).sendMail(anyString(), anyString(), anyString(), anyMap());
 
-        notificationService.notifyEntrySigned(eintrag);
+        spyService.notifyEntrySigned(eintrag);
 
-        verify(emailService, times(1)).sendMail(eq("schuetze@example.com"), anyString(), anyString(), anyMap());
+        org.mockito.Mockito.verify(spyService, times(1)).sendMail(eq("schuetze@example.com"), anyString(), anyString(), anyMap());
     }
 
     @Test
     void testNotifyEntrySignedNotificationsDisabled() {
         schuetze.setEmailNotificationsEnabled(false);
 
-        notificationService.notifyEntrySigned(eintrag);
+        spyService.notifyEntrySigned(eintrag);
 
-        verify(emailService, never()).sendMail(anyString(), anyString(), anyString(), anyMap());
+        org.mockito.Mockito.verify(spyService, never()).sendMail(anyString(), anyString(), anyString(), anyMap());
     }
 }
 

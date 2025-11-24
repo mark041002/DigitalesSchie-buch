@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Collections;
 import org.springframework.stereotype.Component;
+import com.vaadin.flow.component.UI;
 
 /**
  * Service für Security-Utilities.
@@ -42,6 +43,14 @@ public class SecurityService {
      */
     public void logout() {
         authenticationContext.logout();
+        try {
+            UI ui = UI.getCurrent();
+            if (ui != null) {
+                ui.getPage().setLocation("/digschbuch/login");
+            }
+        } catch (Exception ignored) {
+            // UI not available or navigation failed; ignore to avoid breaking logout
+        }
     }
 
     /**

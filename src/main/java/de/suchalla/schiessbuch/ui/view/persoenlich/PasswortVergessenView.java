@@ -65,10 +65,6 @@ public class PasswortVergessenView extends VerticalLayout {
         add(title, beschreibung, emailField, sendenButton, loginLink);
     }
 
-    private String getBaseUrl() {
-        return "http://localhost:8000";
-    }
-
     private void sendeResetLink() {
         String email = emailField.getValue();
         if (email == null || email.trim().isEmpty()) {
@@ -84,12 +80,10 @@ public class PasswortVergessenView extends VerticalLayout {
             // Aus Sicherheitsgründen immer eine Erfolgsmeldung anzeigen, auch wenn die E-Mail nicht existiert
             if (benutzer != null) {
                 String token = benutzerService.erstellePasswortResetToken(benutzer);
-                String baseUrl = getBaseUrl();
-                String resetLink = baseUrl + "/passwort-reset?token=" + token;
 
                 Map<String, Object> vars = new HashMap<>();
                 vars.put("username", benutzer.getVollstaendigerName());
-                vars.put("resetLink", resetLink);
+                vars.put("token", token);
 
                 emailService.sendMail(benutzer.getEmail(), "Digitales Schießbuch - Passwort zurücksetzen", "password-reset.html", vars);
                 log.info("Passwort-Reset-Link an {} gesendet", email);

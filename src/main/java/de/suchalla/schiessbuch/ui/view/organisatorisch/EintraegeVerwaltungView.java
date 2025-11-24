@@ -402,7 +402,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         grid.addColumn(dto -> (dto.getSchuetzeVorname() + " " + dto.getSchuetzeNachname()).trim())
                 .setHeader("Schütze")
                 .setSortable(true);
-        grid.addColumn(dto -> dto.getDatum() == null ? "" : dto.getDatum().format(dateFormatter))
+        grid.addColumn(dto -> dto.getDatum() == null ? "" : dateFormatter.format(dto.getDatum()))
             .setHeader("Datum")
             .setSortable(true);
         grid.addColumn(SchiessnachweisEintragListDTO::getDisziplinName)

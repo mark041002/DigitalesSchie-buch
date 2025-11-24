@@ -46,6 +46,9 @@ class BenutzerServiceTest {
     @Mock
     private BenutzerMapper benutzerMapper;
 
+    @Mock
+    private de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository digitalesZertifikatRepository;
+
     @InjectMocks
     private BenutzerService benutzerService;
 
@@ -158,6 +161,9 @@ class BenutzerServiceTest {
 
     @Test
     void testLoescheBenutzer() {
+        when(benutzerRepository.findById(testBenutzer.getId())).thenReturn(Optional.of(testBenutzer));
+        doNothing().when(digitalesZertifikatRepository).deleteAllByBenutzerId(testBenutzer.getId());
+        doNothing().when(userTokenRepository).deleteAllByBenutzer(testBenutzer);
         doNothing().when(benutzerRepository).delete(any(Benutzer.class));
 
         benutzerService.loescheBenutzer(testBenutzer);

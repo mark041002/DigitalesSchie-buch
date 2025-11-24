@@ -34,7 +34,6 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final PkiService pkiService;
     private final SchiessnachweisEintragRepository eintragRepository;
-    private final de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository zertifikatRepository;
 
     @Override
     public void run(String... args) {

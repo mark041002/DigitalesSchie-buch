@@ -141,22 +141,13 @@ public class MeineVereineView extends VerticalLayout {
         grid.addColumn(mitgliedschaft -> {
             if (mitgliedschaft == null) return "Unbekannt";
             LocalDate d = mitgliedschaft.getBeitrittDatum();
-            return d == null ? "Unbekannt" : d.format(dateFormatter);
+            return d == null ? "Unbekannt" : dateFormatter.format(d);
         })
                 .setHeader("Beitrittsdatum")
                 .setTextAlign(ColumnTextAlign.START);
 
-        // Status als einfache Textspalte (nicht als ComponentColumn mit Div/Span)
-        grid.addColumn(mitgliedschaft -> {
-            if (mitgliedschaft == null || mitgliedschaft.getStatus() == null) return "Unbekannt";
-            return switch (mitgliedschaft.getStatus()) {
-                case AKTIV -> "Aktiv";
-                case BEANTRAGT -> "Beantragt";
-                case ABGELEHNT -> "Abgelehnt";
-                case BEENDET -> "Beendet";
-                case VERLASSEN -> "Verlassen";
-            };
-        })
+        // Status als farbige Pill (ComponentColumn)
+        grid.addComponentColumn(mitgliedschaft -> createStatusPill(mitgliedschaft))
                 .setHeader("Status")
                 .setTextAlign(ColumnTextAlign.START);
 
@@ -181,6 +172,59 @@ public class MeineVereineView extends VerticalLayout {
         contentWrapper.add(gridContainer);
         contentWrapper.expand(gridContainer);
         add(contentWrapper);
+    }
+
+    /**
+     * Erzeugt eine farbige Status-Pill für das Grid (grün/gelb/rot).
+     */
+    private Span createStatusPill(Vereinsmitgliedschaft m) {
+        Span pill = new Span();
+        pill.getStyle().set("display", "inline-block");
+        pill.getStyle().set("padding", "0.15rem 0.6rem");
+        pill.getStyle().set("border-radius", "12px");
+        pill.getStyle().set("font-size", "0.85rem");
+
+        if (m == null || m.getStatus() == null) {
+            pill.setText("Unbekannt");
+            pill.getStyle().set("background-color", "#9e9e9e");
+            pill.getStyle().set("color", "white");
+            return pill;
+        }
+
+        switch (m.getStatus()) {
+            case AKTIV -> {
+                pill.setText("Aktiv");
+                pill.getStyle().set("background-color", "#4caf50");
+                pill.getStyle().set("color", "white");
+            }
+            case BEANTRAGT -> {
+                pill.setText("Beantragt");
+                pill.getStyle().set("background-color", "#ffb300");
+                pill.getStyle().set("color", "black");
+            }
+            case ABGELEHNT -> {
+                pill.setText("Abgelehnt");
+                pill.getStyle().set("background-color", "#d32f2f");
+                pill.getStyle().set("color", "white");
+            }
+            case BEENDET -> {
+                pill.setText("Beendet");
+                pill.getStyle().set("background-color", "#d32f2f");
+                pill.getStyle().set("color", "white");
+            }
+            case VERLASSEN -> {
+                pill.setText("Verlassen");
+                pill.getStyle().set("background-color", "#d32f2f");
+                pill.getStyle().set("color", "white");
+            }
+            default -> {
+                pill.setText(m.getStatus().name());
+                pill.getStyle().set("background-color", "#9e9e9e");
+                pill.getStyle().set("color", "white");
+            }
+        }
+
+        return pill;
     }
 
 
@@ -331,8 +375,8 @@ public class MeineVereineView extends VerticalLayout {
      */
     private void updateGrid() {
         if (currentUser != null) {
-            List<Vereinsmitgliedschaft> mitgliedschaften =
-                    mitgliedschaftService.findeMitgliedschaftenVonBenutzerEntities(currentUser);
+                List<Vereinsmitgliedschaft> mitgliedschaften =
+                    mitgliedschaftService.findeAlleMitgliedschaftenVonBenutzerEntities(currentUser);
             grid.setItems(mitgliedschaften);
 
             // Zeige/Verstecke Empty State Message
