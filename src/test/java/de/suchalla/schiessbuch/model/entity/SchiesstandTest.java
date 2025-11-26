@@ -1,7 +1,6 @@
 package de.suchalla.schiessbuch.model.entity;
 
-import de.suchalla.schiessbuch.mapper.SchiesstandMapper;
-import de.suchalla.schiessbuch.model.dto.SchiesstandDTO;
+import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.enums.SchiesstandTyp;
 import de.suchalla.schiessbuch.testutil.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +12,6 @@ class SchiesstandTest {
 
     private Schiesstand schiesstand;
     private Verein verein;
-    private SchiesstandMapper mapper;
 
     @BeforeEach
     void setUp() {
@@ -73,7 +71,7 @@ class SchiesstandTest {
 
     @Test
     void testEntityToDtoMapping() {
-        SchiesstandDTO dto = mapper.toDTO(schiesstand);
+        Schiesstand dto = mapper.toDTO(schiesstand);
 
         assertNotNull(dto);
         assertEquals(schiesstand.getId(), dto.getId());
@@ -87,7 +85,7 @@ class SchiesstandTest {
 
     @Test
     void testEntityToDtoMappingNull() {
-        SchiesstandDTO dto = mapper.toDTO(null);
+        Schiesstand dto = mapper.toDTO(null);
         assertNull(dto);
     }
 
@@ -96,7 +94,7 @@ class SchiesstandTest {
         Benutzer aufseher = TestDataFactory.createBenutzer(2L, "aufseher@example.com");
         schiesstand.setAufseher(aufseher);
 
-        SchiesstandDTO dto = mapper.toDTO(schiesstand);
+        Schiesstand dto = mapper.toDTO(schiesstand);
 
         assertNotNull(dto);
         assertEquals(aufseher.getId(), dto.getAufseherId());

@@ -39,7 +39,7 @@ import java.util.List;
  * @author Markus Suchalla
  * @version 1.0.1
  */
-@Route(value = "admin/zertifikate", layout = MainLayout.class)
+@Route(value = "zertifikate", layout = MainLayout.class)
 @PageTitle("Zertifikate | Digitales Schießbuch")
 @RolesAllowed({"ADMIN", "AUFSEHER", "SCHIESSSTAND_AUFSEHER", "VEREINS_CHEF"})
 public class ZertifikateView extends VerticalLayout {
@@ -171,12 +171,16 @@ public class ZertifikateView extends VerticalLayout {
         Button detailsButton = new Button("Details", VaadinIcon.EYE.create());
         detailsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
         detailsButton.addClickListener(e -> zeigeDetailsDialog(zertifikat));
-
         if (aktuellerTab == gueltigTab) {
-            Button widerrufenButton = new Button("Widerrufen", VaadinIcon.BAN.create());
-            widerrufenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-            widerrufenButton.addClickListener(e -> zeigeLoeschDialog(zertifikat));
-            return new HorizontalLayout(detailsButton, widerrufenButton);
+            // Nur anzeigen, wenn der aktuelle Benutzer berechtigt ist (Admin oder Vereinschef des betroffenen Vereins)
+            if (userCanRevoke(zertifikat)) {
+                Button widerrufenButton = new Button("Widerrufen", VaadinIcon.BAN.create());
+                widerrufenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+                widerrufenButton.addClickListener(e -> zeigeLoeschDialog(zertifikat));
+                return new HorizontalLayout(detailsButton, widerrufenButton);
+            }
+            // Keine Widerrufen-Schaltfläche für nicht berechtigte Benutzer
+            return new HorizontalLayout(detailsButton);
         } else {
             Button endgueltigLoeschenButton = new Button("Endgültig löschen", VaadinIcon.TRASH.create());
             endgueltigLoeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
@@ -257,6 +261,13 @@ public class ZertifikateView extends VerticalLayout {
     }
 
     private void loescheZertifikat(DigitalesZertifikat zertifikat, String grund) {
+        // Zusätzliche serverseitige Prüfung: nur Admins und Vereinschefs dürfen widerrufen
+        if (!userCanRevoke(zertifikat)) {
+            Notification.show("Sie haben keine Berechtigung, dieses Zertifikat zu widerrufen.")
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
+
         try {
             String typ = zertifikat.getZertifikatsTyp() != null ? zertifikat.getZertifikatsTyp().toUpperCase() : "";
             // Verhindere Widerruf von ROOT und VEREIN Zertifikaten
@@ -398,6 +409,44 @@ public class ZertifikateView extends VerticalLayout {
                             && zertifikat.getSchiesstand().getVerein().getId().equals(vereinDesMitglieds.getId())) {
                         return true;
                     }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Prüft, ob der aktuell eingeloggte Benutzer berechtigt ist, das gegebene Zertifikat zu widerrufen.
+     * Erlaubt sind: ROLE_ADMIN oder Vereinschef des betroffenen Vereins (falls vorhanden).
+     */
+    private boolean userCanRevoke(DigitalesZertifikat zertifikat) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return false;
+
+        // Admins dürfen immer
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (isAdmin) return true;
+
+        String username = auth.getName();
+        if (username == null) return false;
+
+        Benutzer current = benutzerService.findeBenutzerByEmailWithMitgliedschaften(username);
+        if (current == null) return false;
+
+        // Bestimme betroffenen Verein des Zertifikats
+        Verein certVerein = zertifikat.getVerein();
+        if (certVerein == null && zertifikat.getSchiesstand() != null) {
+            certVerein = zertifikat.getSchiesstand().getVerein();
+        }
+        if (certVerein == null) return false;
+
+        if (current.getVereinsmitgliedschaften() != null) {
+            for (var vm : current.getVereinsmitgliedschaften()) {
+                if (vm.getVerein() != null && vm.getVerein().getId().equals(certVerein.getId())
+                        && Boolean.TRUE.equals(vm.getIstVereinschef())) {
+                    return true;
                 }
             }
         }

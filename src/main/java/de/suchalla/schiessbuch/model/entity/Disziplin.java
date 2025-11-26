@@ -1,5 +1,6 @@
 package de.suchalla.schiessbuch.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -41,6 +42,7 @@ public class Disziplin {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verband_id")
+    @JsonIgnore
     private Verband verband;
 
     @Column(name = "erstellt_am", nullable = false, updatable = false)
@@ -52,6 +54,7 @@ public class Disziplin {
     @OneToMany(mappedBy = "disziplin", cascade = CascadeType.ALL)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private Set<SchiessnachweisEintrag> eintraege = new HashSet<>();
 
     @PrePersist

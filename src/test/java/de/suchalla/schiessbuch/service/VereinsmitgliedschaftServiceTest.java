@@ -1,16 +1,12 @@
 package de.suchalla.schiessbuch.service;
 
-import de.suchalla.schiessbuch.mapper.VerbandMapper;
-import de.suchalla.schiessbuch.mapper.VereinsmigliedschaftMapper;
-import de.suchalla.schiessbuch.model.dto.VereinsmigliedschaftDTO;
+import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
-import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.repository.VereinsmitgliedschaftRepository;
-import de.suchalla.schiessbuch.service.email.EmailService;
 import de.suchalla.schiessbuch.testutil.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,10 +39,8 @@ class VereinsmitgliedschaftServiceTest {
     private EmailService notificationService;
 
     @Mock
-    private VereinsmigliedschaftMapper vereinsmigliedschaftMapper;
 
     @Mock
-    private VerbandMapper verbandMapper;
 
     @InjectMocks
     private VereinsmitgliedschaftService service;
@@ -181,12 +175,12 @@ class VereinsmitgliedschaftServiceTest {
     @Test
     void testFindeBeitrittsanfragen() {
         List<Vereinsmitgliedschaft> entities = Arrays.asList(mitgliedschaft);
-        List<VereinsmigliedschaftDTO> dtos = Arrays.asList(new VereinsmigliedschaftDTO());
+        List<Vereinsmitgliedschaft> dtos = Arrays.asList(new Vereinsmitgliedschaft());
 
         when(mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftsStatus.BEANTRAGT)).thenReturn(entities);
         when(vereinsmigliedschaftMapper.toDTOList(entities)).thenReturn(dtos);
 
-        List<VereinsmigliedschaftDTO> result = service.findeBeitrittsanfragen(verein);
+        List<Vereinsmitgliedschaft> result = service.findeBeitrittsanfragen(verein);
 
         assertEquals(1, result.size());
         verify(mitgliedschaftRepository).findByVereinAndStatus(verein, MitgliedschaftsStatus.BEANTRAGT);

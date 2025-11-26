@@ -1,5 +1,6 @@
 package de.suchalla.schiessbuch.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -46,6 +47,7 @@ public class Verband {
 
     @ManyToMany(mappedBy = "verbaende")
     @Builder.Default
+    @JsonIgnore
     private Set<Verein> vereine = new HashSet<>();
 
     @PrePersist

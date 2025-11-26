@@ -141,15 +141,14 @@ public class DataInitializer implements CommandLineRunner {
             log.info("{} Verbands-Disziplinen erstellt", verbandsDisziplinen.length);
 
             // Verein erstellen
-            Verein verein = Verein.builder()
+                Verein verein = Verein.builder()
                     .name("SV Teststadt")
                     .verbaende(java.util.Collections.singleton(dsb))
-                    .vereinsNummer("DSB-12345")
                     .adresse("Musterstraße 1, 12345 Teststadt")
                     .build();
             vereinRepository.save(verein);
             log.info("Verein erstellt: {}", verein.getName());
-            log.info("Vereins-ID: {} | Vereinsnummer: {}", verein.getId(), verein.getVereinsNummer());
+                log.info("Vereins-ID: {}", verein.getId());
 
             // Verbands-Schießstand erstellen (ohne Vereinszuordnung)
             Schiesstand verbandsSchiesstand = Schiesstand.builder()

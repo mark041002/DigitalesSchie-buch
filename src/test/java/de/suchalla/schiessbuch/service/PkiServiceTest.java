@@ -93,7 +93,6 @@ class PkiServiceTest {
         testVerein = Verein.builder()
                 .id(1L)
                 .name("Testverein")
-                .vereinsNummer("TV-123")
                 .build();
 
         testSchiesstand = Schiesstand.builder()

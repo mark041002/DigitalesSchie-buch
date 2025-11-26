@@ -1,7 +1,6 @@
 package de.suchalla.schiessbuch.model.entity;
 
-import de.suchalla.schiessbuch.mapper.VerbandMapper;
-import de.suchalla.schiessbuch.model.dto.VerbandDTO;
+import de.suchalla.schiessbuch.model.entity.Verband;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class VerbandTest {
 
     private Verband verband;
-    private VerbandMapper mapper;
 
     @BeforeEach
     void setUp() {
@@ -97,8 +95,8 @@ class VerbandTest {
 
     @Test
     void testVereineRelationship() {
-        Verein verein1 = Verein.builder().id(1L).name("Verein 1").vereinsNummer("V1").build();
-        Verein verein2 = Verein.builder().id(2L).name("Verein 2").vereinsNummer("V2").build();
+        Verein verein1 = Verein.builder().id(1L).name("Verein 1").build();
+        Verein verein2 = Verein.builder().id(2L).name("Verein 2").build();
 
         verband.getVereine().add(verein1);
         verband.getVereine().add(verein2);
@@ -108,7 +106,7 @@ class VerbandTest {
 
     @Test
     void testEntityToDtoMapping() {
-        VerbandDTO dto = mapper.toDTO(verband);
+        Verband dto = mapper.toDTO(verband);
 
         assertNotNull(dto);
         assertEquals(verband.getId(), dto.getId());
@@ -118,14 +116,14 @@ class VerbandTest {
 
     @Test
     void testEntityToDtoMappingNull() {
-        VerbandDTO dto = mapper.toDTO(null);
+        Verband dto = mapper.toDTO(null);
         assertNull(dto);
     }
 
     @Test
     void testEntityToDtoWithTimestamps() {
         verband.onCreate();
-        VerbandDTO dto = mapper.toDTO(verband);
+        Verband dto = mapper.toDTO(verband);
 
         assertNotNull(dto);
         assertEquals(verband.getErstelltAm(), dto.getErstelltAm());

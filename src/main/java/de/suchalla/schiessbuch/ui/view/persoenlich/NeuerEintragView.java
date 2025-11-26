@@ -27,7 +27,7 @@ import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.DisziplinService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
-import de.suchalla.schiessbuch.service.email.EmailService;
+import de.suchalla.schiessbuch.service.EmailService;
 import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import lombok.extern.slf4j.Slf4j;

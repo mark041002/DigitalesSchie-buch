@@ -1,8 +1,8 @@
 package de.suchalla.schiessbuch.model.entity;
 
 import de.suchalla.schiessbuch.mapper.SchiessnachweisEintragMapper;
-import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragDetailDTO;
-import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO;
+import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintrag;
+import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintrag;
 import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
 import de.suchalla.schiessbuch.model.enums.EintragStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +33,6 @@ class SchiessnachweisEintragTest {
         verein = Verein.builder()
                 .id(1L)
                 .name("Verein A")
-                .vereinsNummer("VA-123")
                 .build();
         schuetze = Benutzer.builder()
                 .id(1L)
@@ -186,7 +185,7 @@ class SchiessnachweisEintragTest {
 
     @Test
     void testEntityToListDtoMapping() {
-        SchiessnachweisEintragListDTO dto = mapper.toDTO(eintrag);
+        SchiessnachweisEintrag dto = mapper.toDTO(eintrag);
 
         assertNotNull(dto);
         assertEquals(eintrag.getId(), dto.getId());
@@ -215,7 +214,7 @@ class SchiessnachweisEintragTest {
 
     @Test
     void testEntityToDetailDtoMapping() {
-        SchiessnachweisEintragDetailDTO dto = mapper.toDetailDTO(eintrag);
+        SchiessnachweisEintrag dto = mapper.toDetailDTO(eintrag);
 
         assertNotNull(dto);
         assertEquals(eintrag.getId(), dto.getId());
@@ -226,16 +225,16 @@ class SchiessnachweisEintragTest {
 
     @Test
     void testEntityToDtoMappingNull() {
-        SchiessnachweisEintragListDTO listDto = mapper.toDTO(null);
+        SchiessnachweisEintrag listDto = mapper.toDTO(null);
         assertNull(listDto);
 
-        SchiessnachweisEintragDetailDTO detailDto = mapper.toDetailDTO(null);
+        SchiessnachweisEintrag detailDto = mapper.toDetailDTO(null);
         assertNull(detailDto);
     }
 
     @Test
     void testEntityToDtoHelperMethods() {
-        SchiessnachweisEintragListDTO dto = mapper.toDTO(eintrag);
+        SchiessnachweisEintrag dto = mapper.toDTO(eintrag);
         assertEquals("Max Mustermann", dto.getSchuetzeVollstaendigerName());
     }
 }

@@ -148,7 +148,7 @@ public class VerbaendeView extends VerticalLayout {
                     .findFirst();
 
             if (chefMitgliedschaft.isPresent()) {
-                Long vereinId = chefMitgliedschaft.get().getVereinId();
+                Long vereinId = chefMitgliedschaft.get().getVerein().getId();
                 de.suchalla.schiessbuch.model.entity.Verein verein = verbandService.findeVerein(vereinId);
                 if (verein != null) {
                     boolean vereinHatVerband = verein.getVerbaende() != null && verein.getVerbaende().stream()

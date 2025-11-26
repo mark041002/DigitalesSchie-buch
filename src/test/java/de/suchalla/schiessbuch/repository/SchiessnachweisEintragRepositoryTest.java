@@ -52,7 +52,6 @@ class SchiessnachweisEintragRepositoryTest {
         // Verein erstellen
         verein = Verein.builder()
                 .name("Testverein")
-                .vereinsNummer("TV-123")
                 .build();
         verein.getVerbaende().add(verband);
         entityManager.persist(verein);

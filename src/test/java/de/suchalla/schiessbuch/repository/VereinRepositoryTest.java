@@ -42,11 +42,10 @@ class VereinRepositoryTest {
         entityManager.persist(testVerband);
 
         testVerein = Verein.builder()
-                .name("Schützenverein Teststadt")
-                .vereinsNummer("SV-12345")
-                .adresse("Schützenstraße 1, 12345 Teststadt")
-                .beschreibung("Traditionsreicher Verein")
-                .build();
+            .name("Schützenverein Teststadt")
+            .adresse("Schützenstraße 1, 12345 Teststadt")
+            .beschreibung("Traditionsreicher Verein")
+            .build();
         testVerein.getVerbaende().add(testVerband);
     }
 
@@ -56,7 +55,6 @@ class VereinRepositoryTest {
 
         assertNotNull(saved.getId());
         assertEquals("Schützenverein Teststadt", saved.getName());
-        assertEquals("SV-12345", saved.getVereinsNummer());
     }
 
     @Test
@@ -70,35 +68,18 @@ class VereinRepositoryTest {
         assertEquals(1, found.get().getVerbaende().size());
     }
 
-    @Test
-    void testFindByVereinsNummer() {
-        entityManager.persistAndFlush(testVerein);
-
-        Optional<Verein> found = vereinRepository.findByVereinsNummer("SV-12345");
-
-        assertTrue(found.isPresent());
-        assertEquals("Schützenverein Teststadt", found.get().getName());
-    }
-
-    @Test
-    void testFindByVereinsNummerNotFound() {
-        Optional<Verein> found = vereinRepository.findByVereinsNummer("NOT-EXIST");
-
-        assertFalse(found.isPresent());
-    }
+    // findByVereinsNummer tests removed (field deprecated)
 
     @Test
     void testFindByVerbaendeContaining() {
         Verein verein1 = Verein.builder()
-                .name("Verein 1")
-                .vereinsNummer("V1")
-                .build();
+            .name("Verein 1")
+            .build();
         verein1.getVerbaende().add(testVerband);
 
         Verein verein2 = Verein.builder()
-                .name("Verein 2")
-                .vereinsNummer("V2")
-                .build();
+            .name("Verein 2")
+            .build();
         verein2.getVerbaende().add(testVerband);
 
         entityManager.persist(verein1);
@@ -115,14 +96,12 @@ class VereinRepositoryTest {
     @Test
     void testFindAllNames() {
         Verein verein1 = Verein.builder()
-                .name("Verein A")
-                .vereinsNummer("VA")
-                .build();
+            .name("Verein A")
+            .build();
 
         Verein verein2 = Verein.builder()
-                .name("Verein B")
-                .vereinsNummer("VB")
-                .build();
+            .name("Verein B")
+            .build();
 
         entityManager.persist(verein1);
         entityManager.persist(verein2);
@@ -140,12 +119,10 @@ class VereinRepositoryTest {
         Verein saved = entityManager.persistAndFlush(testVerein);
 
         saved.setName("Neuer Vereinsname");
-        saved.setVereinsNummer("SV-99999");
         vereinRepository.save(saved);
 
         Verein updated = entityManager.find(Verein.class, saved.getId());
         assertEquals("Neuer Vereinsname", updated.getName());
-        assertEquals("SV-99999", updated.getVereinsNummer());
     }
 
     @Test
@@ -164,12 +141,10 @@ class VereinRepositoryTest {
     void testFindAll() {
         Verein verein1 = Verein.builder()
                 .name("Verein 1")
-                .vereinsNummer("V1")
                 .build();
 
         Verein verein2 = Verein.builder()
                 .name("Verein 2")
-                .vereinsNummer("V2")
                 .build();
 
         entityManager.persist(verein1);

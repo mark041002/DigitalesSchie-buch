@@ -46,7 +46,7 @@ class SignaturServiceTest {
     private ZertifikatVerifizierungsService zertifikatVerifizierungsService;
     
         @Mock
-        private de.suchalla.schiessbuch.service.email.EmailService notificationService;
+        private EmailService notificationService;
 
     @InjectMocks
     private SignaturService signaturService;
@@ -82,7 +82,6 @@ class SignaturServiceTest {
         verein = Verein.builder()
                 .id(1L)
                 .name("Testverein")
-                .vereinsNummer("TV-123")
                 .build();
 
         disziplin = Disziplin.builder()

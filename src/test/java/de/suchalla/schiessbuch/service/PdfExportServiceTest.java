@@ -1,6 +1,7 @@
 package de.suchalla.schiessbuch.service;
 
-import de.suchalla.schiessbuch.model.dto.*;
+import de.suchalla.schiessbuch.model.dto.BenutzerDTO;
+import de.suchalla.schiessbuch.model.entity.*;
 import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
 import de.suchalla.schiessbuch.model.enums.EintragStatus;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
@@ -25,10 +26,10 @@ class PdfExportServiceTest {
 
     private PdfExportService pdfExportService;
     private BenutzerDTO testSchuetze;
-    private VereinDTO testVerein;
-    private SchiesstandDTO testSchiesstand;
-    private List<SchiessnachweisEintragListDTO> testEintraege;
-    private List<VereinsmigliedschaftDTO> testMitgliedschaften;
+    private Verein testVerein;
+    private Schiesstand testSchiesstand;
+    private List<SchiessnachweisEintrag> testEintraege;
+    private List<Vereinsmitgliedschaft> testMitgliedschaften;
 
     @BeforeEach
     void setUp() {
@@ -42,13 +43,12 @@ class PdfExportServiceTest {
                 .rolle(BenutzerRolle.SCHUETZE)
                 .build();
 
-        testVerein = VereinDTO.builder()
+        testVerein = Verein.builder()
                 .id(1L)
                 .name("Testverein")
-                .vereinsNummer("TV-123")
                 .build();
 
-        testSchiesstand = SchiesstandDTO.builder()
+        testSchiesstand = Schiesstand.builder()
                 .id(1L)
                 .name("Stand 1")
                 .adresse("Teststraße 1")
@@ -87,7 +87,7 @@ class PdfExportServiceTest {
 
     @Test
     void testExportiereSchiessnachweiseMitLeerenEintraegen() throws IOException {
-        List<SchiessnachweisEintragListDTO> leereEintraege = new ArrayList<>();
+        List<SchiessnachweisEintrag> leereEintraege = new ArrayList<>();
         LocalDate von = LocalDate.now().minusDays(7);
         LocalDate bis = LocalDate.now();
 
@@ -159,7 +159,7 @@ class PdfExportServiceTest {
 
     @Test
     void testExportiereVereinsmitgliedschaftenMitLeerenMitgliedschaften() throws IOException {
-        List<VereinsmigliedschaftDTO> leereMitgliedschaften = new ArrayList<>();
+        List<Vereinsmitgliedschaft> leereMitgliedschaften = new ArrayList<>();
 
         byte[] pdfBytes = pdfExportService.exportiereVereinsmitgliedschaften(
                 testVerein, leereMitgliedschaften, null, null);
@@ -171,7 +171,7 @@ class PdfExportServiceTest {
     @Test
     void testPdfGroesseMitMehrerenEintraegen() throws IOException {
         // Erstelle viele Einträge
-        List<SchiessnachweisEintragListDTO> vieleEintraege = new ArrayList<>();
+        List<SchiessnachweisEintrag> vieleEintraege = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
             vieleEintraege.add(createTestEintrag((long) i, 
                     LocalDate.now().minusDays(i), 
@@ -192,7 +192,7 @@ class PdfExportServiceTest {
 
     @Test
     void testExportiereSchiessnachweiseMitVerschiedenenStatus() throws IOException {
-        List<SchiessnachweisEintragListDTO> gemischteEintraege = new ArrayList<>();
+        List<SchiessnachweisEintrag> gemischteEintraege = new ArrayList<>();
         gemischteEintraege.add(createTestEintrag(1L, LocalDate.now(), 
                 "Luftgewehr 10m", "4.5mm", 40, "380 Ringe", EintragStatus.OFFEN));
         gemischteEintraege.add(createTestEintrag(2L, LocalDate.now().minusDays(1), 
@@ -211,17 +211,27 @@ class PdfExportServiceTest {
     @Test
     void testPdfMitPkiZertifikatsinformationen() throws IOException {
         // Einträge mit PKI-Signaturinformationen
-        SchiessnachweisEintragListDTO eintragMitZertifikat = createTestEintrag(
-                1L, LocalDate.now(), "Luftgewehr 10m", "4.5mm", 40, "380 Ringe", 
+        SchiessnachweisEintrag eintragMitZertifikat = createTestEintrag(
+                1L, LocalDate.now(), "Luftgewehr 10m", "4.5mm", 40, "380 Ringe",
                 EintragStatus.SIGNIERT);
-        eintragMitZertifikat.setAufseherVorname("Hans");
-        eintragMitZertifikat.setAufseherNachname("Schmidt");
+
+        // Create Aufseher
+        Benutzer aufseher = Benutzer.builder()
+                .id(2L)
+                .vorname("Hans")
+                .nachname("Schmidt")
+                .email("hans@example.com")
+                .passwort("test")
+                .rolle(BenutzerRolle.AUFSEHER)
+                .build();
+
+        eintragMitZertifikat.setAufseher(aufseher);
         eintragMitZertifikat.setSigniertAm(LocalDateTime.now());
-        
-        List<SchiessnachweisEintragListDTO> eintraegeMitZertifikat = List.of(eintragMitZertifikat);
+
+        List<SchiessnachweisEintrag> eintraegeMitZertifikat = List.of(eintragMitZertifikat);
 
         byte[] pdfBytes = pdfExportService.exportiereSchiessnachweise(
-                testSchuetze, eintraegeMitZertifikat, 
+                testSchuetze, eintraegeMitZertifikat,
                 LocalDate.now().minusDays(7), LocalDate.now());
 
         assertNotNull(pdfBytes);
@@ -230,44 +240,85 @@ class PdfExportServiceTest {
 
     // Hilfsmethoden
 
-    private SchiessnachweisEintragListDTO createTestEintrag(Long id, LocalDate datum, 
-            String disziplin, String kaliber, Integer schuesse, String ergebnis, 
+    private SchiessnachweisEintrag createTestEintrag(Long id, LocalDate datum,
+            String disziplinName, String kaliber, Integer schuesse, String ergebnis,
             EintragStatus status) {
-        SchiessnachweisEintragListDTO dto = new SchiessnachweisEintragListDTO();
-        dto.setId(id);
-        dto.setDatum(datum);
-        dto.setDisziplinId(1L);
-        dto.setDisziplinName(disziplin);
-        dto.setKaliber(kaliber);
-        dto.setAnzahlSchuesse(schuesse);
-        dto.setErgebnis(ergebnis);
-        dto.setStatus(status);
-        dto.setSchuetzeId(1L);
-        dto.setSchuetzeVorname("Max");
-        dto.setSchuetzeNachname("Mustermann");
-        dto.setSchiesstandId(1L);
-        dto.setSchiesstandName("Stand 1");
-        dto.setVereinId(1L);
-        dto.setVereinName("Testverein");
-        dto.setAufseherVorname(null);
-        dto.setAufseherNachname(null);
-        return dto;
+        // Create Benutzer (Schütze)
+        Benutzer schuetze = Benutzer.builder()
+                .id(1L)
+                .vorname("Max")
+                .nachname("Mustermann")
+                .email("max@example.com")
+                .passwort("test")
+                .rolle(BenutzerRolle.SCHUETZE)
+                .build();
+
+        // Create Disziplin
+        Disziplin disziplin = Disziplin.builder()
+                .id(1L)
+                .name(disziplinName)
+                .build();
+
+        // Create Verein
+        Verein verein = Verein.builder()
+                .id(1L)
+                .name("Testverein")
+                .build();
+
+        // Create Schiesstand
+        Schiesstand schiesstand = Schiesstand.builder()
+                .id(1L)
+                .name("Stand 1")
+                .adresse("Teststraße 1")
+                .verein(verein)
+                .build();
+
+        // Create Eintrag
+        SchiessnachweisEintrag eintrag = SchiessnachweisEintrag.builder()
+                .id(id)
+                .datum(datum)
+                .disziplin(disziplin)
+                .kaliber(kaliber)
+                .anzahlSchuesse(schuesse)
+                .ergebnis(ergebnis)
+                .status(status)
+                .schuetze(schuetze)
+                .schiesstand(schiesstand)
+                .build();
+
+        return eintrag;
     }
 
-    private VereinsmigliedschaftDTO createTestMitgliedschaft(Long id, String vorname, 
-            String nachname, LocalDate beitritt, MitgliedschaftsStatus status, 
+    private Vereinsmitgliedschaft createTestMitgliedschaft(Long id, String vorname,
+            String nachname, LocalDate beitritt, MitgliedschaftsStatus status,
             Boolean istVereinschef, Boolean istAufseher) {
-        VereinsmigliedschaftDTO dto = new VereinsmigliedschaftDTO();
-        dto.setId(id);
-        dto.setBenutzerId(id);
-        dto.setBenutzerVorname(vorname);
-        dto.setBenutzerNachname(nachname);
-        dto.setVereinId(1L);
-        dto.setVereinName("Testverein");
-        dto.setBeitrittDatum(beitritt);
-        dto.setStatus(status);
-        dto.setIstVereinschef(istVereinschef);
-        dto.setIstAufseher(istAufseher);
-        return dto;
+        // Create Benutzer
+        Benutzer benutzer = Benutzer.builder()
+                .id(id)
+                .vorname(vorname)
+                .nachname(nachname)
+                .email(vorname.toLowerCase() + "@example.com")
+                .passwort("test")
+                .rolle(BenutzerRolle.SCHUETZE)
+                .build();
+
+        // Create Verein
+        Verein verein = Verein.builder()
+                .id(1L)
+                .name("Testverein")
+                .build();
+
+        // Create Vereinsmitgliedschaft
+        Vereinsmitgliedschaft mitgliedschaft = Vereinsmitgliedschaft.builder()
+                .id(id)
+                .benutzer(benutzer)
+                .verein(verein)
+                .beitrittDatum(beitritt)
+                .status(status)
+                .istVereinschef(istVereinschef)
+                .istAufseher(istAufseher)
+                .build();
+
+        return mitgliedschaft;
     }
 }

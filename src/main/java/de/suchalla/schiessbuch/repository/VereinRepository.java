@@ -33,7 +33,7 @@ public interface VereinRepository extends JpaRepository<Verein, Long> {
      * @param vereinsNummer Die Vereinsnummer
      * @return Optional mit Verein
      */
-    Optional<Verein> findByVereinsNummer(String vereinsNummer);
+    // Method findByVereinsNummer removed as Vereinsnummer was deprecated
 
 
     /**

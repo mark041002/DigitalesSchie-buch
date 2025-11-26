@@ -7,6 +7,9 @@ import lombok.*;
  * Vereinfachtes DTO für Benutzer-Listen mit reduzierten Feldern für bessere Performance
  * in Grid-Ansichten und Auswahlfeldern.
  *
+ *   Das passwortFeld der Entity wird aus Sicherheitsgründen
+ *   NICHT in dieses DTO gemappt.</li>
+ *
  * @author Markus Suchalla
  * @version 1.0.0
  */

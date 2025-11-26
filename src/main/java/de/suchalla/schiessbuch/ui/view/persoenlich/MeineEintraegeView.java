@@ -19,7 +19,7 @@ import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
-import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO;
+import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.PdfExportService;
@@ -56,7 +56,7 @@ public class MeineEintraegeView extends VerticalLayout {
     private final VereinService vereinService;
         private final VerbandService verbandService;
 
-    private final Grid<SchiessnachweisEintragListDTO> grid = new Grid<>(SchiessnachweisEintragListDTO.class, false);
+    private final Grid<SchiessnachweisEintrag> grid = new Grid<>(SchiessnachweisEintrag.class, false);
         private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private final DatePicker vonDatum = new DatePicker("Von");
     private final DatePicker bisDatum = new DatePicker("Bis");
@@ -67,7 +67,9 @@ public class MeineEintraegeView extends VerticalLayout {
     private Tab signiertTab;
     private Tab aktuellerTab;
     private ComboBox<String> vereinFilter;
+        private ComboBox<String> disziplinFilter;
         private ComboBox<String> verbandFilter;
+        private com.vaadin.flow.component.grid.Grid.Column<SchiessnachweisEintrag> actionsColumn;
 
         public MeineEintraegeView(SecurityService securityService,
                                                           SchiessnachweisService schiessnachweisService,
@@ -161,6 +163,13 @@ public class MeineEintraegeView extends VerticalLayout {
         verbandFilter.setAllowCustomValue(false);
         verbandFilter.addValueChangeListener(e -> updateGrid());
 
+        // Disziplin-Filter (anfangs leer -> zeigt alle)
+        disziplinFilter = new ComboBox<>("Disziplin");
+        disziplinFilter.setWidth("250px");
+        disziplinFilter.setPlaceholder("");
+        disziplinFilter.setAllowCustomValue(false);
+        disziplinFilter.addValueChangeListener(e -> updateGrid());
+
         // Vereinsfilter (anfangs leer -> zeigt alle)
         vereinFilter = new ComboBox<>("Verein");
         vereinFilter.setWidth("250px");
@@ -181,7 +190,7 @@ public class MeineEintraegeView extends VerticalLayout {
         pdfDownload.add(pdfButton);
 
         // Alles in einem HorizontalLayout nebeneinander
-        HorizontalLayout filterLayout = new HorizontalLayout(vonDatum, bisDatum, verbandFilter, vereinFilter, filterButton, pdfDownload);
+        HorizontalLayout filterLayout = new HorizontalLayout(vonDatum, bisDatum, verbandFilter, disziplinFilter, vereinFilter, filterButton, pdfDownload);
         filterLayout.setAlignItems(FlexComponent.Alignment.END);
         filterLayout.setSpacing(true);
         filterLayout.setWidthFull();
@@ -200,34 +209,41 @@ public class MeineEintraegeView extends VerticalLayout {
                 .setHeader("Datum")
                 .setSortable(true);
 
-        grid.addColumn(SchiessnachweisEintragListDTO::getDisziplinName)
-                .setHeader("Disziplin");
+        grid.addColumn(eintrag -> eintrag.getDisziplin() != null ? eintrag.getDisziplin().getProgramm() : "-")
+                .setHeader("Disziplin")
+                .setSortable(true);
 
         // Vereinsspalte anzeigen (direkt aus DTO)
-        grid.addColumn(eintrag -> eintrag.getVereinName() != null ? eintrag.getVereinName() : "-")
-                .setHeader("Verein");
+        grid.addColumn(eintrag -> eintrag.getSchiesstand() != null && eintrag.getSchiesstand().getVerein() != null ? eintrag.getSchiesstand().getVerein().getName() : null != null ? eintrag.getSchiesstand() != null && eintrag.getSchiesstand().getVerein() != null ? eintrag.getSchiesstand().getVerein().getName() : null : "-")
+                .setHeader("Verein")
+                .setSortable(true);
 
-        grid.addColumn(SchiessnachweisEintragListDTO::getKaliber)
-                .setHeader("Kaliber");
+        grid.addColumn(SchiessnachweisEintrag::getKaliber)
+                .setHeader("Kaliber")
+                .setSortable(true);
                 
-        grid.addColumn(SchiessnachweisEintragListDTO::getWaffenart)
-                .setHeader("Waffenart");
+        grid.addColumn(SchiessnachweisEintrag::getWaffenart)
+                .setHeader("Waffenart")
+                .setSortable(true);
                 
-        grid.addColumn(SchiessnachweisEintragListDTO::getAnzahlSchuesse)
+        grid.addColumn(SchiessnachweisEintrag::getAnzahlSchuesse)
                 .setHeader("Schüsse")
-                .setTextAlign(ColumnTextAlign.END);
+                .setTextAlign(ColumnTextAlign.END)
+                .setSortable(true);
 
-        grid.addColumn(SchiessnachweisEintragListDTO::getErgebnis)
+        grid.addColumn(SchiessnachweisEintrag::getErgebnis)
                 .setHeader("Ergebnis")
-                .setTextAlign(ColumnTextAlign.END);
+                .setTextAlign(ColumnTextAlign.END)
+                .setSortable(true);
 
         grid.addComponentColumn(this::createStatusBadge)
                 .setHeader("Status");
 
-        grid.addColumn(SchiessnachweisEintragListDTO::getAufseherVollstaendigerName)
-                .setHeader("Aufseher");
+        grid.addColumn(eintrag -> eintrag.getAufseher() != null ? eintrag.getAufseher().getVollstaendigerName() : "-")
+                .setHeader("Aufseher")
+                .setSortable(true);
 
-        grid.addComponentColumn(this::createActionButtons)
+        actionsColumn = grid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen");
 
         grid.getColumns().forEach(c -> c.setAutoWidth(true));
@@ -261,13 +277,17 @@ public class MeineEintraegeView extends VerticalLayout {
      * @param eintrag Der Eintrag (DTO)
      * @return Layout mit Buttons
      */
-    private HorizontalLayout createActionButtons(SchiessnachweisEintragListDTO eintrag) {
+    private HorizontalLayout createActionButtons(SchiessnachweisEintrag eintrag) {
         HorizontalLayout layout = new HorizontalLayout();
         layout.setSpacing(true);
-        Button deleteButton = new Button("Löschen", new com.vaadin.flow.component.icon.Icon(com.vaadin.flow.component.icon.VaadinIcon.TRASH));
-        deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-        deleteButton.addClickListener(e -> deleteEintrag(eintrag.getId()));
-        layout.add(deleteButton);
+                Button deleteButton = new Button("Löschen", new com.vaadin.flow.component.icon.Icon(com.vaadin.flow.component.icon.VaadinIcon.TRASH));
+                deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+
+                // Zeige Löschen-Button nur wenn Eintrag NICHT signiert ist
+                if (!(eintrag.getStatus() != null && eintrag.getStatus() == de.suchalla.schiessbuch.model.enums.EintragStatus.SIGNIERT)) {
+                        deleteButton.addClickListener(e -> deleteEintrag(eintrag.getId()));
+                        layout.add(deleteButton);
+                }
 
         return layout;
     }
@@ -295,7 +315,7 @@ public class MeineEintraegeView extends VerticalLayout {
         if (currentUser != null) {
             LocalDate von = vonDatum.getValue();
             LocalDate bis = bisDatum.getValue();
-            List<SchiessnachweisEintragListDTO> eintraege;
+            List<SchiessnachweisEintrag> eintraege;
             if (von != null && bis != null) {
                 eintraege = schiessnachweisService.findeEintraegeImZeitraum(currentUser, von, bis);
             } else {
@@ -316,11 +336,23 @@ public class MeineEintraegeView extends VerticalLayout {
             }
             // Bei 'Alle' keine Statusfilterung
 
-                        // Vereinsfilter anwenden (jetzt direkt über DTO-Felder)
+                        // Disziplinfilter anwenden (direkt über DTO-Felder)
+                        String disziplinFilterValue = disziplinFilter.getValue();
+                        if (disziplinFilterValue != null && !disziplinFilterValue.isEmpty()) {
+                                eintraege = eintraege.stream()
+                                                .filter(e -> e.getDisziplin() != null &&
+                                                             e.getDisziplin().getProgramm() != null &&
+                                                             e.getDisziplin().getProgramm().equals(disziplinFilterValue))
+                                                .toList();
+                        }
+
+                        // Vereinsfilter anwenden
                         String vereinFilterValue = vereinFilter.getValue();
                         if (vereinFilterValue != null && !vereinFilterValue.isEmpty()) {
                                 eintraege = eintraege.stream()
-                                                .filter(e -> e.getVereinName() != null && e.getVereinName().equals(vereinFilterValue))
+                                                .filter(e -> e.getSchiesstand() != null &&
+                                                             e.getSchiesstand().getVerein() != null &&
+                                                             e.getSchiesstand().getVerein().getName().equals(vereinFilterValue))
                                                 .toList();
                         }
 
@@ -337,7 +369,9 @@ public class MeineEintraegeView extends VerticalLayout {
                                                         .collect(Collectors.toSet());
 
                                         eintraege = eintraege.stream()
-                                                        .filter(e -> e.getVereinId() != null && vereinIds.contains(e.getVereinId()))
+                                                        .filter(e -> e.getSchiesstand() != null &&
+                                                                     e.getSchiesstand().getVerein() != null &&
+                                                                     vereinIds.contains(e.getSchiesstand().getVerein().getId()))
                                                         .toList();
                                 } else {
                                         eintraege = List.of();
@@ -345,6 +379,11 @@ public class MeineEintraegeView extends VerticalLayout {
                         }
 
             grid.setItems(eintraege);
+
+                        // Aktionen-Spalte im Signiert-Tab ausblenden
+                        if (actionsColumn != null) {
+                                actionsColumn.setVisible(!(aktuellerTab == signiertTab));
+                        }
 
             // Zeige/Verstecke Empty State Message
             boolean isEmpty = eintraege.isEmpty();
@@ -364,6 +403,15 @@ public class MeineEintraegeView extends VerticalLayout {
 
         // Setze Items; nicht vorauswählen (leer bleibt, zeigt alle)
         vereinFilter.setItems(vereinNames);
+        // Disziplinnamen aus vorhandenen Einträgen laden (zeigt alle, wenn leer)
+        Set<String> disziplinNames = new TreeSet<>();
+        if (currentUser != null) {
+            disziplinNames = schiessnachweisService.findeEintraegeFuerSchuetze(currentUser).stream()
+                    .map(eintrag -> eintrag.getDisziplin() != null ? eintrag.getDisziplin().getProgramm() : "-")
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toCollection(TreeSet::new));
+        }
+        disziplinFilter.setItems(disziplinNames);
         // Verbandnamen ebenfalls laden (anfangs leer -> zeigt alle)
         Set<String> verbandNames = verbandService.findeAlleVerbaendeEntities().stream()
                 .map(Verband::getName)
@@ -386,7 +434,7 @@ public class MeineEintraegeView extends VerticalLayout {
                 LocalDate bisEff = bis != null ? bis : LocalDate.now();
 
                 // Service gibt jetzt DTOs zurück
-                List<SchiessnachweisEintragListDTO> eintraege = schiessnachweisService
+                List<SchiessnachweisEintrag> eintraege = schiessnachweisService
                         .findeSignierteEintraegeImZeitraum(currentUser, vonEff, bisEff);
 
                 // BenutzerMapper wird nicht benötigt, da currentUser noch Entity ist (für Security)
@@ -411,7 +459,7 @@ public class MeineEintraegeView extends VerticalLayout {
     /**
      * Erstellt ein farbiges Status-Badge (jetzt mit DTO).
      */
-    private Span createStatusBadge(SchiessnachweisEintragListDTO eintrag) {
+    private Span createStatusBadge(SchiessnachweisEintrag eintrag) {
         Span badge = new Span();
         badge.getStyle()
                 .set("padding", "4px 12px")

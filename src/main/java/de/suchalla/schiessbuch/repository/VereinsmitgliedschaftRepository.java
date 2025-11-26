@@ -21,22 +21,26 @@ public interface VereinsmitgliedschaftRepository extends JpaRepository<Vereinsmi
 
     /**
      * Findet die (optionale) Mitgliedschaft eines Benutzers.
+     * Lädt Benutzer und Verein via @EntityGraph für optimale Performance.
      *
      * Hinweis: Ein Benutzer kann mehrere Mitgliedschaften haben. Diese Methode gibt alle Mitgliedschaften zurück.
      *
      * @param benutzer Der Benutzer
      * @return Liste der Mitgliedschaften
      */
+    @EntityGraph(attributePaths = {"benutzer", "verein"})
     List<Vereinsmitgliedschaft> findByBenutzer(Benutzer benutzer);
 
     /**
      * Gibt alle Mitgliedschaften eines Benutzers für einen Verein zurück (kann mehrere Einträge enthalten).
      * Wird verwendet, um mit eventuell vorhandenen Duplikaten robust umzugehen.
+     * Lädt Benutzer und Verein via @EntityGraph für optimale Performance.
      *
      * @param benutzer Der Benutzer
      * @param verein Der Verein
      * @return Liste der Mitgliedschaften
      */
+    @EntityGraph(attributePaths = {"benutzer", "verein"})
     List<Vereinsmitgliedschaft> findAllByBenutzerAndVerein(Benutzer benutzer, Verein verein);
 
     /**

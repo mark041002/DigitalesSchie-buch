@@ -413,29 +413,29 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
                 .set("margin-bottom", "var(--lumo-space-m)");
 
         // Grid für Einträge
-        Grid<de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO> eintraegeGrid =
-                new Grid<>(de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO.class, false);
+        Grid<de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag> eintraegeGrid =
+                new Grid<>(de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag.class, false);
         eintraegeGrid.setHeight("100%");
         eintraegeGrid.addClassName("rounded-grid");
 
-        eintraegeGrid.addColumn(de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO::getDatum)
+        eintraegeGrid.addColumn(de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag::getDatum)
                 .setHeader("Datum")
                 .setSortable(true)
                 .setAutoWidth(true);
 
-        eintraegeGrid.addColumn(dto -> (dto.getSchuetzeVorname() + " " + dto.getSchuetzeNachname()).trim())
+        eintraegeGrid.addColumn(e -> e.getSchuetze() != null ? e.getSchuetze().getVollstaendigerName() : "-")
                 .setHeader("Schütze")
                 .setAutoWidth(true);
 
-        eintraegeGrid.addColumn(de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO::getDisziplinName)
+        eintraegeGrid.addColumn(e -> e.getDisziplin() != null ? e.getDisziplin().getProgramm() : "-")
                 .setHeader("Disziplin")
                 .setAutoWidth(true);
 
-        eintraegeGrid.addColumn(de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO::getKaliber)
+        eintraegeGrid.addColumn(de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag::getKaliber)
                 .setHeader("Kaliber")
                 .setAutoWidth(true);
 
-        eintraegeGrid.addColumn(de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO::getAnzahlSchuesse)
+        eintraegeGrid.addColumn(de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag::getAnzahlSchuesse)
                 .setHeader("Schüsse")
                 .setAutoWidth(true)
                 .setTextAlign(ColumnTextAlign.END);
@@ -447,7 +447,7 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
         // Lade Einträge
         try {
             // Lade alle Einträge und filtere nach Schießstand-ID
-            List<de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO> eintraege =
+            List<de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag> eintraege =
                     schiessnachweisService.findeEintraegeAnSchiesstand(schiesstand);
 
             if (eintraege.isEmpty()) {
@@ -478,7 +478,7 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
      * Erstellt ein Status-Badge für Einträge.
      */
     private com.vaadin.flow.component.html.Span createEintragStatusBadge(
-            de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO eintrag) {
+            de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag eintrag) {
         com.vaadin.flow.component.html.Span badge = new com.vaadin.flow.component.html.Span();
         badge.getStyle()
                 .set("padding", "4px 12px")

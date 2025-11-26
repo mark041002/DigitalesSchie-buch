@@ -24,7 +24,7 @@ import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.service.BenutzerService;
-import de.suchalla.schiessbuch.service.email.EmailService;
+import de.suchalla.schiessbuch.service.EmailService;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;

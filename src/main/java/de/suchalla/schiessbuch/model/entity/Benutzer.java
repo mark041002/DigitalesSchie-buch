@@ -1,5 +1,6 @@
 package de.suchalla.schiessbuch.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -35,6 +36,7 @@ public class Benutzer {
 
     @NotBlank(message = "Passwort darf nicht leer sein")
     @Column(nullable = false)
+    @JsonIgnore
     private String passwort;
 
     @NotBlank(message = "Vorname darf nicht leer sein")
@@ -73,11 +75,13 @@ public class Benutzer {
     @OneToMany(mappedBy = "benutzer", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private Set<Vereinsmitgliedschaft> vereinsmitgliedschaften = new HashSet<>();
 
     @OneToMany(mappedBy = "schuetze", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private Set<SchiessnachweisEintrag> schiessnachweise = new HashSet<>();
 
     @PrePersist

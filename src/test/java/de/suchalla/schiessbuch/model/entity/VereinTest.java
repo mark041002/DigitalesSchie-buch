@@ -1,7 +1,6 @@
 package de.suchalla.schiessbuch.model.entity;
 
-import de.suchalla.schiessbuch.mapper.VereinMapper;
-import de.suchalla.schiessbuch.model.dto.VereinDTO;
+import de.suchalla.schiessbuch.model.entity.Verein;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,14 +15,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class VereinTest {
 
     private Verein verein;
-    private VereinMapper mapper;
 
     @BeforeEach
     void setUp() {
         verein = Verein.builder()
                 .id(1L)
                 .name("Schützenverein Teststadt")
-                .vereinsNummer("SV-12345")
                 .adresse("Schützenstraße 1, 12345 Teststadt")
                 .beschreibung("Traditionsreicher Schützenverein seit 1900")
                 .build();
@@ -35,7 +32,6 @@ class VereinTest {
         assertNotNull(verein);
         assertEquals(1L, verein.getId());
         assertEquals("Schützenverein Teststadt", verein.getName());
-        assertEquals("SV-12345", verein.getVereinsNummer());
         assertEquals("Schützenstraße 1, 12345 Teststadt", verein.getAdresse());
         assertEquals("Traditionsreicher Schützenverein seit 1900", verein.getBeschreibung());
     }
@@ -43,11 +39,9 @@ class VereinTest {
     @Test
     void testSetterMethods() {
         verein.setName("Neuer Verein");
-        verein.setVereinsNummer("SV-99999");
         verein.setAdresse("Neue Straße 1");
 
         assertEquals("Neuer Verein", verein.getName());
-        assertEquals("SV-99999", verein.getVereinsNummer());
         assertEquals("Neue Straße 1", verein.getAdresse());
     }
 
@@ -56,19 +50,16 @@ class VereinTest {
         Verein verein1 = Verein.builder()
                 .id(1L)
                 .name("Verein 1")
-                .vereinsNummer("V1")
                 .build();
 
         Verein verein2 = Verein.builder()
                 .id(1L)
                 .name("Verein 2")
-                .vereinsNummer("V2")
                 .build();
 
         Verein verein3 = Verein.builder()
                 .id(2L)
                 .name("Verein 1")
-                .vereinsNummer("V1")
                 .build();
 
         assertEquals(verein1, verein2);
@@ -110,19 +101,18 @@ class VereinTest {
 
     @Test
     void testEntityToDtoMapping() {
-        VereinDTO dto = mapper.toDTO(verein);
+        Verein dto = mapper.toDTO(verein);
 
         assertNotNull(dto);
         assertEquals(verein.getId(), dto.getId());
         assertEquals(verein.getName(), dto.getName());
-        assertEquals(verein.getVereinsNummer(), dto.getVereinsNummer());
         assertEquals(verein.getAdresse(), dto.getAdresse());
         assertEquals(verein.getBeschreibung(), dto.getBeschreibung());
     }
 
     @Test
     void testEntityToDtoMappingNull() {
-        VereinDTO dto = mapper.toDTO(null);
+        Verein dto = mapper.toDTO(null);
         assertNull(dto);
     }
 
@@ -131,7 +121,7 @@ class VereinTest {
         Verband verband = Verband.builder().id(1L).name("DSB").build();
         verein.getVerbaende().add(verband);
 
-        VereinDTO dto = mapper.toDTO(verein);
+        Verein dto = mapper.toDTO(verein);
 
         assertNotNull(dto);
         assertEquals(1, dto.getVerbandIds().size());
@@ -142,7 +132,7 @@ class VereinTest {
     @Test
     void testEntityToDtoMitgliederAnzahl() {
         // MitgliederAnzahl sollte 0 sein wenn keine Mitgliedschaften
-        VereinDTO dto = mapper.toDTO(verein);
+        Verein dto = mapper.toDTO(verein);
         assertEquals(0, dto.getMitgliederAnzahl());
     }
 }

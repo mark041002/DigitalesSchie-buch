@@ -31,7 +31,6 @@ public final class TestDataFactory {
         return Verein.builder()
                 .id(id)
                 .name(name)
-                .vereinsNummer("VN-" + id)
                 .adresse("Adresse " + name)
                 .beschreibung("Beschreibung " + name)
                 .build();

@@ -1,9 +1,7 @@
 package de.suchalla.schiessbuch.service;
 
-import de.suchalla.schiessbuch.mapper.DisziplinMapper;
-import de.suchalla.schiessbuch.mapper.SchiesstandMapper;
-import de.suchalla.schiessbuch.model.dto.DisziplinDTO;
-import de.suchalla.schiessbuch.model.dto.SchiesstandDTO;
+import de.suchalla.schiessbuch.model.entity.Disziplin;
+import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.Disziplin;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.repository.DisziplinRepository;
@@ -40,10 +38,8 @@ class DisziplinServiceTest {
     private SchiesstandRepository schiesstandRepository;
 
     @Mock
-    private DisziplinMapper disziplinMapper;
 
     @Mock
-    private SchiesstandMapper schiesstandMapper;
 
     @InjectMocks
     private DisziplinService disziplinService;
@@ -78,14 +74,14 @@ class DisziplinServiceTest {
     void testFindeDisziplinenVonVerband() {
         Long verbandId = 1L;
         List<Disziplin> disziplinen = Arrays.asList(testDisziplin);
-        List<DisziplinDTO> disziplinDTOs = Arrays.asList(
-            DisziplinDTO.builder().id(1L).kennziffer("LG-10m").build()
+        List<Disziplin> disziplinDTOs = Arrays.asList(
+            Disziplin.builder().id(1L).kennziffer("LG-10m").build()
         );
 
         when(disziplinRepository.findByVerbandId(verbandId)).thenReturn(disziplinen);
         when(disziplinMapper.toDTOList(disziplinen)).thenReturn(disziplinDTOs);
 
-        List<DisziplinDTO> result = disziplinService.findeDisziplinenVonVerband(verbandId);
+        List<Disziplin> result = disziplinService.findeDisziplinenVonVerband(verbandId);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -127,14 +123,14 @@ class DisziplinServiceTest {
     @Test
     void testFindeAlleSchiesstaende() {
         List<Schiesstand> schiesstaende = Arrays.asList(testSchiesstand);
-        List<SchiesstandDTO> schiesstandDTOs = Arrays.asList(
-                SchiesstandDTO.builder().id(1L).name("Stand 1").build()
+        List<Schiesstand> schiesstandDTOs = Arrays.asList(
+                Schiesstand.builder().id(1L).name("Stand 1").build()
         );
 
         when(schiesstandRepository.findAllWithVerein()).thenReturn(schiesstaende);
         when(schiesstandMapper.toDTOList(schiesstaende)).thenReturn(schiesstandDTOs);
 
-        List<SchiesstandDTO> result = disziplinService.findeAlleSchiesstaende();
+        List<Schiesstand> result = disziplinService.findeAlleSchiesstaende();
 
         assertNotNull(result);
         assertEquals(1, result.size());

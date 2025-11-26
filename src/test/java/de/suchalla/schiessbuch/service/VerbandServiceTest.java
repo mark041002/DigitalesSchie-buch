@@ -1,8 +1,6 @@
 package de.suchalla.schiessbuch.service;
 
-import de.suchalla.schiessbuch.mapper.VerbandMapper;
-import de.suchalla.schiessbuch.mapper.VereinMapper;
-import de.suchalla.schiessbuch.model.dto.VerbandDTO;
+import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.model.entity.*;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
 import de.suchalla.schiessbuch.repository.*;
@@ -44,10 +42,8 @@ class VerbandServiceTest {
     private VereinsmitgliedschaftService vereinsmitgliedschaftService;
 
     @Mock
-    private VerbandMapper verbandMapper;
 
     @Mock
-    private VereinMapper vereinMapper;
 
     @InjectMocks
     private VerbandService service;
@@ -98,12 +94,12 @@ class VerbandServiceTest {
     @Test
     void testFindeAlleVerbaende() {
         List<Verband> verbaende = Arrays.asList(verband);
-        List<VerbandDTO> dtos = Arrays.asList(VerbandDTO.builder().id(1L).name("DSB").build());
+        List<Verband> dtos = Arrays.asList(Verband.builder().id(1L).name("DSB").build());
 
         when(verbandRepository.findAllWithVereine()).thenReturn(verbaende);
         when(verbandMapper.toDTOList(verbaende)).thenReturn(dtos);
 
-        List<VerbandDTO> result = service.findeAlleVerbaende();
+        List<Verband> result = service.findeAlleVerbaende();
 
         assertEquals(1, result.size());
         verify(verbandRepository).findAllWithVereine();
@@ -112,7 +108,7 @@ class VerbandServiceTest {
     @Test
     void testIstMitgliedImVerband() {
         when(vereinsmitgliedschaftService.findeVerbaendeVonBenutzer(benutzer))
-                .thenReturn(Arrays.asList(VerbandDTO.builder().id(1L).build()));
+                .thenReturn(Arrays.asList(Verband.builder().id(1L).build()));
 
         boolean result = service.istMitgliedImVerband(benutzer, 1L);
 
@@ -122,7 +118,7 @@ class VerbandServiceTest {
     @Test
     void testIstMitgliedImVerbandFalse() {
         when(vereinsmitgliedschaftService.findeVerbaendeVonBenutzer(benutzer))
-                .thenReturn(Arrays.asList(VerbandDTO.builder().id(2L).build()));
+                .thenReturn(Arrays.asList(Verband.builder().id(2L).build()));
 
         boolean result = service.istMitgliedImVerband(benutzer, 1L);
 

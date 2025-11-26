@@ -1,7 +1,6 @@
 package de.suchalla.schiessbuch.model.entity;
 
-import de.suchalla.schiessbuch.mapper.DisziplinMapper;
-import de.suchalla.schiessbuch.model.dto.DisziplinDTO;
+import de.suchalla.schiessbuch.model.entity.Disziplin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class DisziplinTest {
 
     private Disziplin disziplin;
-    private DisziplinMapper mapper;
 
     @BeforeEach
     void setUp() {
@@ -107,7 +105,7 @@ class DisziplinTest {
 
     @Test
     void testEntityToDtoMapping() {
-        DisziplinDTO dto = mapper.toDTO(disziplin);
+        Disziplin dto = mapper.toDTO(disziplin);
 
         assertNotNull(dto);
         assertEquals(disziplin.getId(), dto.getId());
@@ -117,7 +115,7 @@ class DisziplinTest {
 
     @Test
     void testEntityToDtoMappingNull() {
-        DisziplinDTO dto = mapper.toDTO(null);
+        Disziplin dto = mapper.toDTO(null);
         assertNull(dto);
     }
 
@@ -126,7 +124,7 @@ class DisziplinTest {
         Verband verband = Verband.builder().id(1L).name("DSB").build();
         disziplin.setVerband(verband);
 
-        DisziplinDTO dto = mapper.toDTO(disziplin);
+        Disziplin dto = mapper.toDTO(disziplin);
 
         assertNotNull(dto);
         assertEquals(1L, dto.getVerbandId());

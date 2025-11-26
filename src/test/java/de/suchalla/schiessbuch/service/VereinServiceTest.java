@@ -48,7 +48,6 @@ class VereinServiceTest {
         testVerein = Verein.builder()
                 .id(1L)
                 .name("Schützenverein Teststadt")
-                .vereinsNummer("SV-12345")
                 .adresse("Schützenstraße 1, 12345 Teststadt")
                 .beschreibung("Traditionsreicher Verein")
                 .verbaende(new HashSet<>(Arrays.asList(testVerband)))
@@ -60,7 +59,6 @@ class VereinServiceTest {
         Verein existierend = Verein.builder()
                 .id(1L)
                 .name("Alter Name")
-                .vereinsNummer("ALT-123")
                 .adresse("Alte Adresse")
                 .beschreibung("Alte Beschreibung")
                 .verbaende(new HashSet<>())
@@ -76,7 +74,6 @@ class VereinServiceTest {
 
         // Prüfe, dass die Werte aktualisiert wurden
         assertEquals("Schützenverein Teststadt", existierend.getName());
-        assertEquals("SV-12345", existierend.getVereinsNummer());
         assertEquals("Schützenstraße 1, 12345 Teststadt", existierend.getAdresse());
         assertEquals("Traditionsreicher Verein", existierend.getBeschreibung());
         assertEquals(1, existierend.getVerbaende().size());
@@ -86,7 +83,6 @@ class VereinServiceTest {
     void testAktualisiereVerein_NoId() {
         Verein vereinOhneId = Verein.builder()
                 .name("Test")
-                .vereinsNummer("TEST")
                 .build();
 
         assertThrows(IllegalArgumentException.class, () -> {
@@ -113,14 +109,12 @@ class VereinServiceTest {
         Verein existierend = Verein.builder()
                 .id(1L)
                 .name("Test")
-                .vereinsNummer("TEST")
                 .verbaende(new HashSet<>(Arrays.asList(testVerband)))
                 .build();
 
         Verein updateVerein = Verein.builder()
                 .id(1L)
                 .name("Test Updated")
-                .vereinsNummer("TEST-UPD")
                 .verbaende(new HashSet<>())
                 .build();
 
@@ -139,14 +133,12 @@ class VereinServiceTest {
         Verein existierend = Verein.builder()
                 .id(1L)
                 .name("Test")
-                .vereinsNummer("TEST")
                 .verbaende(new HashSet<>(Arrays.asList(testVerband)))
                 .build();
 
         Verein updateVerein = Verein.builder()
                 .id(1L)
                 .name("Test Updated")
-                .vereinsNummer("TEST-UPD")
                 .verbaende(null)
                 .build();
 

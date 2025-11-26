@@ -1,9 +1,7 @@
 package de.suchalla.schiessbuch.service;
 
-import de.suchalla.schiessbuch.mapper.VerbandMapper;
-import de.suchalla.schiessbuch.mapper.VereinMapper;
-import de.suchalla.schiessbuch.model.dto.VerbandDTO;
-import de.suchalla.schiessbuch.model.dto.VereinDTO;
+import de.suchalla.schiessbuch.model.entity.Verband;
+import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
 import de.suchalla.schiessbuch.model.entity.Verband;
@@ -37,8 +35,6 @@ public class VerbandService {
     private final VereinsmitgliedschaftRepository mitgliedschaftRepository;
     private final DisziplinRepository disziplinRepository;
     private final VereinsmitgliedschaftService vereinsmitgliedschaftService;
-    private final VerbandMapper verbandMapper;
-    private final VereinMapper vereinMapper;
 
     /**
      * Erstellt einen neuen Verband.
@@ -70,9 +66,9 @@ public class VerbandService {
      * @return Liste aller Verbände als DTOs
      */
     @Transactional(readOnly = true)
-    public List<VerbandDTO> findeAlleVerbaende() {
+    public List<Verband> findeAlleVerbaende() {
         List<Verband> entities = verbandRepository.findAllWithVereine();
-        return verbandMapper.toDTOList(entities);
+        return entities;
     }
 
     /**
@@ -83,16 +79,6 @@ public class VerbandService {
     @Transactional(readOnly = true)
     public List<Verband> findeAlleVerbaendeEntities() {
         return verbandRepository.findAllWithVereine();
-    }
-
-    /**
-     * Alias für EAGER-Laden aller Verbände als DTOs (wird in UI verwendet).
-     *
-     * @return Liste aller Verbände als DTOs
-     */
-    @Transactional(readOnly = true)
-    public List<VerbandDTO> findeAlleVerbaendeMitVereinen() {
-        return findeAlleVerbaende();
     }
 
     /**
@@ -202,13 +188,7 @@ public class VerbandService {
      * @param vereinsNummer Die Vereinsnummer
      * @return Verein oder null
      */
-    @Transactional(readOnly = true)
-    public Verein findeVereinByVereinsNummer(String vereinsNummer) {
-        if (vereinsNummer == null) {
-            return null;
-        }
-        return vereinRepository.findByVereinsNummer(vereinsNummer.trim()).orElse(null);
-    }
+    // Methode findeVereinByVereinsNummer entfernt, da die Vereinsnummer nicht mehr verwendet wird
 
     /**
      * Findet alle Vereine als DTOs.
@@ -216,9 +196,9 @@ public class VerbandService {
      * @return Liste aller Vereine als DTOs
      */
     @Transactional(readOnly = true)
-    public List<VereinDTO> findeAlleVereine() {
+    public List<Verein> findeAlleVereine() {
         List<Verein> entities = vereinRepository.findAll();
-        return vereinMapper.toDTOList(entities);
+        return entities;
     }
 
     /**

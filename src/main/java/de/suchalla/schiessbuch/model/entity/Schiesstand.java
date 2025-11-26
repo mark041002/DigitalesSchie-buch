@@ -1,5 +1,6 @@
 package de.suchalla.schiessbuch.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.suchalla.schiessbuch.model.enums.SchiesstandTyp;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -41,10 +42,12 @@ public class Schiesstand {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verein_id")
+    @JsonIgnore
     private Verein verein;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vereinschef_id")
+    @JoinColumn(name = "aufseher_id")
+    @JsonIgnore
     private Benutzer aufseher;
 
     @Column(length = 500)
@@ -62,6 +65,7 @@ public class Schiesstand {
     @OneToMany(mappedBy = "schiesstand", cascade = CascadeType.ALL)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private Set<SchiessnachweisEintrag> eintraege = new HashSet<>();
 
     @PrePersist

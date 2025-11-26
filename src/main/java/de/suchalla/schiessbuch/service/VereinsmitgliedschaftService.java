@@ -1,12 +1,9 @@
 package de.suchalla.schiessbuch.service;
 
-import de.suchalla.schiessbuch.mapper.VerbandMapper;
-import de.suchalla.schiessbuch.mapper.VereinsmigliedschaftMapper;
-import de.suchalla.schiessbuch.model.dto.VerbandDTO;
-import de.suchalla.schiessbuch.model.dto.VereinsmigliedschaftDTO;
+import de.suchalla.schiessbuch.model.entity.Verband;
+import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
-import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
 import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
@@ -14,7 +11,6 @@ import de.suchalla.schiessbuch.repository.BenutzerRepository;
 import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.repository.VereinsmitgliedschaftRepository;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
-import de.suchalla.schiessbuch.service.email.EmailService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -43,8 +39,6 @@ public class VereinsmitgliedschaftService {
     private final DigitalesZertifikatRepository zertifikatRepository;
     private final BenutzerRepository benutzerRepository;
     private final PkiService pkiService;
-    private final VereinsmigliedschaftMapper vereinsmigliedschaftMapper;
-    private final VerbandMapper verbandMapper;
     private final EmailService notificationService;
 
     /**
@@ -116,7 +110,7 @@ public class VereinsmitgliedschaftService {
                     throw new IllegalArgumentException("Es besteht bereits eine offene Beitrittsanfrage für diesen Verein");
                 }
                 // Andernfalls geben wir den ersten gefundenen Datensatz zurück (Falle älterer, beendeter Einträge)
-                saved = existierende.get(0);
+                saved = existierende.getFirst();
             }
             throw ex;
         }
@@ -187,9 +181,9 @@ public class VereinsmitgliedschaftService {
      * @return Liste der Anfragen als DTOs
      */
     @Transactional(readOnly = true)
-    public List<VereinsmigliedschaftDTO> findeBeitrittsanfragen(Verein verein) {
+    public List<Vereinsmitgliedschaft> findeBeitrittsanfragen(Verein verein) {
         List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftsStatus.BEANTRAGT);
-        return vereinsmigliedschaftMapper.toDTOList(entities);
+        return entities;
     }
 
     /**
@@ -199,9 +193,9 @@ public class VereinsmitgliedschaftService {
      * @return Liste der Mitgliedschaften als DTOs
      */
     @Transactional(readOnly = true)
-    public List<VereinsmigliedschaftDTO> findeAktiveMitgliedschaften(Verein verein) {
+    public List<Vereinsmitgliedschaft> findeAktiveMitgliedschaften(Verein verein) {
         List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftsStatus.AKTIV);
-        return vereinsmigliedschaftMapper.toDTOList(entities);
+        return entities;
     }
 
     /**
@@ -222,9 +216,9 @@ public class VereinsmitgliedschaftService {
      * @return Liste der Mitgliedschaften als DTOs
      */
     @Transactional(readOnly = true)
-    public List<VereinsmigliedschaftDTO> findeMitgliedschaften(Benutzer benutzer) {
+    public List<Vereinsmitgliedschaft> findeMitgliedschaften(Benutzer benutzer) {
         List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByBenutzer(benutzer);
-        return vereinsmigliedschaftMapper.toDTOList(entities);
+        return entities;
     }
 
     /**
@@ -300,6 +294,7 @@ public class VereinsmitgliedschaftService {
 
     /**
      * Setzt den Aufseher-Status einer Mitgliedschaft.
+     * Wenn der Aufseher-Status gesetzt wird, wird ein Zertifikat erstellt.
      * Wenn der Aufseher-Status entzogen wird, wird das gueltigBis-Datum des Zertifikats auf jetzt gesetzt.
      *
      * @param mitgliedschaftId Die Mitgliedschafts-ID
@@ -316,14 +311,55 @@ public class VereinsmitgliedschaftService {
         boolean warVorherAufseher = Boolean.TRUE.equals(mitgliedschaft.getIstAufseher());
         mitgliedschaft.setIstAufseher(istAufseher);
 
-        // Wenn Aufseher-Status entzogen wird, Zertifikat-Gültigkeit beenden
-        if (warVorherAufseher && !istAufseher) {
-            Optional<DigitalesZertifikat> zertifikat = zertifikatRepository.findByBenutzer(mitgliedschaft.getBenutzer());
-            if (zertifikat.isPresent()) {
-                DigitalesZertifikat cert = zertifikat.get();
-                // Setze gueltigBis auf jetzt, damit das Zertifikat ab jetzt ungültig ist
-                cert.setGueltigBis(LocalDateTime.now());
-                zertifikatRepository.save(cert);
+        Benutzer benutzerDetached = mitgliedschaft.getBenutzer();
+        if (benutzerDetached != null && benutzerDetached.getId() != null) {
+            Benutzer benutzer = benutzerRepository.findById(benutzerDetached.getId()).orElse(benutzerDetached);
+
+            // Wenn Aufseher-Status gesetzt wird, Zertifikat erstellen
+            if (!warVorherAufseher && istAufseher) {
+                Optional<DigitalesZertifikat> bestehendesZertifikat = zertifikatRepository.findByBenutzer(benutzer);
+                if (bestehendesZertifikat.isEmpty()) {
+                    try {
+                        DigitalesZertifikat neuesZertifikat = pkiService.createAufseherCertificate(benutzer, mitgliedschaft.getVerein());
+                        log.info("Zertifikat für neuen Aufseher {} erstellt (SN: {})",
+                                benutzer.getVollstaendigerName(), neuesZertifikat.getSeriennummer());
+                    } catch (Exception e) {
+                        log.error("Fehler beim Erstellen des Aufseher-Zertifikats für {}", benutzer.getVollstaendigerName(), e);
+                        throw new RuntimeException("Zertifikat konnte nicht erstellt werden: " + e.getMessage(), e);
+                    }
+                } else {
+                    log.info("Aufseher {} hat bereits ein Zertifikat", benutzer.getVollstaendigerName());
+                }
+
+                // Rolle auf AUFSEHER setzen, falls noch nicht gesetzt
+                if (benutzer.getRolle() == BenutzerRolle.SCHUETZE) {
+                    benutzer.setRolle(BenutzerRolle.AUFSEHER);
+                    benutzerRepository.save(benutzer);
+                    log.info("Rolle von {} auf AUFSEHER gesetzt", benutzer.getVollstaendigerName());
+                }
+            }
+
+            // Wenn Aufseher-Status entzogen wird, Zertifikat-Gültigkeit beenden
+            if (warVorherAufseher && !istAufseher) {
+                Optional<DigitalesZertifikat> zertifikat = zertifikatRepository.findByBenutzer(benutzer);
+                if (zertifikat.isPresent()) {
+                    DigitalesZertifikat cert = zertifikat.get();
+                    // Setze gueltigBis auf jetzt, damit das Zertifikat ab jetzt ungültig ist
+                    cert.setGueltigBis(LocalDateTime.now());
+                    zertifikatRepository.save(cert);
+                    log.info("Zertifikat von {} widerrufen (Aufseher-Status entzogen)", benutzer.getVollstaendigerName());
+                }
+
+                // Rolle auf SCHUETZE zurücksetzen, falls keine anderen Aufseherfunktionen
+                List<Vereinsmitgliedschaft> mitgliedschaftenDesBenutzers = mitgliedschaftRepository.findByBenutzer(benutzer);
+                boolean hatAndereAufseherFunktion = mitgliedschaftenDesBenutzers.stream()
+                        .anyMatch(m -> Boolean.TRUE.equals(m.getIstAufseher()) || Boolean.TRUE.equals(m.getIstVereinschef()));
+
+                if (!hatAndereAufseherFunktion && (benutzer.getRolle() == BenutzerRolle.AUFSEHER)) {
+                    benutzer.setRolle(BenutzerRolle.SCHUETZE);
+                    benutzerRepository.save(benutzer);
+                    log.info("Rolle von {} auf SCHUETZE zurückgesetzt", benutzer.getVollstaendigerName());
+                }
             }
         }
 
@@ -337,14 +373,14 @@ public class VereinsmitgliedschaftService {
      * @return Liste der Verbände als DTOs
      */
     @Transactional(readOnly = true)
-    public List<VerbandDTO> findeVerbaendeVonBenutzer(Benutzer benutzer) {
+    public List<Verband> findeVerbaendeVonBenutzer(Benutzer benutzer) {
         List<de.suchalla.schiessbuch.model.entity.Verband> entities =
                 mitgliedschaftRepository.findByBenutzer(benutzer).stream()
                 .filter((Vereinsmitgliedschaft m) -> m.getStatus() == MitgliedschaftsStatus.AKTIV && m.getAktiv())
                 .flatMap((Vereinsmitgliedschaft m) -> m.getVerein().getVerbaende().stream())
                 .distinct()
                 .collect(java.util.stream.Collectors.toList());
-        return verbandMapper.toDTOList(entities);
+        return entities;
     }
 
     /**
@@ -386,9 +422,9 @@ public class VereinsmitgliedschaftService {
      * @return Liste aller Mitgliedschaften als DTOs
      */
     @Transactional(readOnly = true)
-    public List<VereinsmigliedschaftDTO> findeAlleMitgliedschaften(Verein verein) {
+    public List<Vereinsmitgliedschaft> findeAlleMitgliedschaften(Verein verein) {
         List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVerein(verein);
-        return vereinsmigliedschaftMapper.toDTOList(entities);
+        return entities;
     }
 
     /**
@@ -399,9 +435,9 @@ public class VereinsmitgliedschaftService {
      * @return Liste der Mitgliedschaften als DTOs
      */
     @Transactional(readOnly = true)
-    public List<VereinsmigliedschaftDTO> findeMitgliedschaftenNachStatus(Verein verein, MitgliedschaftsStatus status) {
+    public List<Vereinsmitgliedschaft> findeMitgliedschaftenNachStatus(Verein verein, MitgliedschaftsStatus status) {
         List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, status);
-        return vereinsmigliedschaftMapper.toDTOList(entities);
+        return entities;
     }
 
 

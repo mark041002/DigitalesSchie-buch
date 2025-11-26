@@ -1,5 +1,6 @@
 package de.suchalla.schiessbuch.service.email;
 
+import de.suchalla.schiessbuch.service.EmailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -26,8 +26,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.server.StreamResource;
-import de.suchalla.schiessbuch.mapper.VereinMapper;
-import de.suchalla.schiessbuch.model.dto.VereinsmigliedschaftDTO;
+import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
@@ -62,9 +61,8 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
     private final PdfExportService pdfExportService;
     private final Benutzer currentUser;
     private final VereinRepository vereinRepository;
-    private final VereinMapper vereinMapper;
 
-    private final Grid<VereinsmigliedschaftDTO> mitgliederGrid = new Grid<>(VereinsmigliedschaftDTO.class, false);
+    private final Grid<Vereinsmitgliedschaft> mitgliederGrid = new Grid<>(Vereinsmitgliedschaft.class, false);
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     // Tabs as class fields so we can select them from beforeEnter
@@ -85,16 +83,14 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
     private MitgliedschaftsStatus aktuellerStatus = MitgliedschaftsStatus.AKTIV;
     private Tab aktuellerTab;
     private Tab alleTab;
-    private Grid.Column<VereinsmigliedschaftDTO> statusColumn;
-    private Grid.Column<VereinsmigliedschaftDTO> rolleColumn;
+    private Grid.Column<Vereinsmitgliedschaft> statusColumn;
+    private Grid.Column<Vereinsmitgliedschaft> rolleColumn;
 
     public MitgliedschaftenVerwaltenView(SecurityService securityService,
                                          VereinsmitgliedschaftService mitgliedschaftService,
                                          PdfExportService pdfExportService,
-                                         VereinRepository vereinRepository,
-                                         VereinMapper vereinMapper) {
+                                         VereinRepository vereinRepository) {
         this.mitgliedschaftService = mitgliedschaftService;
-        this.vereinMapper = vereinMapper;
         this.pdfExportService = pdfExportService;
         this.vereinRepository = vereinRepository;
         this.currentUser = securityService.getAuthenticatedUser();
@@ -116,8 +112,8 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
             mitgliedschaftService.findeMitgliedschaften(currentUser).stream()
                     .filter(m -> Boolean.TRUE.equals(m.getIstVereinschef()) || Boolean.TRUE.equals(m.getIstAufseher()))
                     .findFirst()
-                    .ifPresent(dto -> {
-                        Long vereinId = dto.getVereinId();
+                    .ifPresent(m -> {
+                        Long vereinId = m.getVerein().getId();
                         aktuellerVerein = vereinRepository.findById(vereinId).orElse(null);
                     });
         }
@@ -337,11 +333,11 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
         mitgliederGrid.addClassName("rounded-grid");
         mitgliederGrid.setColumnReorderingAllowed(true);
 
-        mitgliederGrid.addColumn(dto -> (dto.getBenutzerVorname() + " " + dto.getBenutzerNachname()).trim())
+        mitgliederGrid.addColumn(dto -> (dto.getBenutzer().getVorname() + " " + dto.getBenutzer().getNachname()).trim())
                 .setHeader("Name")
                 .setSortable(true)
                 .setAutoWidth(true);
-        mitgliederGrid.addColumn(VereinsmigliedschaftDTO::getBenutzerEmail)
+        mitgliederGrid.addColumn(m -> m.getBenutzer() != null ? m.getBenutzer().getEmail() : "-")
                 .setHeader("E-Mail")
                 .setAutoWidth(true);
         mitgliederGrid.addColumn(dto -> {
@@ -379,7 +375,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
     /**
      * Erstellt Aktions-Buttons je nach Status.
      */
-    private HorizontalLayout createActionButtons(VereinsmigliedschaftDTO dto) {
+    private HorizontalLayout createActionButtons(Vereinsmitgliedschaft dto) {
         HorizontalLayout layout = new HorizontalLayout();
         layout.setSpacing(true);
         layout.getStyle().set("flex-wrap", "wrap");
@@ -559,7 +555,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
      */
     private void updateGrid() {
         if (aktuellerVerein != null) {
-            List<VereinsmigliedschaftDTO> mitglieder;
+            List<Vereinsmitgliedschaft> mitglieder;
 
             if (aktuellerStatus == null) {
                 // Alle Mitgliedschaften
@@ -573,7 +569,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
             String suchbegriff = suchfeld.getValue();
             if (suchbegriff != null && !suchbegriff.trim().isEmpty()) {
                 mitglieder = mitglieder.stream()
-                        .filter(m -> (m.getBenutzerVorname() + " " + m.getBenutzerNachname()).toLowerCase()
+                        .filter(m -> (m.getBenutzer().getVorname() + " " + m.getBenutzer().getNachname()).toLowerCase()
                                 .contains(suchbegriff.toLowerCase()))
                         .collect(Collectors.toList());
             }
@@ -606,7 +602,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
     private StreamResource createPdfResource() {
         return new StreamResource("mitgliedschaften_" + LocalDate.now() + ".pdf", () -> {
             try {
-                List<VereinsmigliedschaftDTO> mitglieder;
+                List<Vereinsmitgliedschaft> mitglieder;
 
                 if (aktuellerStatus == null) {
                     mitglieder = mitgliedschaftService.findeAlleMitgliedschaften(aktuellerVerein);
@@ -618,7 +614,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
                 String suchbegriff = suchfeld.getValue();
                 if (suchbegriff != null && !suchbegriff.trim().isEmpty()) {
                     mitglieder = mitglieder.stream()
-                            .filter(m -> (m.getBenutzerVorname() + " " + m.getBenutzerNachname()).toLowerCase()
+                            .filter(m -> (m.getBenutzer().getVorname() + " " + m.getBenutzer().getNachname()).toLowerCase()
                                     .contains(suchbegriff.toLowerCase()))
                             .collect(Collectors.toList());
                 }
@@ -627,7 +623,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
                 LocalDate bis = bisDatum.getValue();
 
                 byte[] pdfBytes = pdfExportService.exportiereVereinsmitgliedschaften(
-                        vereinMapper.toDTO(aktuellerVerein), mitglieder, von, bis);
+                        aktuellerVerein, mitglieder, von, bis);
                 return new ByteArrayInputStream(pdfBytes);
             } catch (Exception e) {
                 log.error("Fehler beim Erstellen der PDF", e);
@@ -641,7 +637,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
     /**
      * Gibt den Rollentext für ein Mitglied zurück.
      */
-    private String getRolleText(VereinsmigliedschaftDTO dto) {
+    private String getRolleText(Vereinsmitgliedschaft dto) {
         if (Boolean.TRUE.equals(dto.getIstVereinschef())) {
             return "Vereinschef";
         } else if (Boolean.TRUE.equals(dto.getIstAufseher())) {
@@ -653,7 +649,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
     /**
      * Gibt den Statustext zurück.
      */
-    private String getStatusText(VereinsmigliedschaftDTO dto) {
+    private String getStatusText(Vereinsmitgliedschaft dto) {
         return switch (dto.getStatus()) {
             case AKTIV -> "Aktiv";
             case BEANTRAGT -> "Zur Genehmigung";

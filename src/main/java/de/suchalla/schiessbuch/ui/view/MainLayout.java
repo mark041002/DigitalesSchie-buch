@@ -93,6 +93,23 @@ public class MainLayout extends AppLayout {
 
         String username = currentUser != null ? currentUser.getVollstaendigerName() : "Gast";
 
+        // Hilfe-Button (nur Desktop)
+        Button hilfeButton = new Button("Hilfe", VaadinIcon.QUESTION_CIRCLE.create());
+        hilfeButton.addClickListener(e -> {
+            // Get current route to pass as context
+            getUI().ifPresent(ui -> {
+                String currentRoute = ui.getInternals().getActiveViewLocation().getPath();
+                ui.navigate("hilfe?from=" + currentRoute);
+            });
+        });
+        hilfeButton.getStyle()
+                .set("background", "var(--lumo-primary-color-10pct)")
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-xs) var(--lumo-space-m)")
+                .set("font-weight", "500");
+        hilfeButton.addClassName("header-desktop-only");
+
         // Profil-Button (nur Desktop, rechts)
         profilButtonDesktop = new Button(username, VaadinIcon.USER.create());
         profilButtonDesktop.addClickListener(e ->
@@ -116,7 +133,7 @@ public class MainLayout extends AppLayout {
                 .set("font-weight", "500");
         logoutButton.addClassName("header-desktop-only");
 
-        HorizontalLayout rightButtons = new HorizontalLayout(profilButtonDesktop, logoutButton);
+        HorizontalLayout rightButtons = new HorizontalLayout(hilfeButton, profilButtonDesktop, logoutButton);
         rightButtons.setSpacing(true);
         rightButtons.setAlignItems(FlexComponent.Alignment.CENTER);
         rightButtons.getStyle().set("gap", "var(--lumo-space-s)");
@@ -291,6 +308,21 @@ public class MainLayout extends AppLayout {
 
         String username = currentUser != null ? currentUser.getVollstaendigerName() : "Gast";
 
+        // Hilfe-Button für Mobile
+        Button hilfeButtonMobile = new Button("Hilfe", VaadinIcon.QUESTION_CIRCLE.create());
+        hilfeButtonMobile.addClickListener(e -> {
+            getUI().ifPresent(ui -> {
+                String currentRoute = ui.getInternals().getActiveViewLocation().getPath();
+                ui.navigate("hilfe?from=" + currentRoute);
+            });
+        });
+        hilfeButtonMobile.setWidthFull();
+        hilfeButtonMobile.getStyle()
+                .set("background", "var(--lumo-primary-color-10pct)")
+                .set("color", "var(--lumo-primary-text-color)")
+                .set("justify-content", "flex-start")
+                .set("margin-bottom", "var(--lumo-space-xs)");
+
         // Profil-Button für Mobile
         profilButtonMobile = new Button(username, VaadinIcon.USER.create());
         profilButtonMobile.addClickListener(e ->
@@ -312,7 +344,7 @@ public class MainLayout extends AppLayout {
                 .set("color", "var(--lumo-error-text-color)")
                 .set("justify-content", "flex-start");
 
-                                                                mobileSection.add(profilButtonMobile, logoutButton);
+                                                                mobileSection.add(hilfeButtonMobile, profilButtonMobile, logoutButton);
         return mobileSection;
     }
 

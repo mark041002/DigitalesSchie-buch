@@ -1,7 +1,6 @@
 package de.suchalla.schiessbuch.model.entity;
 
-import de.suchalla.schiessbuch.mapper.VereinsmigliedschaftMapper;
-import de.suchalla.schiessbuch.model.dto.VereinsmigliedschaftDTO;
+import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
 import de.suchalla.schiessbuch.testutil.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +15,6 @@ class VereinsmitgliedschaftTest {
     private Vereinsmitgliedschaft mitgliedschaft;
     private Benutzer benutzer;
     private Verein verein;
-    private VereinsmigliedschaftMapper mapper;
 
     @BeforeEach
     void setUp() {
@@ -108,7 +106,7 @@ class VereinsmitgliedschaftTest {
 
     @Test
     void testEntityToDtoMapping() {
-        VereinsmigliedschaftDTO dto = mapper.toDTO(mitgliedschaft);
+        Vereinsmitgliedschaft dto = mapper.toDTO(mitgliedschaft);
 
         assertNotNull(dto);
         assertEquals(mitgliedschaft.getId(), dto.getId());
@@ -129,13 +127,13 @@ class VereinsmitgliedschaftTest {
 
     @Test
     void testEntityToDtoMappingNull() {
-        VereinsmigliedschaftDTO dto = mapper.toDTO(null);
+        Vereinsmitgliedschaft dto = mapper.toDTO(null);
         assertNull(dto);
     }
 
     @Test
     void testEntityToDtoHelperMethod() {
-        VereinsmigliedschaftDTO dto = mapper.toDTO(mitgliedschaft);
+        Vereinsmitgliedschaft dto = mapper.toDTO(mitgliedschaft);
         assertEquals("Max Mustermann", dto.getBenutzerVollstaendigerName());
     }
 }

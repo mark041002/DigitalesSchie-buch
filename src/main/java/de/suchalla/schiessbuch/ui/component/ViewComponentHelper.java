@@ -7,7 +7,9 @@ import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 
 /**
  * Hilfsklasse für die Erstellung häufig verwendeter UI-Komponenten.
@@ -250,6 +252,165 @@ public final class ViewComponentHelper {
                 .set("margin-bottom", "var(--lumo-space-m)")
                 .set("color", "var(--lumo-primary-text-color)");
         return header;
+    }
+
+    // ==================== Hilfe-System Komponenten ====================
+
+    /**
+     * Erstellt eine Tipp-Box mit Lightbulb-Icon und Text.
+     *
+     * @param text Der Tipp-Text
+     * @param color Die Farbe der Box (z.B. "var(--lumo-primary-color)")
+     * @return Tipp-Box-Komponente
+     */
+    public static Div createTippBox(String text, String color) {
+        Div tippBox = new Div();
+        tippBox.getStyle()
+                .set("background", color + "10")
+                .set("border-left", "4px solid " + color)
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-m)")
+                .set("margin-top", "var(--lumo-space-m)");
+
+        HorizontalLayout content = new HorizontalLayout();
+        content.setAlignItems(FlexComponent.Alignment.START);
+        content.setSpacing(true);
+
+        Icon icon = VaadinIcon.LIGHTBULB.create();
+        icon.setSize("24px");
+        icon.getStyle().set("color", color);
+
+        Paragraph tippText = new Paragraph(text);
+        tippText.getStyle()
+                .set("margin", "0")
+                .set("color", "var(--lumo-body-text-color)");
+
+        content.add(icon, tippText);
+        tippBox.add(content);
+        return tippBox;
+    }
+
+    /**
+     * Erstellt eine Error-Box mit Warning-Icon und Text.
+     *
+     * @param text Der Fehler-/Warnungstext
+     * @return Error-Box-Komponente
+     */
+    public static Div createErrorBox(String text) {
+        Div errorBox = new Div();
+        errorBox.getStyle()
+                .set("background", "var(--lumo-error-color-10pct)")
+                .set("border-left", "4px solid var(--lumo-error-color)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-m)")
+                .set("margin-top", "var(--lumo-space-m)");
+
+        HorizontalLayout content = new HorizontalLayout();
+        content.setAlignItems(FlexComponent.Alignment.START);
+        content.setSpacing(true);
+
+        Icon icon = VaadinIcon.WARNING.create();
+        icon.setSize("24px");
+        icon.getStyle().set("color", "var(--lumo-error-color)");
+
+        Paragraph errorText = new Paragraph(text);
+        errorText.getStyle()
+                .set("margin", "0")
+                .set("color", "var(--lumo-body-text-color)");
+
+        content.add(icon, errorText);
+        errorBox.add(content);
+        return errorBox;
+    }
+
+    /**
+     * Erstellt einen Bild-Platzhalter für Screenshots.
+     *
+     * @param imageName Der Name der Bild-Datei
+     * @param description Beschreibung des Bildes
+     * @return Bild-Platzhalter-Komponente
+     */
+    public static Div createImagePlaceholder(String imageName, String description) {
+        Div placeholder = new Div();
+        placeholder.getStyle()
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("border", "2px dashed var(--lumo-contrast-30pct)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-xl)")
+                .set("margin-top", "var(--lumo-space-m)")
+                .set("text-align", "center")
+                .set("color", "var(--lumo-secondary-text-color)")
+                .set("min-height", "300px")
+                .set("display", "flex")
+                .set("flex-direction", "column")
+                .set("align-items", "center")
+                .set("justify-content", "center");
+
+        Icon imageIcon = VaadinIcon.PICTURE.create();
+        imageIcon.setSize("64px");
+        imageIcon.getStyle()
+                .set("color", "var(--lumo-contrast-30pct)")
+                .set("margin-bottom", "var(--lumo-space-m)");
+
+        Paragraph text = new Paragraph("Bild-Platzhalter: " + imageName);
+        text.getStyle()
+                .set("font-weight", "600")
+                .set("margin", "0");
+
+        Paragraph desc = new Paragraph(description);
+        desc.getStyle()
+                .set("font-size", "var(--lumo-font-size-s)")
+                .set("margin", "var(--lumo-space-xs) 0 0 0");
+
+        Paragraph hint = new Paragraph("Hier können Sie ein Screenshot einfügen");
+        hint.getStyle()
+                .set("font-size", "var(--lumo-font-size-xs)")
+                .set("font-style", "italic")
+                .set("margin", "var(--lumo-space-s) 0 0 0");
+
+        placeholder.add(imageIcon, text, desc, hint);
+        return placeholder;
+    }
+
+    /**
+     * Erstellt eine Hilfe-Section mit Icon und Titel.
+     *
+     * @param id Die Section-ID für Anchor-Navigation
+     * @param title Der Titel der Section
+     * @param icon Das VaadinIcon für die Section
+     * @param iconColor Die Farbe des Icons
+     * @return Hilfe-Section-Komponente
+     */
+    public static Div createHelpSection(String id, String title, VaadinIcon icon, String iconColor) {
+        Div section = new Div();
+        section.setId(id);
+        section.getStyle()
+                .set("background", "var(--lumo-base-color)")
+                .set("border", "1px solid var(--lumo-contrast-10pct)")
+                .set("border-radius", "var(--lumo-border-radius-l)")
+                .set("padding", "var(--lumo-space-l)")
+                .set("margin-bottom", "var(--lumo-space-l)")
+                .set("box-shadow", "var(--lumo-box-shadow-xs)")
+                .set("scroll-margin-top", "100px");
+
+        HorizontalLayout header = new HorizontalLayout();
+        header.setAlignItems(FlexComponent.Alignment.CENTER);
+        header.setSpacing(true);
+        header.getStyle().set("margin-bottom", "var(--lumo-space-m)");
+
+        Icon iconComponent = icon.create();
+        iconComponent.setSize("32px");
+        iconComponent.getStyle().set("color", iconColor);
+
+        H2 sectionTitle = new H2(title);
+        sectionTitle.getStyle()
+                .set("margin", "0")
+                .set("color", "var(--lumo-header-text-color)");
+
+        header.add(iconComponent, sectionTitle);
+        section.add(header);
+
+        return section;
     }
 
 }

@@ -7,7 +7,10 @@ import java.time.LocalDateTime;
 
 /**
  * DTO für Benutzer-Daten ohne sensible Informationen.
- * Das password-Feld der Entity wird aus Sicherheitsgründen nicht in dieses DTO gemappt.
+ *
+ *   Das passwort-Feld der Entity wird aus Sicherheitsgründen
+ *   NICHT in dieses DTO gemappt, um zu verhindern, dass Passwort-Hashes versehentlich
+ *   an Clients gesendet werden.</li>
  *
  * @author Markus Suchalla
  * @version 1.0.0

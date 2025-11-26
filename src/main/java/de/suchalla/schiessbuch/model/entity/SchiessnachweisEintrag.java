@@ -1,5 +1,6 @@
 package de.suchalla.schiessbuch.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.suchalla.schiessbuch.model.enums.EintragStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -31,16 +32,19 @@ public class SchiessnachweisEintrag {
     @NotNull(message = "Schütze darf nicht leer sein")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schuetze_id", nullable = false)
+    @JsonIgnore
     private Benutzer schuetze;
 
     @NotNull(message = "Disziplin darf nicht leer sein")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "disziplin_id", nullable = false)
+    @JsonIgnore
     private Disziplin disziplin;
 
     @NotNull(message = "Schießstand darf nicht leer sein")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schiesstand_id", nullable = false)
+    @JsonIgnore
     private Schiesstand schiesstand;
 
     @NotNull(message = "Datum darf nicht leer sein")
@@ -64,6 +68,7 @@ public class SchiessnachweisEintrag {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "aufseher_id")
+    @JsonIgnore
     private Benutzer aufseher;
 
     @Column(name = "signiert_am")
@@ -84,6 +89,7 @@ public class SchiessnachweisEintrag {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "zertifikat_id")
+    @JsonIgnore
     private DigitalesZertifikat zertifikat;
 
     @Column(name = "ablehnungsgrund", length = 1000)

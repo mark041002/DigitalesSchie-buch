@@ -5,8 +5,13 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * DTO für Digitale Zertifikate ohne privateKeyPEM.
- * Das privateKeyPEM-Feld wird aus Sicherheitsgründen nicht in dieses DTO gemappt.
+ * DTO für Digitale Zertifikate ohne den privaten Schlüssel.
+ *
+ *   Das privateKeyPEM-Feld der Entity wird aus
+ *   Sicherheitsgründen NICHT in dieses DTO gemappt. Private Schlüssel sollten niemals
+ *   an Clients geschickt werden.
+ *   Verifizierung: Enthält denormalisierte Felder für öffentliche Verifizierung
+ *       ohne Zugriff auf sensible Schlüsseldaten zu benötigen.</li>
  *
  * @author Markus Suchalla
  * @version 1.0.0
@@ -22,7 +27,7 @@ public class DigitalesZertifikatDTO {
     private String seriennummer;
     private String subjectDN;
     private String issuerDN;
-    private String zertifikatPEM;  // Öffentliches Zertifikat ist OK
+    private String zertifikatPEM;
     private LocalDateTime gueltigSeit;
     private LocalDateTime gueltigBis;
     private Boolean widerrufen;

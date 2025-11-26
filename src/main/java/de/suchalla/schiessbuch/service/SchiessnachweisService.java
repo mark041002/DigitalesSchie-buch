@@ -1,7 +1,5 @@
 package de.suchalla.schiessbuch.service;
 
-import de.suchalla.schiessbuch.mapper.SchiessnachweisEintragMapper;
-import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintragListDTO;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
@@ -29,7 +27,6 @@ public class SchiessnachweisService {
 
     private final SchiessnachweisEintragRepository eintragRepository;
     private final SchiesstandRepository schiesstandRepository;
-    private final SchiessnachweisEintragMapper eintragMapper;
 
     /**
      * Erstellt einen neuen Schießnachweis-Eintrag.
@@ -42,56 +39,52 @@ public class SchiessnachweisService {
     }
 
     /**
-     * Findet alle Einträge eines Schützen in einem Zeitraum und gibt sie als ListDTOs zurück.
+     * Findet alle Einträge eines Schützen in einem Zeitraum.
      *
      * @param schuetze Der Schütze
      * @param von Start-Datum
      * @param bis End-Datum
-     * @return Liste der Einträge als ListDTOs
+     * @return Liste der Einträge
      */
     @Transactional(readOnly = true)
-    public List<SchiessnachweisEintragListDTO> findeEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
-        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchuetzeAndDatumBetween(schuetze, von, bis);
-        return eintragMapper.toListDTOList(entities);
+    public List<SchiessnachweisEintrag> findeEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
+        return eintragRepository.findBySchuetzeAndDatumBetween(schuetze, von, bis);
     }
 
     /**
-     * Findet alle Einträge eines Schützen und gibt sie als ListDTOs zurück.
+     * Findet alle Einträge eines Schützen.
      *
      * @param schuetze Der Schütze
-     * @return Liste der Einträge als ListDTOs
+     * @return Liste der Einträge
      */
     @Transactional(readOnly = true)
-    public List<SchiessnachweisEintragListDTO> findeEintraegeFuerSchuetze(Benutzer schuetze) {
-        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchuetze(schuetze);
-        return eintragMapper.toListDTOList(entities);
+    public List<SchiessnachweisEintrag> findeEintraegeFuerSchuetze(Benutzer schuetze) {
+        return eintragRepository.findBySchuetze(schuetze);
     }
 
     /**
-     * Findet alle signierten Einträge eines Schützen in einem Zeitraum als ListDTOs.
+     * Findet alle signierten Einträge eines Schützen in einem Zeitraum.
      *
      * @param schuetze Der Schütze
      * @param von Start-Datum
      * @param bis End-Datum
-     * @return Liste der signierten Einträge als ListDTOs
+     * @return Liste der signierten Einträge
      */
     @Transactional(readOnly = true)
-    public List<SchiessnachweisEintragListDTO> findeSignierteEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
-        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchuetzeAndDatumBetweenAndStatus(
+    public List<SchiessnachweisEintrag> findeSignierteEintraegeImZeitraum(Benutzer schuetze, LocalDate von, LocalDate bis) {
+        return eintragRepository.findBySchuetzeAndDatumBetweenAndStatus(
                 schuetze, von, bis, EintragStatus.SIGNIERT);
-        return eintragMapper.toListDTOList(entities);
     }
 
     /**
-     * Findet alle unsignierten Einträge an einem Schießstand als ListDTOs.
+     * Findet alle unsignierten Einträge an einem Schießstand.
      *
      * @param schiesstand Der Schießstand
-     * @return Liste der unsignierten Einträge als ListDTOs
+     * @return Liste der unsignierten Einträge
      */
     @Transactional(readOnly = true)
-    public List<SchiessnachweisEintragListDTO> findeUnsignierteEintraege(Schiesstand schiesstand) {
-        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchiesstandAndStatus(schiesstand, EintragStatus.UNSIGNIERT);
-        return eintragMapper.toListDTOList(entities);
+    public List<SchiessnachweisEintrag> findeUnsignierteEintraege(Schiesstand schiesstand) {
+        return eintragRepository.findBySchiesstandAndStatus(schiesstand, EintragStatus.UNSIGNIERT);
     }
 
     /**
@@ -101,12 +94,11 @@ public class SchiessnachweisService {
      * @return Liste der Einträge
      */
     @Transactional(readOnly = true)
-    public List<SchiessnachweisEintragListDTO> findeEintraegeAnSchiesstand(Schiesstand schiesstand) {
+    public List<SchiessnachweisEintrag> findeEintraegeAnSchiesstand(Schiesstand schiesstand) {
         // Lade Schiesstand neu aus DB, um LazyInitializationException zu vermeiden
         Schiesstand managedSchiesstand = schiesstandRepository.findById(schiesstand.getId())
                 .orElse(schiesstand);
-        List<SchiessnachweisEintrag> entities = eintragRepository.findBySchiesstand(managedSchiesstand);
-        return eintragMapper.toListDTOList(entities);
+        return eintragRepository.findBySchiesstand(managedSchiesstand);
     }
 
     /**

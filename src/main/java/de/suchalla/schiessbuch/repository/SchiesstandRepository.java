@@ -4,6 +4,7 @@ import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,11 +20,13 @@ public interface SchiesstandRepository extends JpaRepository<Schiesstand, Long> 
 
     /**
      * Findet alle Schießstände eines Vereins.
+     * Lädt Verein und Aufseher via LEFT JOIN FETCH für optimale Performance.
      *
      * @param verein Der Verein
      * @return Liste der Schießstände
      */
-    List<Schiesstand> findByVerein(Verein verein);
+    @Query("SELECT DISTINCT s FROM Schiesstand s LEFT JOIN FETCH s.verein LEFT JOIN FETCH s.aufseher WHERE s.verein = :verein")
+    List<Schiesstand> findByVerein(@Param("verein") Verein verein);
 
     /**
      * Findet alle Schießstände mit Verein und Aufseher.

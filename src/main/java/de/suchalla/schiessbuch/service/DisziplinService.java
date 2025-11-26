@@ -1,9 +1,7 @@
 package de.suchalla.schiessbuch.service;
 
-import de.suchalla.schiessbuch.mapper.DisziplinMapper;
-import de.suchalla.schiessbuch.mapper.SchiesstandMapper;
-import de.suchalla.schiessbuch.model.dto.DisziplinDTO;
-import de.suchalla.schiessbuch.model.dto.SchiesstandDTO;
+import de.suchalla.schiessbuch.model.entity.Disziplin;
+import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.Disziplin;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.repository.DisziplinRepository;
@@ -28,8 +26,6 @@ public class DisziplinService {
 
     private final DisziplinRepository disziplinRepository;
     private final SchiesstandRepository schiesstandRepository;
-    private final DisziplinMapper disziplinMapper;
-    private final SchiesstandMapper schiesstandMapper;
 
     /**
      * Erstellt eine neue Disziplin.
@@ -48,9 +44,9 @@ public class DisziplinService {
      * @return Liste der Disziplinen als DTOs
      */
     @Transactional(readOnly = true)
-    public List<DisziplinDTO> findeDisziplinenVonVerband(Long verbandid) {
+    public List<Disziplin> findeDisziplinenVonVerband(Long verbandid) {
         List<Disziplin> entities = disziplinRepository.findByVerbandId(verbandid);
-        return disziplinMapper.toDTOList(entities);
+        return entities;
     }
 
     /**
@@ -88,9 +84,9 @@ public class DisziplinService {
      * @return Liste aller Schießstände als DTOs
      */
     @Transactional(readOnly = true)
-    public List<SchiesstandDTO> findeAlleSchiesstaende() {
+    public List<Schiesstand> findeAlleSchiesstaende() {
         List<Schiesstand> entities = schiesstandRepository.findAllWithVerein();
-        return schiesstandMapper.toDTOList(entities);
+        return entities;
     }
 
     /**

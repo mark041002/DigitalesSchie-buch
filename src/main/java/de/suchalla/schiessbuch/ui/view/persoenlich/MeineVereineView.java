@@ -16,6 +16,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
@@ -250,7 +251,7 @@ public class MeineVereineView extends VerticalLayout {
         infoIcon.setSize("20px");
         // Keine explizite Farbe setzen, Standard-Info-Box-Styling übernimmt das Blau
 
-        Span infoText = new Span("Geben Sie die Vereinsnummer ein, um eine Beitrittsanfrage zu senden.");
+        Span infoText = new Span("Suchen Sie nach Namen oder Adresse (Teiltext möglich). Wählen Sie einen Verein aus der Liste aus — vollständiger Name und Adresse werden angezeigt. 'Beitreten' sendet eine Beitrittsanfrage.");
         infoText.getStyle().set("margin-left", "var(--lumo-space-s)");
         infoText.getStyle().set("color", "var(--lumo-primary-text-color)"); // Blauschrift
 
@@ -260,29 +261,89 @@ public class MeineVereineView extends VerticalLayout {
         infoLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START); // linksbündig
         infoBox.add(infoLayout);
 
-        TextField vereinsNummerField = new TextField("Vereinsnummer");
-        vereinsNummerField.setWidthFull();
-        vereinsNummerField.setPlaceholder("z.B. DSB-12345");
-        vereinsNummerField.setClearButtonVisible(true);
+        Button abbrechenButton = new Button("Abbrechen", e -> dialog.close());
 
-        Button beitretenButton = new Button("Beitreten", new Icon(VaadinIcon.SIGN_IN), e -> {
-             if (vereinsNummerField.getValue() == null || vereinsNummerField.getValue().isEmpty()) {
-                 Notification.show("Bitte geben Sie eine Vereinsnummer ein")
-                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                 return;
-             }
+        // Einfache Suche: ein Feld für Name / Nummer / Adresse und eine Ergebnisliste (keine Tabelle)
+        TextField suchFeld = new TextField("Verein suchen (Name, Adresse)");
+        suchFeld.setWidthFull();
+        suchFeld.setPlaceholder("Teil des Namens oder der Adresse eingeben");
+        suchFeld.setClearButtonVisible(true);
+        suchFeld.setValueChangeMode(ValueChangeMode.EAGER);
 
-             vereinBeitreten(vereinsNummerField.getValue());
-             dialog.close();
-         });
-         beitretenButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        VerticalLayout ergebnisContainer = new VerticalLayout();
+        ergebnisContainer.setWidthFull();
+        ergebnisContainer.setSpacing(false);
+        ergebnisContainer.setPadding(false);
 
-         Button abbrechenButton = new Button("Abbrechen", e -> dialog.close());
+        final List<Verein> alleVereine = loadAlleVereine();
 
-         layout.add(infoBox, vereinsNummerField);
-         dialog.add(layout);
-         dialog.getFooter().add(abbrechenButton, beitretenButton);
-         dialog.open();
+        // Hilfsmethode zum (rek)aufbauen der Ergebnisliste
+        java.util.function.Consumer<List<Verein>> refreshResults = matches -> {
+            ergebnisContainer.removeAll();
+            if (matches == null || matches.isEmpty()) {
+                Span none = new Span("Keine Vereine gefunden");
+                none.getStyle().set("color", "var(--lumo-disabled-text-color)");
+                ergebnisContainer.add(none);
+                return;
+            }
+
+            for (Verein v : matches) {
+                HorizontalLayout row = new HorizontalLayout();
+                row.setWidthFull();
+                row.setAlignItems(FlexComponent.Alignment.CENTER);
+
+                VerticalLayout info = new VerticalLayout();
+                info.setPadding(false);
+                info.setSpacing(false);
+                info.setWidthFull();
+
+                Span name = new Span(v.getName());
+                name.getStyle().set("font-weight", "600");
+                com.vaadin.flow.component.html.Paragraph addr = new com.vaadin.flow.component.html.Paragraph(v.getAdresse() == null ? "" : v.getAdresse());
+                addr.getStyle().set("margin", "0");
+
+                info.add(name, addr);
+
+                Button join = new Button("Beitreten", e -> {
+                    try {
+                        mitgliedschaftService.vereinBeitreten(currentUser, v);
+                        Notification.show("Beitrittsanfrage wurde gesendet").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                        updateGrid();
+                        dialog.close();
+                    } catch (Exception ex) {
+                        Notification.show("Fehler: " + ex.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    }
+                });
+                join.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+                row.add(info, join);
+                row.expand(info);
+                ergebnisContainer.add(row);
+            }
+        };
+
+        // Anfangs alle Vereine anzeigen
+        refreshResults.accept(alleVereine);
+
+        // Filter beim Tippen
+        suchFeld.addValueChangeListener(e -> {
+            String q = e.getValue() == null ? "" : e.getValue().trim().toLowerCase();
+            if (q.isEmpty()) {
+                refreshResults.accept(alleVereine);
+                return;
+            }
+            List<Verein> matches = alleVereine.stream().filter(v -> {
+                String name = v.getName() == null ? "" : v.getName().toLowerCase();
+                String adr = v.getAdresse() == null ? "" : v.getAdresse().toLowerCase();
+                return name.contains(q) || adr.contains(q);
+            }).toList();
+            refreshResults.accept(matches);
+        });
+
+        layout.add(infoBox, suchFeld, ergebnisContainer);
+        dialog.add(layout);
+        dialog.getFooter().add(abbrechenButton);
+        dialog.open();
     }
 
     /**
@@ -310,35 +371,7 @@ public class MeineVereineView extends VerticalLayout {
         return new Button();
     }
 
-    /**
-     * Tritt einem Verein bei.
-     */
-    private void vereinBeitreten(String vereinsNummer) {
-        try {
-            if (vereinsNummer == null || vereinsNummer.isBlank()) {
-                Notification.show("Ungültige Vereinsnummer").addThemeVariants(NotificationVariant.LUMO_ERROR);
-                return;
-            }
-
-            Verein verein = verbandService.findeVereinByVereinsNummer(vereinsNummer);
-            
-            if (verein == null) {
-                Notification.show("Verein nicht gefunden").addThemeVariants(NotificationVariant.LUMO_ERROR);
-                return;
-            }
-
-            // Verein gefunden, Verband wird automatisch aus dem Verein bestimmt
-            mitgliedschaftService.vereinBeitreten(currentUser, verein);
-
-            Notification.show("Beitrittsanfrage wurde gesendet")
-                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-
-            updateGrid();
-
-        } catch (Exception e) {
-            Notification.show("Fehler: " + e.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
-        }
-    }
+    
 
     /**
      * Verlässt einen Verein.
@@ -383,6 +416,15 @@ public class MeineVereineView extends VerticalLayout {
             boolean isEmpty = mitgliedschaften.isEmpty();
             grid.setVisible(!isEmpty);
             emptyStateMessage.setVisible(isEmpty);
+        }
+    }
+
+    private List<Verein> loadAlleVereine() {
+        try {
+            return verbandService.findeAlleVereineEntities();
+        } catch (Exception ex) {
+            Notification.show("Fehler beim Laden der Vereine: " + ex.getMessage()).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return List.of();
         }
     }
 }

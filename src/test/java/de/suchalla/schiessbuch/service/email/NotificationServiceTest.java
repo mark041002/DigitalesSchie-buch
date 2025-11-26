@@ -3,6 +3,7 @@ package de.suchalla.schiessbuch.service.email;
 import de.suchalla.schiessbuch.model.entity.*;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
 import de.suchalla.schiessbuch.repository.VereinsmitgliedschaftRepository;
+import de.suchalla.schiessbuch.service.EmailService;
 import de.suchalla.schiessbuch.testutil.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

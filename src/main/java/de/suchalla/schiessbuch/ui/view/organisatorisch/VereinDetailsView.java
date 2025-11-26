@@ -47,7 +47,6 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
     private final Benutzer currentUser;
 
     private final TextField nameField = new TextField("Vereinsname");
-    private final TextField vereinsNummerField = new TextField("Vereinsnummer");
     private final TextField adresseField = new TextField("Adresse");
     private final TextArea beschreibungField = new TextArea("Beschreibung");
 
@@ -125,11 +124,10 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
         FormLayout formLayout = new FormLayout();
         nameField.setRequired(true);
         nameField.setWidthFull();
-        vereinsNummerField.setWidthFull();
         adresseField.setWidthFull();
         beschreibungField.setWidthFull();
         beschreibungField.setHeight("150px");
-        formLayout.add(nameField, vereinsNummerField, adresseField, beschreibungField);
+        formLayout.add(nameField, adresseField, beschreibungField);
         formLayout.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0", 1),
                 new FormLayout.ResponsiveStep("500px", 2)
@@ -162,8 +160,6 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
         }
 
         nameField.setValue(aktuellerVerein.getName() != null ? aktuellerVerein.getName() : "");
-        vereinsNummerField.setValue(aktuellerVerein.getVereinsNummer() != null ?
-                aktuellerVerein.getVereinsNummer() : "");
         adresseField.setValue(aktuellerVerein.getAdresse() != null ? aktuellerVerein.getAdresse() : "");
         beschreibungField.setValue(aktuellerVerein.getBeschreibung() != null ?
                 aktuellerVerein.getBeschreibung() : "");
@@ -181,7 +177,7 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
                 .filter(m -> Boolean.TRUE.equals(m.getIstVereinschef()))
                 .findFirst()
                 .ifPresent(dto -> {
-                    Long vereinId = dto.getVereinId();
+                    Long vereinId = dto.getVerein().getId();
                     aktuellerVerein = vereinRepository.findById(vereinId).orElse(null);
                     ladeVereinsdaten();
                 });        if (aktuellerVerein == null) {
@@ -209,7 +205,6 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
 
         try {
             aktuellerVerein.setName(nameField.getValue());
-            aktuellerVerein.setVereinsNummer(vereinsNummerField.getValue());
             aktuellerVerein.setAdresse(adresseField.getValue());
             aktuellerVerein.setBeschreibung(beschreibungField.getValue());
 

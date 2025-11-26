@@ -12,7 +12,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import de.suchalla.schiessbuch.service.email.EmailService;
+import de.suchalla.schiessbuch.service.EmailService;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.service.BenutzerService;
 import lombok.extern.slf4j.Slf4j;

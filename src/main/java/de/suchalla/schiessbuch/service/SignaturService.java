@@ -6,7 +6,6 @@ import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import de.suchalla.schiessbuch.repository.SchiessnachweisEintragRepository;
-import de.suchalla.schiessbuch.service.email.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -54,11 +53,9 @@ public class SignaturService {
         try {
             log.info("Starte Signierung für Eintrag-ID: {} durch Aufseher: {}", eintrag.getId(), aufseher.getId());
 
-            DigitalesZertifikat aufseherZertifikat = zertifikatRepository.findByBenutzer(aufseher)
-                    .orElseGet(() -> {
-                        log.info("Erstelle neues Zertifikat für Aufseher: {}", aufseher.getId());
-                        return pkiService.createAufseherCertificate(aufseher, verein);
-                    });
+            DigitalesZertifikat aufseherZertifikat = zertifikatRepository.findByBenutzer(aufseher).orElseThrow(
+                    () -> new RuntimeException("Kein gültiges Zertifikat für Aufseher gefunden")
+            );
 
             if (!aufseherZertifikat.istGueltig()) {
                 throw new RuntimeException("Zertifikat des Aufsehers ist nicht gültig oder wurde widerrufen");

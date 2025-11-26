@@ -1,5 +1,6 @@
 package de.suchalla.schiessbuch.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -33,9 +34,7 @@ public class Verein {
     @Column(nullable = false)
     private String name;
 
-    @NotBlank(message = "Vereinsnummer darf nicht leer sein")
-    @Column(name = "vereins_nummer", nullable = false)
-    private String vereinsNummer;
+    // Vereinsnummer removed from model
 
     @Column(length = 500)
     private String adresse;
@@ -61,10 +60,12 @@ public class Verein {
     @OneToMany(mappedBy = "verein", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
+    @JsonIgnore
     private Set<Vereinsmitgliedschaft> mitgliedschaften = new HashSet<>();
 
     @OneToOne(mappedBy = "verein", cascade = CascadeType.ALL)
     @ToString.Exclude
+    @JsonIgnore
     private Schiesstand schiesstand;
 
     @PrePersist
@@ -83,7 +84,6 @@ public class Verein {
         return "Verein{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", vereinsNummer='" + vereinsNummer + '\'' +
                 '}';
     }
 }

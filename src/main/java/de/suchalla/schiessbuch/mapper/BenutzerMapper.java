@@ -40,7 +40,7 @@ public class BenutzerMapper implements BaseMapper<Benutzer, BenutzerDTO> {
     }
 
     /**
-     * Konvertiert Benutzer-Entity zu Listen-DTO (minimal).
+     * Konvertiert Benutzer-Entity zu Listen-DTO.
      */
     public BenutzerListDTO toListDTO(Benutzer entity) {
         if (entity == null) {
