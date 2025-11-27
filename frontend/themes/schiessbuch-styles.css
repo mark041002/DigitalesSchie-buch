@@ -1,0 +1,238 @@
+/* ==========================================================================
+   Digitales Schießbuch - Zentrale Styles
+   ========================================================================== */
+
+/* Grid/Table Container mit grauem Hintergrund */
+.table-container {
+    background-color: var(--lumo-base-color);
+    border-radius: var(--lumo-border-radius-l);
+    padding: var(--lumo-space-m);
+    box-shadow: var(--lumo-box-shadow-s);
+}
+
+/* Glassmorphism-Effekt */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Moderne Divider */
+.divider {
+    height: 1px;
+    background: linear-gradient(90deg,
+    transparent,
+    var(--lumo-contrast-20pct),
+    transparent);
+    margin: var(--lumo-space-m) 0;
+}
+
+/* Zebra-Streifen für bessere Lesbarkeit */
+.striped-layout > *:nth-child(even) {
+    background-color: var(--lumo-contrast-5pct);
+}
+
+/* Tooltip-Style */
+[title] {
+    position: relative;
+}
+
+/* Focus-Ring für Accessibility */
+*:focus-visible {
+    outline: 2px solid var(--lumo-primary-color);
+    outline-offset: 2px;
+    border-radius: var(--lumo-border-radius-s);
+}
+
+/* Header mit Gradient */
+.gradient-header {
+    width: 100%;
+    background: linear-gradient(135deg, var(--lumo-primary-color) 0%, var(--lumo-primary-color-50pct) 100%);
+    color: var(--lumo-primary-contrast-color);
+    padding: var(--lumo-space-l);
+    border-radius: var(--lumo-border-radius-l);
+    margin-bottom: var(--lumo-space-l);
+    box-shadow: var(--lumo-box-shadow-m);
+    box-sizing: border-box;
+}
+
+.gradient-header h2 {
+    margin: 0 0 var(--lumo-space-s) 0;
+    color: var(--lumo-primary-contrast-color);
+}
+
+.gradient-header .subtitle {
+    display: block;
+    opacity: 0.9;
+    font-size: var(--lumo-font-size-m);
+    margin-top: var(--lumo-space-xs);
+}
+
+/* Inline subtitle variant: place the subtitle on the right side of the title
+   when the header container has the modifier class 'header-inline-subtitle'. */
+.gradient-header.header-inline-subtitle {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-m);
+}
+.gradient-header.header-inline-subtitle .subtitle {
+    display: inline-block;
+    margin-top: 0;
+    margin-left: 0;
+    font-weight: 500;
+    color: #ffffff;
+    opacity: 0.95;
+}
+
+/* Info Box */
+.info-box {
+    width: 100%;
+    background: var(--lumo-primary-color-10pct);
+    border-left: 4px solid var(--lumo-primary-color);
+    border-radius: var(--lumo-border-radius-m);
+    padding: var(--lumo-space-l) var(--lumo-space-m);
+    margin-top: var(--lumo-space-m);
+    margin-bottom: var(--lumo-space-m);
+    box-shadow: var(--lumo-box-shadow-xs);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--lumo-space-m);
+    box-sizing: border-box;
+}
+
+.info-box vaadin-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--lumo-primary-color);
+}
+
+.info-box p {
+    color: var(--lumo-primary-text-color);
+    margin: 0;
+    flex: 1;
+}
+
+/* Warning Box */
+.warning-box {
+    width: 100%;
+    background: var(--lumo-warning-color-10pct);
+    border-left: 4px solid var(--lumo-warning-color);
+    border-radius: var(--lumo-border-radius-m);
+    padding: var(--lumo-space-m);
+    margin-bottom: var(--lumo-space-l);
+    box-shadow: var(--lumo-box-shadow-xs);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--lumo-space-m);
+    box-sizing: border-box;
+}
+
+.warning-box vaadin-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--lumo-warning-color);
+}
+
+.warning-box p {
+    color: var(--lumo-warning-text-color);
+    margin: 0;
+    flex: 1;
+}
+
+/* Error Box */
+.error-box {
+    width: 100%;
+    border: 2px solid var(--lumo-error-color);
+    border-radius: var(--lumo-border-radius-l);
+    background-color: var(--lumo-error-color-10pct);
+    padding: var(--lumo-space-l);
+    box-shadow: var(--lumo-box-shadow-s);
+}
+
+.error-box h3 {
+    color: var(--lumo-error-text-color);
+    margin-top: 0;
+}
+
+/* Success Box */
+.success-box {
+    width: 100%;
+    border: 2px solid var(--lumo-success-color);
+    border-radius: var(--lumo-border-radius-l);
+    background-color: var(--lumo-success-color-10pct);
+    padding: var(--lumo-space-l);
+    box-shadow: var(--lumo-box-shadow-s);
+}
+
+.success-box h3 {
+    color: var(--lumo-success-text-color);
+    margin-top: 0;
+}
+
+/* Note: Stats Grid, Stat Card, Quick Access Container moved to cards.css to avoid duplication */
+
+/* Detail Row - für Zertifikat-Details */
+.detail-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: var(--lumo-space-m);
+    padding: var(--lumo-space-s) 0;
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row .label {
+    font-weight: 600;
+    color: var(--lumo-secondary-text-color);
+}
+
+.detail-row .value {
+    color: var(--lumo-body-text-color);
+    word-break: break-word;
+}
+
+/* Note: Empty State, Cards Container, Card moved to cards.css to avoid duplication */
+/* Note: neuer-eintrag-btn moved to buttons.css to avoid duplication */
+
+/* Note: All Dialog Styling moved to dialogs.css to avoid duplication */
+/* Note: Error Button styling moved to buttons.css to avoid duplication */
+
+/* Badge Farben für Status */
+.badge-success {
+    background-color: #27ae60 ; /* Grün */
+    color: #fff ;
+}
+.badge-warning {
+    background-color: #f1c40f ; /* Gelb */
+    color: #fff ;
+}
+.badge-error {
+    background-color: #e74c3c ; /* Rot */
+    color: #fff ;
+}
+.badge {
+    padding: 0.25em 0.75em;
+    border-radius: 1em;
+    font-size: 0.95em;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+/* Grid cell alignment helpers */
+.align-numeric {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.align-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+

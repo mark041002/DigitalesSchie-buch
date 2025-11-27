@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Datenbank
+  postgres:
+    image: postgres:16-alpine
+    container_name: schiessbuch-db
+    environment:
+      POSTGRES_DB: schiessbuch
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432" # Host-Port 5433, Container-Port 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - schiessbuch-network
+    restart: unless-stopped
+
+  # Spring Boot Anwendung
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: schiessbuch-app
+    depends_on:
+      - postgres
+    environment:
+      # Datenbank läuft auf "postgres" Container
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/schiessbuch
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    ports:
+      - "8000:8000"
+    networks:
+      - schiessbuch-network
+    restart: unless-stopped
+
+networks:
+  schiessbuch-network:
+
+volumes:
+  postgres_data:
