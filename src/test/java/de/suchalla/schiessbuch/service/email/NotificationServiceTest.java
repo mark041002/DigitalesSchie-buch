@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 class NotificationServiceTest {
 
     @Mock
-    private jakarta.mail.internet.MimeMessage mimeMessage; // placeholder to satisfy injection if needed
+    private jakarta.mail.internet.MimeMessage mimeMessage; // Platzhalter für Injektion falls benötigt
 
     @Mock
     private org.springframework.mail.javamail.JavaMailSender mailSender;

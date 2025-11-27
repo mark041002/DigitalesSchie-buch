@@ -1,6 +1,5 @@
 package de.suchalla.schiessbuch.model.entity;
 
-import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
 import de.suchalla.schiessbuch.testutil.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;

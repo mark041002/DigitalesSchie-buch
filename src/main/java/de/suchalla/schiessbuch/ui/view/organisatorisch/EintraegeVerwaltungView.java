@@ -211,7 +211,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         }
 
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
-        contentWrapper.setSizeFull();
+        contentWrapper.setWidthFull();
 
         // Header-Bereich
         Div header = new Div();
@@ -282,16 +282,8 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         contentWrapper.add(tabsContainer);
 
         // Filter-Container
-        filterContainer = new Div();
-        filterContainer.addClassName("filter-box");
-        filterContainer.setWidthFull();
-        filterContainer.getStyle()
-                .set("background", "var(--lumo-contrast-5pct)")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("padding", "var(--lumo-space-m)")
-                .set("margin-bottom", "var(--lumo-space-m)");
-        filterContainer.add(createFilterLayout());
-        contentWrapper.add(filterContainer);
+        contentWrapper.add(ViewComponentHelper.createFilterBox(createFilterLayout()));
+
 
         // Empty State Message
         emptyStateMessage = ViewComponentHelper.createEmptyStateMessage("Noch keine Einträge vorhanden.", VaadinIcon.RECORDS);
@@ -348,9 +340,13 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
             schuetzenComboBox, aufseherComboBox, vonDatum, bisDatum, filterButton, pdfDownload
         );
         filterRow.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.END);
-        filterRow.setSpacing(true);
+        filterRow.setSpacing(false);
+        filterRow.setPadding(false);
         filterRow.setWidthFull();
-        filterRow.getStyle().set("flex-wrap", "wrap");
+        filterRow.getStyle()
+                .set("flex-wrap", "wrap")
+                .set("gap", "var(--lumo-space-m)")
+                .set("box-sizing", "border-box");
 
         layout.add(filterRow);
         aktualisiereFilterOptionen();

@@ -55,7 +55,7 @@ public class MitgliederVerwaltungView extends VerticalLayout {
     private void createContent() {
         // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
-        contentWrapper.setSizeFull();
+        contentWrapper.setWidthFull();
 
         // Header-Bereich
         Div header = ViewComponentHelper.createGradientHeader("Benutzerverwaltung");
@@ -80,7 +80,7 @@ public class MitgliederVerwaltungView extends VerticalLayout {
         emptyStateMessage = ViewComponentHelper.createEmptyStateMessage("Keine Benutzer vorhanden.", VaadinIcon.USERS);
         emptyStateMessage.setVisible(false);
 
-        // Grid Setup
+        // Grid Einrichtung
         setupGrid();
 
         gridContainer.add(emptyStateMessage, grid);

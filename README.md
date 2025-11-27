@@ -118,17 +118,10 @@ Die Anwendung folgt einer mehrschichtigen Architektur (Layered Architecture):
 
 ### Voraussetzungen
 
-- Java Development Kit (JDK) 17 oder höher
+- Java Development Kit (JDK) 23 oder höher
 - Apache Maven 3.8 oder höher
-- PostgreSQL 13 oder höher (optional, H2 für Entwicklung)
-- Git (für Versionskontrolle)
+- PostgreSQL 16 oder höher (optional, H2 für Entwicklung)
 
-### Projekt klonen
-
-```bash
-git clone <repository-url>
-cd DigitalesSchiessbuch
-```
 
 ### Datenbank konfigurieren
 
@@ -159,7 +152,7 @@ mvn clean install
 mvn spring-boot:run
 ```
 
-Die Anwendung ist dann verfügbar unter: `http://localhost:8080`
+Die Anwendung ist dann verfügbar unter: `http://localhost:8000`
 
 ### Docker Deployment
 
@@ -167,36 +160,6 @@ Für Docker-Deployment existiert eine separate Konfiguration:
 
 ```bash
 docker-compose up -d
-```
-
-## Projektstruktur
-
-```
-src/
-├── main/
-│   ├── java/de/suchalla/schiessbuch/
-│   │   ├── config/              # Konfigurationsklassen
-│   │   ├── mapper/              # Entity <-> DTO Mapper
-│   │   ├── model/
-│   │   │   ├── dto/            # Data Transfer Objects
-│   │   │   ├── entity/         # JPA Entities
-│   │   │   └── enums/          # Enumerationen
-│   │   ├── repository/         # JPA Repositories
-│   │   ├── security/           # Security Configuration
-│   │   ├── service/            # Business Logic
-│   │   │   └── email/          # E-Mail Services
-│   │   └── ui/
-│   │       ├── component/      # Wiederverwendbare UI-Komponenten
-│   │       └── view/           # Vaadin Views
-│   │           ├── administrativ/
-│   │           ├── oeffentlich/
-│   │           ├── organisatorisch/
-│   │           └── persoenlich/
-│   └── resources/
-│       ├── application.properties
-│       └── templates/          # E-Mail Templates
-└── frontend/
-    └── themes/                 # CSS Styles
 ```
 
 ## Sicherheitskonzept
@@ -208,15 +171,13 @@ src/
 - E-Mail-Verifizierung erforderlich
 
 ### Autorisierung
-- Rollenbasierte Zugriffskontrolle (RBAC)
+- Rollenbasierte Zugriffskontrolle
 - Method-Level Security mit @RolesAllowed
 - View-Level Security in Vaadin Routes
 
 ### Digitale Signaturen
 - RSA 2048-bit Schlüsselpaare
 - SHA-256 Hash-Algorithmus
-- X.509 v3 Zertifikate
-- Zertifikatsgültigkeit: 5 Jahre
 - Öffentliche Schlüssel für Verifikation verfügbar
 
 ### Datenschutz
@@ -236,13 +197,11 @@ src/
 
 ### Best Practices
 - Clean Code Prinzipien
-- DRY (Don't Repeat Yourself)
 - SOLID Principles
 - @EntityGraph für optimierte JPA Queries
 - Generische Interfaces zur Code-Wiederverwendung
 
 ### Dokumentation
-- JavaDoc-Kommentare auf Deutsch
 - Inline-Kommentare für komplexe Logik
 - Strukturierte Package-Organisation
 - README-Dokumentation
@@ -253,53 +212,4 @@ src/
 # Unit Tests ausführen
 mvn test
 
-# Integration Tests ausführen
-mvn verify
-
-# Test-Coverage Report
-mvn jacoco:report
 ```
-
-## Build und Deployment
-
-### Produktions-Build erstellen
-
-```bash
-mvn clean package -Pproduction
-```
-
-Das erzeugte JAR-File befindet sich in `target/digitales-schiebuch-1.0.0-SNAPSHOT.jar`
-
-### Anwendung deployen
-
-```bash
-java -jar target/digitales-schiebuch-1.0.0-SNAPSHOT.jar
-```
-
-### Umgebungsvariablen (Produktion)
-
-```bash
-export SPRING_PROFILES_ACTIVE=production
-export SPRING_DATASOURCE_URL=jdbc:postgresql://db-host:5432/schiessbuch
-export SPRING_DATASOURCE_USERNAME=prod_user
-export SPRING_DATASOURCE_PASSWORD=secure_password
-export SPRING_MAIL_HOST=smtp.example.com
-export SPRING_MAIL_USERNAME=noreply@example.com
-export SPRING_MAIL_PASSWORD=mail_password
-```
-
-## Lizenz
-
-Dieses Projekt wurde im Rahmen einer Bachelor-Arbeit entwickelt.
-
-## Kontakt
-
-Bei Fragen oder Anregungen wenden Sie sich bitte an:
-
-Markus Suchalla
-
----
-
-**Version:** 1.0.0-SNAPSHOT
-**Erstellt:** 2024/2025
-**Framework:** Spring Boot 3.x mit Vaadin 24.3

@@ -1,4 +1,4 @@
-package de.suchalla.schiessbuch.ui.view;
+package de.suchalla.schiessbuch.ui.view.organisatorisch;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -25,6 +25,7 @@ import de.suchalla.schiessbuch.repository.BenutzerRepository;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import de.suchalla.schiessbuch.service.BenutzerService;
 import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
+import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -69,7 +70,7 @@ public class ZertifikateView extends VerticalLayout {
     private void createContent() {
         // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
-        contentWrapper.setSizeFull();
+        contentWrapper.setWidthFull();
 
         // Header-Bereich
         Div header = ViewComponentHelper.createGradientHeader("Zertifikatsverwaltung");

@@ -208,7 +208,7 @@ public class BenutzerService {
         });
     }
 
-    // ==================== Private Helper-Methoden ====================
+    // ==================== Private Hilfsmethoden ====================
 
     /**
      * Erstellt einen Token mit gegebenem Typ und Gültigkeitsdauer.

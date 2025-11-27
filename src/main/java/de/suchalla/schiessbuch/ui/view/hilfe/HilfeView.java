@@ -22,8 +22,6 @@ import jakarta.annotation.security.PermitAll;
 @PermitAll
 public class HilfeView extends VerticalLayout implements HasUrlParameter<String>, BeforeEnterObserver {
 
-    private String fromRoute;
-
     public HilfeView() {
         setSpacing(true);
         setPadding(true);
@@ -44,11 +42,7 @@ public class HilfeView extends VerticalLayout implements HasUrlParameter<String>
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        // Get the "from" query parameter
-        this.fromRoute = event.getLocation().getQueryParameters()
-                .getParameters()
-                .getOrDefault("from", java.util.Collections.singletonList(""))
-                .get(0);
+        // No special actions needed before entering
     }
 
     private void createContent() {

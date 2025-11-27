@@ -9,8 +9,11 @@
     var(--lumo-contrast-10pct) 50%,
     var(--lumo-contrast-5pct) 100%);
     min-height: calc(100vh - 60px);
+    height: calc(100vh - 60px);
     overflow-y: auto;
     overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Content Wrapper - zentrierte Inhalte */
@@ -20,11 +23,15 @@
     padding: var(--lumo-space-l);
     box-sizing: border-box;
     width: 100%;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
 }
 
 @media (max-width: 768px) {
     .content-wrapper {
         padding: var(--lumo-space-m);
+        flex: 1 1 auto;
     }
 }
 
@@ -77,20 +84,20 @@
     display: flex;
     flex-direction: column;
     min-height: 400px;
-    height:auto;
     overflow-x: auto;
     overflow-y: auto;
 }
 
 @media (max-width: 768px) {
     .grid-container {
-        overflow-x: auto ;
-        overflow-y: visible ;
+        overflow-x: auto;
+        overflow-y: visible;
         -webkit-overflow-scrolling: touch;
-        width: 100% ;
-        max-width: calc(100vw - var(--lumo-space-m) * 2);
-        padding: var(--lumo-space-s) ;
-        margin: 0 auto;
+        width: 100%;
+        max-width: 100%;
+        padding: var(--lumo-space-s);
+        margin: 0;
+        min-width: 0;
     }
 
     .grid-container vaadin-grid {
@@ -109,10 +116,9 @@
 .rounded-grid {
     border-radius: var(--lumo-border-radius-m);
     overflow: hidden;
-    height: 100%;
+    flex: 1 1 auto;
     width: 100%;
     min-height: 400px;
-    height: auto;
 }
 
 

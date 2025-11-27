@@ -29,10 +29,10 @@ public abstract class BaseHilfeView extends VerticalLayout {
         setPadding(false);
         addClassName("content-wrapper");
 
-        // Create navigation at the top
+        // Erstelle Navigation oben
         createTopNavigation();
 
-        // Create header
+        // Erstelle Kopfzeile
         Div header = ViewComponentHelper.createGradientHeader(
                 "Hilfe: " + HilfeNavigation.getPageTitle(currentPage),
                 getRoleDisplayName() + " / " + HilfeNavigation.getPageTitle(currentPage)
@@ -62,7 +62,7 @@ public abstract class BaseHilfeView extends VerticalLayout {
 
         String previousPage = HilfeNavigation.getPreviousPage(role, currentPage);
         String nextPage = HilfeNavigation.getNextPage(role, currentPage);
-        // Build three areas: left arrow (icons only), centered overview, right arrow (icons only)
+        // Erstelle drei Bereiche: linker Pfeil (nur Icons), zentrierte Übersicht, rechter Pfeil (nur Icons)
         HorizontalLayout leftArrow = new HorizontalLayout();
         leftArrow.setAlignItems(FlexComponent.Alignment.CENTER);
         leftArrow.getStyle().set("gap", "var(--lumo-space-s)");

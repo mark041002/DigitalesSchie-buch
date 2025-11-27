@@ -2,8 +2,6 @@ package de.suchalla.schiessbuch.service;
 
 import de.suchalla.schiessbuch.model.entity.Disziplin;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
-import de.suchalla.schiessbuch.model.entity.Disziplin;
-import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.repository.DisziplinRepository;
 import de.suchalla.schiessbuch.repository.SchiesstandRepository;
 import org.junit.jupiter.api.BeforeEach;

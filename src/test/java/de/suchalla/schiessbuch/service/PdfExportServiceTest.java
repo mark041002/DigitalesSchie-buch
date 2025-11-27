@@ -216,7 +216,7 @@ class PdfExportServiceTest {
                 1L, LocalDate.now(), "Luftgewehr 10m", "4.5mm", 40, "380 Ringe",
                 EintragStatus.SIGNIERT);
 
-        // Create Aufseher
+        // Erstelle Aufseher
         Benutzer aufseher = Benutzer.builder()
                 .id(2L)
                 .vorname("Hans")
@@ -244,7 +244,7 @@ class PdfExportServiceTest {
     private SchiessnachweisEintrag createTestEintrag(Long id, LocalDate datum,
             String disziplinName, String kaliber, Integer schuesse, String ergebnis,
             EintragStatus status) {
-        // Create Benutzer (Schütze)
+        // Erstelle Benutzer (Schütze)
         Benutzer schuetze = Benutzer.builder()
                 .id(1L)
                 .vorname("Max")
@@ -254,20 +254,20 @@ class PdfExportServiceTest {
                 .rolle(BenutzerRolle.SCHUETZE)
                 .build();
 
-        // Create Disziplin
+        // Erstelle Disziplin
         Disziplin disziplin = Disziplin.builder()
                 .id(1L)
                 .kennziffer("LG-10m")
                 .programm(disziplinName)
                 .build();
 
-        // Create Verein
+        // Erstelle Verein
         Verein verein = Verein.builder()
                 .id(1L)
                 .name("Testverein")
                 .build();
 
-        // Create Schiesstand
+        // Erstelle Schießstand
         Schiesstand schiesstand = Schiesstand.builder()
                 .id(1L)
                 .name("Stand 1")
@@ -276,7 +276,7 @@ class PdfExportServiceTest {
                 .verein(verein)
                 .build();
 
-        // Create Eintrag
+        // Erstelle Eintrag
         SchiessnachweisEintrag eintrag = SchiessnachweisEintrag.builder()
                 .id(id)
                 .datum(datum)
@@ -295,7 +295,7 @@ class PdfExportServiceTest {
     private Vereinsmitgliedschaft createTestMitgliedschaft(Long id, String vorname,
             String nachname, LocalDate beitritt, MitgliedschaftsStatus status,
             Boolean istVereinschef, Boolean istAufseher) {
-        // Create Benutzer
+        // Erstelle Benutzer
         Benutzer benutzer = Benutzer.builder()
                 .id(id)
                 .vorname(vorname)
@@ -305,13 +305,13 @@ class PdfExportServiceTest {
                 .rolle(BenutzerRolle.SCHUETZE)
                 .build();
 
-        // Create Verein
+        // Erstelle Verein
         Verein verein = Verein.builder()
                 .id(1L)
                 .name("Testverein")
                 .build();
 
-        // Create Vereinsmitgliedschaft
+        // Erstelle Vereinsmitgliedschaft
         Vereinsmitgliedschaft mitgliedschaft = Vereinsmitgliedschaft.builder()
                 .id(id)
                 .benutzer(benutzer)

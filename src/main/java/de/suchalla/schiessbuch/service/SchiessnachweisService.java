@@ -95,7 +95,6 @@ public class SchiessnachweisService {
      */
     @Transactional(readOnly = true)
     public List<SchiessnachweisEintrag> findeEintraegeAnSchiesstand(Schiesstand schiesstand) {
-        // Lade Schiesstand neu aus DB, um LazyInitializationException zu vermeiden
         Schiesstand managedSchiesstand = schiesstandRepository.findById(schiesstand.getId())
                 .orElse(schiesstand);
         return eintragRepository.findBySchiesstand(managedSchiesstand);

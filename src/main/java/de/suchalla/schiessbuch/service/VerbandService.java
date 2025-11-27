@@ -4,8 +4,6 @@ import de.suchalla.schiessbuch.model.entity.Verband;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
-import de.suchalla.schiessbuch.model.entity.Verband;
-import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import de.suchalla.schiessbuch.repository.DisziplinRepository;

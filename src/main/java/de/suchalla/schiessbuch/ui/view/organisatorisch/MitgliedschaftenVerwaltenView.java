@@ -213,16 +213,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
         contentWrapper.add(tabsContainer);
 
         // Filter-Container
-        Div filterContainer = new Div();
-        filterContainer.addClassName("filter-box");
-        filterContainer.setWidthFull();
-        filterContainer.getStyle()
-                .set("background", "var(--lumo-contrast-5pct)")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("padding", "var(--lumo-space-m)")
-                .set("margin-bottom", "var(--lumo-space-m)");
-        filterContainer.add(createFilterLayout());
-        contentWrapper.add(filterContainer);
+        contentWrapper.add(ViewComponentHelper.createFilterBox(createFilterLayout()));
 
         // Empty State Message
         emptyStateMessage = ViewComponentHelper.createEmptyStateMessage("Noch keine Mitgliedschaften vorhanden.", VaadinIcon.USERS);
@@ -297,9 +288,12 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
         filterLayout.setDefaultVerticalComponentAlignment(Alignment.END);
         filterLayout.setAlignItems(FlexComponent.Alignment.END);
         filterLayout.setWidthFull();
-        filterLayout.setSpacing(true);
+        filterLayout.setSpacing(false);
         filterLayout.setPadding(false);
-        filterLayout.getStyle().set("flex-wrap", "wrap");
+        filterLayout.getStyle()
+                .set("flex-wrap", "wrap")
+                .set("gap", "var(--lumo-space-m)")
+                .set("box-sizing", "border-box");
 
         return filterLayout;
     }

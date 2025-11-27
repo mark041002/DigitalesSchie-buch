@@ -28,6 +28,9 @@ public final class ViewComponentHelper {
      * Erstellt einen standardisierten Content-Wrapper für Views.
      * - spacing/padding: false
      * - CSS-Klasse: content-wrapper
+     * - flex: 1 1 auto (erlaubt automatisches Wachsen bei großem Display)
+     * - overflow: auto (erlaubt Scrollen auf mobilen Geräten)
+     * - padding-bottom: für Abstand am unteren Rand
      *
      * @return vorkonfigurierter VerticalLayout-Wrapper
      */
@@ -36,6 +39,13 @@ public final class ViewComponentHelper {
         contentWrapper.setSpacing(false);
         contentWrapper.setPadding(false);
         contentWrapper.addClassName("content-wrapper");
+        contentWrapper.getStyle()
+                .set("flex", "1 1 auto")
+                .set("display", "flex")
+                .set("flex-direction", "column")
+                .set("overflow-y", "auto")
+                .set("overflow-x", "hidden")
+                .set("padding-bottom", "var(--lumo-space-xl)");
         return contentWrapper;
     }
 
@@ -136,6 +146,9 @@ public final class ViewComponentHelper {
 
     /**
      * Erstellt einen Grid-Container mit responsive Styling.
+     * Der Container erlaubt horizontales Scrollen auf Mobile für breite Tabellen.
+     * Mindesthöhe: 400px, auf großen Displays nutzt es die volle verfügbare Höhe durch flex: 1 1 auto.
+     * Margin-bottom sorgt für Abstand am unteren Rand.
      *
      * @return Grid-Container-Komponente
      */
@@ -148,8 +161,9 @@ public final class ViewComponentHelper {
                 .set("display", "flex")
                 .set("flex-direction", "column")
                 .set("overflow-x", "auto")
-                .set("overflow-y", "auto");
-        gridContainer.setHeightFull();
+                .set("overflow-y", "auto")
+                .set("min-height", "400px")
+                .set("margin-bottom", "var(--lumo-space-l)");
         return gridContainer;
     }
 
@@ -411,6 +425,44 @@ public final class ViewComponentHelper {
         section.add(header);
 
         return section;
+    }
+
+    /**
+     * Erstellt eine standardisierte Filter-Box mit definiertem Styling.
+     *
+     * @param content das zu einzufügende Komponenten-Layout (z.B. ein HorizontalLayout)
+     * @return vorkonfiguriertes Div mit Klasse "filter-box"
+     */
+    public static Div createFilterBox(com.vaadin.flow.component.Component content) {
+        Div filterBox = new Div();
+        filterBox.addClassName("filter-box");
+        filterBox.setWidthFull();
+        filterBox.getStyle()
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-m)")
+                .set("margin-bottom", "var(--lumo-space-m)")
+                .set("overflow", "visible")
+                .set("box-sizing", "border-box");
+        if (content != null) {
+            filterBox.add(content);
+        }
+        return filterBox;
+    }
+
+    /**
+     * Erstellt eine Filter-Box und erlaubt zusätzliche Anpassungen über einen Consumer.
+     *
+     * @param content der Inhalt der Box
+     * @param customizer ein Consumer, der zusätzliche style- oder andere Einstellungen vornimmt
+     * @return vorkonfiguriertes Div
+     */
+    public static Div createFilterBox(com.vaadin.flow.component.Component content, java.util.function.Consumer<Div> customizer) {
+        Div box = createFilterBox(content);
+        if (customizer != null) {
+            customizer.accept(box);
+        }
+        return box;
     }
 
 }

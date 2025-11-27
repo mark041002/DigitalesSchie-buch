@@ -96,7 +96,7 @@ public class MainLayout extends AppLayout {
         // Hilfe-Button (nur Desktop)
         Button hilfeButton = new Button("Hilfe", VaadinIcon.QUESTION_CIRCLE.create());
         hilfeButton.addClickListener(e -> {
-            // Get current route to pass as context
+            // Ermittle aktuelle Route für Kontext
             getUI().ifPresent(ui -> {
                 String currentRoute = ui.getInternals().getActiveViewLocation().getPath();
                 ui.navigate("hilfe?from=" + currentRoute);

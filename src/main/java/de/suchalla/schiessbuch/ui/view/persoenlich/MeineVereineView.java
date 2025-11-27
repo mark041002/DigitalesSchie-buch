@@ -79,7 +79,7 @@ public class MeineVereineView extends VerticalLayout {
     private void createContent() {
         // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
-        contentWrapper.setSizeFull();
+        contentWrapper.setWidthFull();
 
         // Header-Bereich wie bei "Meine Einträge"
         HorizontalLayout header = new HorizontalLayout();
@@ -87,16 +87,24 @@ public class MeineVereineView extends VerticalLayout {
         header.setWidthFull();
         header.setPadding(true);
         header.setSpacing(true);
-        header.setAlignItems(Alignment.START);
+        header.setAlignItems(Alignment.CENTER);
+        header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        header.getStyle()
+                .set("flex-wrap", "wrap")
+                .set("gap", "var(--lumo-space-m)");
 
         H2 title = new H2("Meine Vereine");
-        title.getStyle().set("margin", "0");
+        title.getStyle()
+                .set("margin", "0")
+                .set("font-size", "clamp(1.3rem, 4vw, 1.75rem)"); // Responsive Schriftgröße
 
         // Button für Vereinsbeitritt wie bei "Meine Einträge"
         Button beitretenButton = new Button("Einem Verein beitreten", new Icon(VaadinIcon.PLUS_CIRCLE));
         beitretenButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         beitretenButton.addClassName("neuer-eintrag-btn");
-        beitretenButton.getStyle().set("margin-left", "auto");
+        beitretenButton.getStyle()
+                .set("flex-shrink", "0")
+                .set("white-space", "nowrap");
         beitretenButton.addClickListener(e -> zeigeVereinsbeitrittsDialog());
 
         header.add(title, beitretenButton);

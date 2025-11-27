@@ -76,7 +76,7 @@ public class SchuetzeHilfeView extends VerticalLayout implements BeforeEnterObse
 
         add(backButton, title, intro);
 
-        // Create help sections
+        // Erstelle Hilfe-Abschnitte
         add(createDashboardSection());
         add(createMeineEintraegeSection());
         add(createNeuerEintragSection());

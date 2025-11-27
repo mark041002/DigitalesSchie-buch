@@ -1,6 +1,5 @@
 package de.suchalla.schiessbuch.model.entity;
 
-import de.suchalla.schiessbuch.model.entity.Disziplin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

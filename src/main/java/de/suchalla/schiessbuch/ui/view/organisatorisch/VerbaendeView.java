@@ -70,7 +70,7 @@ public class VerbaendeView extends VerticalLayout {
 
     private void createContent() {
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
-        contentWrapper.setSizeFull();
+        contentWrapper.setWidthFull();
 
         Div header = ViewComponentHelper.createGradientHeader("Schützenverbände");
         contentWrapper.add(header);

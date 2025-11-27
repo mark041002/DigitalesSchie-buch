@@ -1,3 +1,4 @@
+
 package de.suchalla.schiessbuch.service;
 
 import jakarta.mail.internet.MimeMessage;

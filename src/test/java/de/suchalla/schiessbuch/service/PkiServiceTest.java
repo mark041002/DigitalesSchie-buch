@@ -105,7 +105,7 @@ class PkiServiceTest {
         String rootPrivateKeyPEM = generateTestPrivateKeyPEM();
         String vereinPrivateKeyPEM = generateTestPrivateKeyPEM();
 
-        // Mock Root-Zertifikat
+        // Simuliertes Root-Zertifikat
         rootZertifikat = DigitalesZertifikat.builder()
                 .id(1L)
                 .zertifikatsTyp("ROOT")
@@ -117,7 +117,7 @@ class PkiServiceTest {
                 .widerrufen(false)
                 .build();
 
-        // Mock Vereins-Zertifikat
+        // Simuliertes Vereins-Zertifikat
         vereinZertifikat = DigitalesZertifikat.builder()
                 .id(2L)
                 .zertifikatsTyp("VEREIN")

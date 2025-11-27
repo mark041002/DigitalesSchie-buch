@@ -37,8 +37,7 @@ public class VerbaendeView extends VerticalLayout {
     private final Grid<Verband> grid = new Grid<>(Verband.class, false);
 
     public VerbaendeView(VerbandService verbandService,
-                         DisziplinService disziplinService,
-                         SecurityService securityService) {
+                         DisziplinService disziplinService) {
         this.verbandService = verbandService;
         this.disziplinService = disziplinService;
 

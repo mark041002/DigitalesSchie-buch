@@ -97,7 +97,7 @@ public class MeineEintraegeView extends VerticalLayout {
     private void createContent() {
         // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
-        contentWrapper.setSizeFull();
+        contentWrapper.setWidthFull();
 
         // Header-Bereich
         HorizontalLayout header = new HorizontalLayout();
@@ -105,18 +105,26 @@ public class MeineEintraegeView extends VerticalLayout {
         header.setWidthFull();
         header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
         header.setAlignItems(FlexComponent.Alignment.CENTER);
+        header.getStyle()
+                .set("flex-wrap", "wrap")
+                .set("gap", "var(--lumo-space-m)");
 
         // Text-Container
         Div textContainer = new Div();
         H3 title = new H3("Meine Schießnachweis-Einträge");
-        title.getStyle().set("margin", "0");
-        title.getStyle().set("color", "var(--lumo-primary-contrast-color)"); // Überschrift weiß
+        title.getStyle()
+                .set("margin", "0")
+                .set("color", "var(--lumo-primary-contrast-color)")
+                .set("font-size", "clamp(1.2rem, 4vw, 1.5rem)"); // Responsive Schriftgröße
         textContainer.add(title);
 
         // Button für neuen Eintrag
         Button neuerEintragButton = new Button("Neuer Eintrag", new Icon(VaadinIcon.PLUS_CIRCLE));
         neuerEintragButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         neuerEintragButton.addClassName("neuer-eintrag-btn");
+        neuerEintragButton.getStyle()
+                .set("flex-shrink", "0")
+                .set("white-space", "nowrap");
         neuerEintragButton.addClickListener(e ->
             getUI().ifPresent(ui -> ui.navigate(NeuerEintragView.class))
         );
@@ -141,15 +149,6 @@ public class MeineEintraegeView extends VerticalLayout {
         });
         contentWrapper.add(tabs);
 
-        // Filter-Bereich
-        Div filterBox = new Div();
-        filterBox.addClassName("filter-box");
-        filterBox.setWidthFull();
-        filterBox.getStyle()
-                .set("background", "var(--lumo-contrast-5pct)")
-                .set("border-radius", "var(--lumo-border-radius-m)")
-                .set("padding", "var(--lumo-space-m)")
-                .set("margin-bottom", "var(--lumo-space-m)");
 
         // Datum-Filter standardmäßig leer
         vonDatum.setWidth("200px");
@@ -192,12 +191,17 @@ public class MeineEintraegeView extends VerticalLayout {
         // Alles in einem HorizontalLayout nebeneinander
         HorizontalLayout filterLayout = new HorizontalLayout(vonDatum, bisDatum, verbandFilter, disziplinFilter, vereinFilter, filterButton, pdfDownload);
         filterLayout.setAlignItems(FlexComponent.Alignment.END);
-        filterLayout.setSpacing(true);
+        filterLayout.setSpacing(false);
+        filterLayout.setPadding(false);
         filterLayout.setWidthFull();
-        filterLayout.getStyle().set("flex-wrap", "wrap").set("margin-top", "var(--lumo-space-m)");
+        filterLayout.getStyle()
+                .set("flex-wrap", "wrap")
+                .set("gap", "var(--lumo-space-m)")
+                .set("box-sizing", "border-box");
 
-        filterBox.add(filterLayout);
-        contentWrapper.add(filterBox);
+        // Filter-Container
+        contentWrapper.add(ViewComponentHelper.createFilterBox(filterLayout));
+
 
         // Grid-Container mit weißem Hintergrund
         Div gridContainer = ViewComponentHelper.createGridContainer();

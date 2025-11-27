@@ -1,6 +1,5 @@
 package de.suchalla.schiessbuch.model.entity;
 
-import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.enums.SchiesstandTyp;
 import de.suchalla.schiessbuch.testutil.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
