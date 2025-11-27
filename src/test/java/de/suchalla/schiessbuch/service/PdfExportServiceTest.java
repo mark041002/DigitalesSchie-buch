@@ -5,6 +5,7 @@ import de.suchalla.schiessbuch.model.entity.*;
 import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
 import de.suchalla.schiessbuch.model.enums.EintragStatus;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
+import de.suchalla.schiessbuch.model.enums.SchiesstandTyp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -51,9 +52,9 @@ class PdfExportServiceTest {
         testSchiesstand = Schiesstand.builder()
                 .id(1L)
                 .name("Stand 1")
+                .typ(SchiesstandTyp.VEREINSGEBUNDEN)
                 .adresse("Teststraße 1")
-                .vereinId(1L)
-                .vereinName("Testverein")
+                .verein(testVerein)
                 .build();
 
         testEintraege = new ArrayList<>();
@@ -256,7 +257,8 @@ class PdfExportServiceTest {
         // Create Disziplin
         Disziplin disziplin = Disziplin.builder()
                 .id(1L)
-                .name(disziplinName)
+                .kennziffer("LG-10m")
+                .programm(disziplinName)
                 .build();
 
         // Create Verein
@@ -269,6 +271,7 @@ class PdfExportServiceTest {
         Schiesstand schiesstand = Schiesstand.builder()
                 .id(1L)
                 .name("Stand 1")
+                .typ(SchiesstandTyp.VEREINSGEBUNDEN)
                 .adresse("Teststraße 1")
                 .verein(verein)
                 .build();

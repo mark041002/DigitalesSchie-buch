@@ -41,10 +41,6 @@ class VerbandServiceTest {
     @Mock
     private VereinsmitgliedschaftService vereinsmitgliedschaftService;
 
-    @Mock
-
-    @Mock
-
     @InjectMocks
     private VerbandService service;
 
@@ -94,10 +90,8 @@ class VerbandServiceTest {
     @Test
     void testFindeAlleVerbaende() {
         List<Verband> verbaende = Arrays.asList(verband);
-        List<Verband> dtos = Arrays.asList(Verband.builder().id(1L).name("DSB").build());
 
         when(verbandRepository.findAllWithVereine()).thenReturn(verbaende);
-        when(verbandMapper.toDTOList(verbaende)).thenReturn(dtos);
 
         List<Verband> result = service.findeAlleVerbaende();
 

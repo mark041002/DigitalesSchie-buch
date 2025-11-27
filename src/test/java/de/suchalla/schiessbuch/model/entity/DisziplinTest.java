@@ -23,7 +23,6 @@ class DisziplinTest {
             .kennziffer("KK-50m")
             .programm("Kleinkaliber 50m - Präzisionsprogramm")
             .build();
-        mapper = new DisziplinMapper();
     }
 
     @Test
@@ -101,34 +100,6 @@ class DisziplinTest {
 
         assertNotNull(disziplin.getVerband());
         assertEquals("DSB", disziplin.getVerband().getName());
-    }
-
-    @Test
-    void testEntityToDtoMapping() {
-        Disziplin dto = mapper.toDTO(disziplin);
-
-        assertNotNull(dto);
-        assertEquals(disziplin.getId(), dto.getId());
-        assertEquals(disziplin.getKennziffer(), dto.getKennziffer());
-        assertEquals(disziplin.getProgramm(), dto.getProgramm());
-    }
-
-    @Test
-    void testEntityToDtoMappingNull() {
-        Disziplin dto = mapper.toDTO(null);
-        assertNull(dto);
-    }
-
-    @Test
-    void testEntityToDtoWithVerband() {
-        Verband verband = Verband.builder().id(1L).name("DSB").build();
-        disziplin.setVerband(verband);
-
-        Disziplin dto = mapper.toDTO(disziplin);
-
-        assertNotNull(dto);
-        assertEquals(1L, dto.getVerbandId());
-        assertEquals("DSB", dto.getVerbandName());
     }
 }
 

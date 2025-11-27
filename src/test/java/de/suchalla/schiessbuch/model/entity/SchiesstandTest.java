@@ -24,7 +24,6 @@ class SchiesstandTest {
                 .adresse("Adresse")
                 .beschreibung("Beschreibung")
                 .build();
-        mapper = new SchiesstandMapper();
     }
 
     @Test
@@ -67,38 +66,6 @@ class SchiesstandTest {
         Schiesstand s3 = Schiesstand.builder().id(2L).name("A").typ(SchiesstandTyp.VEREINSGEBUNDEN).build();
         assertEquals(s1, s2);
         assertNotEquals(s1, s3);
-    }
-
-    @Test
-    void testEntityToDtoMapping() {
-        Schiesstand dto = mapper.toDTO(schiesstand);
-
-        assertNotNull(dto);
-        assertEquals(schiesstand.getId(), dto.getId());
-        assertEquals(schiesstand.getName(), dto.getName());
-        assertEquals(schiesstand.getTyp(), dto.getTyp());
-        assertEquals(schiesstand.getAdresse(), dto.getAdresse());
-        assertEquals(schiesstand.getBeschreibung(), dto.getBeschreibung());
-        assertEquals(verein.getId(), dto.getVereinId());
-        assertEquals(verein.getName(), dto.getVereinName());
-    }
-
-    @Test
-    void testEntityToDtoMappingNull() {
-        Schiesstand dto = mapper.toDTO(null);
-        assertNull(dto);
-    }
-
-    @Test
-    void testEntityToDtoWithAufseher() {
-        Benutzer aufseher = TestDataFactory.createBenutzer(2L, "aufseher@example.com");
-        schiesstand.setAufseher(aufseher);
-
-        Schiesstand dto = mapper.toDTO(schiesstand);
-
-        assertNotNull(dto);
-        assertEquals(aufseher.getId(), dto.getAufseherId());
-        assertEquals("Max Mustermann", dto.getAufseherVollstaendigerName());
     }
 }
 

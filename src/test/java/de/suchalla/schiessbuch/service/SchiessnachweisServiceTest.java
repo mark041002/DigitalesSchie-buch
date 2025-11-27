@@ -1,7 +1,5 @@
 package de.suchalla.schiessbuch.service;
 
-import de.suchalla.schiessbuch.mapper.SchiessnachweisEintragMapper;
-import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintrag;
 import de.suchalla.schiessbuch.model.entity.*;
 import de.suchalla.schiessbuch.model.enums.EintragStatus;
 import de.suchalla.schiessbuch.repository.SchiessnachweisEintragRepository;
@@ -27,9 +25,6 @@ class SchiessnachweisServiceTest {
 
     @Mock
     private SchiessnachweisEintragRepository eintragRepository;
-
-    @Mock
-    private SchiessnachweisEintragMapper eintragMapper;
 
     @InjectMocks
     private SchiessnachweisService service;
@@ -64,10 +59,8 @@ class SchiessnachweisServiceTest {
         LocalDate von = LocalDate.now().minusDays(7);
         LocalDate bis = LocalDate.now();
         List<SchiessnachweisEintrag> entities = Arrays.asList(eintrag);
-        List<SchiessnachweisEintrag> dtos = Arrays.asList(new SchiessnachweisEintrag());
 
         when(eintragRepository.findBySchuetzeAndDatumBetween(schuetze, von, bis)).thenReturn(entities);
-        when(eintragMapper.toListDTOList(entities)).thenReturn(dtos);
 
         List<SchiessnachweisEintrag> result = service.findeEintraegeImZeitraum(schuetze, von, bis);
 

@@ -1,8 +1,5 @@
 package de.suchalla.schiessbuch.model.entity;
 
-import de.suchalla.schiessbuch.mapper.SchiessnachweisEintragMapper;
-import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintrag;
-import de.suchalla.schiessbuch.model.dto.SchiessnachweisEintrag;
 import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
 import de.suchalla.schiessbuch.model.enums.EintragStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +23,6 @@ class SchiessnachweisEintragTest {
     private Disziplin disziplin;
     private Schiesstand schiesstand;
     private Verein verein;
-    private SchiessnachweisEintragMapper mapper;
 
     @BeforeEach
     void setUp() {
@@ -68,8 +64,6 @@ class SchiessnachweisEintragTest {
                 .istSigniert(false)
                 .status(EintragStatus.OFFEN)
                 .build();
-
-        mapper = new SchiessnachweisEintragMapper();
     }
 
     @Test
@@ -181,61 +175,6 @@ class SchiessnachweisEintragTest {
 
         assertNotNull(neuerEintrag.getErstelltAm());
         assertNotNull(neuerEintrag.getAktualisiertAm());
-    }
-
-    @Test
-    void testEntityToListDtoMapping() {
-        SchiessnachweisEintrag dto = mapper.toDTO(eintrag);
-
-        assertNotNull(dto);
-        assertEquals(eintrag.getId(), dto.getId());
-        assertEquals(eintrag.getDatum(), dto.getDatum());
-        assertEquals(eintrag.getAnzahlSchuesse(), dto.getAnzahlSchuesse());
-        assertEquals(eintrag.getErgebnis(), dto.getErgebnis());
-        assertEquals(eintrag.getStatus(), dto.getStatus());
-
-        // Schütze-Mapping
-        assertEquals(schuetze.getId(), dto.getSchuetzeId());
-        assertEquals("Max", dto.getSchuetzeVorname());
-        assertEquals("Mustermann", dto.getSchuetzeNachname());
-
-        // Disziplin-Mapping (Kennziffer shown in lists)
-        assertEquals(disziplin.getId(), dto.getDisziplinId());
-        assertEquals(disziplin.getKennziffer(), dto.getDisziplinName());
-
-        // Schießstand-Mapping
-        assertEquals(schiesstand.getId(), dto.getSchiesstandId());
-        assertEquals("Stand 1", dto.getSchiesstandName());
-
-        // Verein-Mapping (über Schießstand)
-        assertEquals(verein.getId(), dto.getVereinId());
-        assertEquals("Verein A", dto.getVereinName());
-    }
-
-    @Test
-    void testEntityToDetailDtoMapping() {
-        SchiessnachweisEintrag dto = mapper.toDetailDTO(eintrag);
-
-        assertNotNull(dto);
-        assertEquals(eintrag.getId(), dto.getId());
-        assertEquals(eintrag.getBemerkung(), dto.getBemerkung());
-        assertEquals(eintrag.getDigitaleSignatur(), dto.getDigitaleSignatur());
-        assertEquals(schuetze.getEmail(), dto.getSchuetzeEmail());
-    }
-
-    @Test
-    void testEntityToDtoMappingNull() {
-        SchiessnachweisEintrag listDto = mapper.toDTO(null);
-        assertNull(listDto);
-
-        SchiessnachweisEintrag detailDto = mapper.toDetailDTO(null);
-        assertNull(detailDto);
-    }
-
-    @Test
-    void testEntityToDtoHelperMethods() {
-        SchiessnachweisEintrag dto = mapper.toDTO(eintrag);
-        assertEquals("Max Mustermann", dto.getSchuetzeVollstaendigerName());
     }
 }
 

@@ -23,7 +23,6 @@ class VerbandTest {
                 .name("Deutscher Schützenbund")
                 .beschreibung("Dachverband der deutschen Schützenvereine")
                 .build();
-        mapper = new VerbandMapper();
     }
 
     @Test
@@ -102,32 +101,6 @@ class VerbandTest {
         verband.getVereine().add(verein2);
 
         assertEquals(2, verband.getVereine().size());
-    }
-
-    @Test
-    void testEntityToDtoMapping() {
-        Verband dto = mapper.toDTO(verband);
-
-        assertNotNull(dto);
-        assertEquals(verband.getId(), dto.getId());
-        assertEquals(verband.getName(), dto.getName());
-        assertEquals(verband.getBeschreibung(), dto.getBeschreibung());
-    }
-
-    @Test
-    void testEntityToDtoMappingNull() {
-        Verband dto = mapper.toDTO(null);
-        assertNull(dto);
-    }
-
-    @Test
-    void testEntityToDtoWithTimestamps() {
-        verband.onCreate();
-        Verband dto = mapper.toDTO(verband);
-
-        assertNotNull(dto);
-        assertEquals(verband.getErstelltAm(), dto.getErstelltAm());
-        assertEquals(verband.getAktualisiertAm(), dto.getAktualisiertAm());
     }
 }
 

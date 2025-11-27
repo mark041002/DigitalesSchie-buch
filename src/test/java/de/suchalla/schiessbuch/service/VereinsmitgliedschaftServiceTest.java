@@ -38,10 +38,6 @@ class VereinsmitgliedschaftServiceTest {
     @Mock
     private EmailService notificationService;
 
-    @Mock
-
-    @Mock
-
     @InjectMocks
     private VereinsmitgliedschaftService service;
 
@@ -175,10 +171,8 @@ class VereinsmitgliedschaftServiceTest {
     @Test
     void testFindeBeitrittsanfragen() {
         List<Vereinsmitgliedschaft> entities = Arrays.asList(mitgliedschaft);
-        List<Vereinsmitgliedschaft> dtos = Arrays.asList(new Vereinsmitgliedschaft());
 
         when(mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftsStatus.BEANTRAGT)).thenReturn(entities);
-        when(vereinsmigliedschaftMapper.toDTOList(entities)).thenReturn(dtos);
 
         List<Vereinsmitgliedschaft> result = service.findeBeitrittsanfragen(verein);
 

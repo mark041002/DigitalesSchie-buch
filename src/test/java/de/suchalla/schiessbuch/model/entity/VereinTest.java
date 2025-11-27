@@ -24,7 +24,6 @@ class VereinTest {
                 .adresse("Schützenstraße 1, 12345 Teststadt")
                 .beschreibung("Traditionsreicher Schützenverein seit 1900")
                 .build();
-        mapper = new VereinMapper();
     }
 
     @Test
@@ -97,43 +96,6 @@ class VereinTest {
         verein.onUpdate();
         assertEquals(erstelltAm, verein.getErstelltAm());
         assertNotNull(verein.getAktualisiertAm());
-    }
-
-    @Test
-    void testEntityToDtoMapping() {
-        Verein dto = mapper.toDTO(verein);
-
-        assertNotNull(dto);
-        assertEquals(verein.getId(), dto.getId());
-        assertEquals(verein.getName(), dto.getName());
-        assertEquals(verein.getAdresse(), dto.getAdresse());
-        assertEquals(verein.getBeschreibung(), dto.getBeschreibung());
-    }
-
-    @Test
-    void testEntityToDtoMappingNull() {
-        Verein dto = mapper.toDTO(null);
-        assertNull(dto);
-    }
-
-    @Test
-    void testEntityToDtoWithVerbaende() {
-        Verband verband = Verband.builder().id(1L).name("DSB").build();
-        verein.getVerbaende().add(verband);
-
-        Verein dto = mapper.toDTO(verein);
-
-        assertNotNull(dto);
-        assertEquals(1, dto.getVerbandIds().size());
-        assertEquals(1L, dto.getVerbandIds().get(0));
-        assertEquals("DSB", dto.getVerbandNamen().get(0));
-    }
-
-    @Test
-    void testEntityToDtoMitgliederAnzahl() {
-        // MitgliederAnzahl sollte 0 sein wenn keine Mitgliedschaften
-        Verein dto = mapper.toDTO(verein);
-        assertEquals(0, dto.getMitgliederAnzahl());
     }
 }
 

@@ -27,7 +27,6 @@ class VereinsmitgliedschaftTest {
                 .status(MitgliedschaftsStatus.BEANTRAGT)
                 .aktiv(true)
                 .build();
-        mapper = new VereinsmigliedschaftMapper();
     }
 
     @Test
@@ -102,39 +101,6 @@ class VereinsmitgliedschaftTest {
         assertEquals(m1, m2);
         assertNotEquals(m1, m3);
         assertEquals(m1.hashCode(), m2.hashCode());
-    }
-
-    @Test
-    void testEntityToDtoMapping() {
-        Vereinsmitgliedschaft dto = mapper.toDTO(mitgliedschaft);
-
-        assertNotNull(dto);
-        assertEquals(mitgliedschaft.getId(), dto.getId());
-        assertEquals(mitgliedschaft.getStatus(), dto.getStatus());
-        assertEquals(mitgliedschaft.getAktiv(), dto.getAktiv());
-        assertEquals(mitgliedschaft.getIstAufseher(), dto.getIstAufseher());
-        assertEquals(mitgliedschaft.getIstVereinschef(), dto.getIstVereinschef());
-
-        // Benutzer-Mapping
-        assertEquals(benutzer.getId(), dto.getBenutzerId());
-        assertEquals(benutzer.getVorname(), dto.getBenutzerVorname());
-        assertEquals(benutzer.getNachname(), dto.getBenutzerNachname());
-
-        // Verein-Mapping
-        assertEquals(verein.getId(), dto.getVereinId());
-        assertEquals(verein.getName(), dto.getVereinName());
-    }
-
-    @Test
-    void testEntityToDtoMappingNull() {
-        Vereinsmitgliedschaft dto = mapper.toDTO(null);
-        assertNull(dto);
-    }
-
-    @Test
-    void testEntityToDtoHelperMethod() {
-        Vereinsmitgliedschaft dto = mapper.toDTO(mitgliedschaft);
-        assertEquals("Max Mustermann", dto.getBenutzerVollstaendigerName());
     }
 }
 
