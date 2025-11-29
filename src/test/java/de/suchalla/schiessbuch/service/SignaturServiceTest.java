@@ -125,48 +125,6 @@ class SignaturServiceTest {
                 .build();
     }
 
-    @Test
-    void testSignEintragMitId_SignsSuccessfully() {
-        when(eintragRepository.findById(1L)).thenReturn(Optional.of(eintrag));
-        when(zertifikatRepository.findByBenutzer(aufseher))
-                .thenReturn(Optional.of(aufseherZertifikat));
-        when(pkiService.signData(any(String.class), any(DigitalesZertifikat.class)))
-                .thenReturn("MOCK_SIGNATURE_123");
-        doNothing().when(schiessnachweisService).signiereEintrag(anyLong(), any(), any());
-
-        signaturService.signEintragMitId(1L, aufseher, verein);
-
-        verify(eintragRepository, times(1)).findById(1L);
-        verify(zertifikatRepository, times(1)).findByBenutzer(aufseher);
-        verify(pkiService, times(1)).signData(any(String.class), eq(aufseherZertifikat));
-        verify(schiessnachweisService, times(1)).signiereEintrag(eq(1L), eq(aufseher), any(String.class));
-    }
-
-    @Test
-    void testSignEintragMitId_ThrowsExceptionWhenEintragNotFound() {
-        when(eintragRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThrows(IllegalArgumentException.class, () -> 
-            signaturService.signEintragMitId(1L, aufseher, verein));
-        
-        verify(zertifikatRepository, never()).findByBenutzer(any());
-        verify(pkiService, never()).signData(any(), any());
-    }
-
-    @Test
-    void testSignEintrag_CreatesZertifikatWhenNotExists() {
-        when(zertifikatRepository.findByBenutzer(aufseher)).thenReturn(Optional.empty());
-        when(pkiService.createAufseherCertificate(aufseher, verein))
-                .thenReturn(aufseherZertifikat);
-        when(pkiService.signData(any(String.class), any(DigitalesZertifikat.class)))
-                .thenReturn("MOCK_SIGNATURE_123");
-        doNothing().when(schiessnachweisService).signiereEintrag(anyLong(), any(), any());
-
-        signaturService.signEintrag(eintrag, aufseher, verein);
-
-        verify(pkiService, times(1)).createAufseherCertificate(aufseher, verein);
-        verify(pkiService, times(1)).signData(any(String.class), eq(aufseherZertifikat));
-    }
 
     @Test
     void testSignEintrag_UsesExistingZertifikat() {
@@ -174,11 +132,10 @@ class SignaturServiceTest {
                 .thenReturn(Optional.of(aufseherZertifikat));
         when(pkiService.signData(any(String.class), any(DigitalesZertifikat.class)))
                 .thenReturn("MOCK_SIGNATURE_123");
-        doNothing().when(schiessnachweisService).signiereEintrag(anyLong(), any(), any());
+        doNothing().when(schiessnachweisService).signiereEintrag(any(SchiessnachweisEintrag.class), any(), any());
 
-        signaturService.signEintrag(eintrag, aufseher, verein);
+        signaturService.signEintrag(eintrag, aufseher);
 
-        verify(pkiService, never()).createAufseherCertificate(any(), any());
         verify(pkiService, times(1)).signData(any(String.class), eq(aufseherZertifikat));
     }
 
@@ -193,11 +150,11 @@ class SignaturServiceTest {
         when(zertifikatRepository.findByBenutzer(aufseher))
                 .thenReturn(Optional.of(invalidZertifikat));
 
-        assertThrows(RuntimeException.class, () -> 
-            signaturService.signEintrag(eintrag, aufseher, verein));
-        
+        assertThrows(RuntimeException.class, () ->
+            signaturService.signEintrag(eintrag, aufseher));
+
         verify(pkiService, never()).signData(any(), any());
-        verify(schiessnachweisService, never()).signiereEintrag(anyLong(), any(), any());
+        verify(schiessnachweisService, never()).signiereEintrag(any(SchiessnachweisEintrag.class), any(), any());
     }
 
     @Test
@@ -206,9 +163,9 @@ class SignaturServiceTest {
                 .thenReturn(Optional.of(aufseherZertifikat));
         when(pkiService.signData(any(String.class), any(DigitalesZertifikat.class)))
                 .thenReturn("MOCK_SIGNATURE_123");
-        doNothing().when(schiessnachweisService).signiereEintrag(anyLong(), any(), any());
+        doNothing().when(schiessnachweisService).signiereEintrag(any(SchiessnachweisEintrag.class), any(), any());
 
-        signaturService.signEintrag(eintrag, aufseher, verein);
+        signaturService.signEintrag(eintrag, aufseher);
 
         assertEquals(aufseher, eintrag.getAufseher());
         assertEquals("MOCK_SIGNATURE_123", eintrag.getDigitaleSignatur());
@@ -222,7 +179,7 @@ class SignaturServiceTest {
         when(pkiService.signData(any(String.class), any(DigitalesZertifikat.class)))
                 .thenAnswer(invocation -> {
                     String dataToSign = invocation.getArgument(0);
-                    
+
                     // Prüfe ob alle wichtigen Felder in den signierten Daten enthalten sind
                     assertTrue(dataToSign.contains("ID:" + eintrag.getId()));
                     assertTrue(dataToSign.contains("Schuetze:" + schuetze.getEmail()));
@@ -232,12 +189,12 @@ class SignaturServiceTest {
                     assertTrue(dataToSign.contains("Ergebnis:380 Ringe"));
                     assertTrue(dataToSign.contains("Kaliber:4.5mm"));
                     assertTrue(dataToSign.contains("Waffenart:Luftgewehr"));
-                    
+
                     return "MOCK_SIGNATURE";
                 });
-        doNothing().when(schiessnachweisService).signiereEintrag(anyLong(), any(), any());
+        doNothing().when(schiessnachweisService).signiereEintrag(any(SchiessnachweisEintrag.class), any(), any());
 
-        signaturService.signEintrag(eintrag, aufseher, verein);
+        signaturService.signEintrag(eintrag, aufseher);
 
         verify(pkiService, times(1)).signData(any(String.class), any(DigitalesZertifikat.class));
     }
@@ -261,10 +218,10 @@ class SignaturServiceTest {
                 .thenReturn(Optional.of(aufseherZertifikat));
         when(pkiService.signData(any(String.class), any(DigitalesZertifikat.class)))
                 .thenReturn("MOCK_SIGNATURE_123");
-        doNothing().when(schiessnachweisService).signiereEintrag(anyLong(), any(), any());
+        doNothing().when(schiessnachweisService).signiereEintrag(any(SchiessnachweisEintrag.class), any(), any());
 
-        assertDoesNotThrow(() -> 
-            signaturService.signEintrag(eintragMitNulls, aufseher, verein));
+        assertDoesNotThrow(() ->
+            signaturService.signEintrag(eintragMitNulls, aufseher));
     }
 
     @Test
@@ -274,11 +231,11 @@ class SignaturServiceTest {
         when(pkiService.signData(any(String.class), any(DigitalesZertifikat.class)))
                 .thenThrow(new RuntimeException("PKI Error"));
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> 
-            signaturService.signEintrag(eintrag, aufseher, verein));
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+            signaturService.signEintrag(eintrag, aufseher));
 
         assertTrue(exception.getMessage().contains("Eintrag konnte nicht signiert werden"));
-        verify(schiessnachweisService, never()).signiereEintrag(anyLong(), any(), any());
+        verify(schiessnachweisService, never()).signiereEintrag(any(SchiessnachweisEintrag.class), any(), any());
     }
 
     @Test
@@ -287,12 +244,12 @@ class SignaturServiceTest {
                 .thenReturn(Optional.of(aufseherZertifikat));
         when(pkiService.signData(any(String.class), any(DigitalesZertifikat.class)))
                 .thenReturn("SIGNATURE_XYZ");
-        doNothing().when(schiessnachweisService).signiereEintrag(anyLong(), any(), any());
+        doNothing().when(schiessnachweisService).signiereEintrag(any(SchiessnachweisEintrag.class), any(), any());
 
-        signaturService.signEintrag(eintrag, aufseher, verein);
+        signaturService.signEintrag(eintrag, aufseher);
 
         verify(schiessnachweisService, times(1))
-                .signiereEintrag(eq(1L), eq(aufseher), eq("SIGNATURE_XYZ"));
+                .signiereEintrag(eq(eintrag), eq(aufseher), eq("SIGNATURE_XYZ"));
     }
 
     @Test
@@ -310,9 +267,9 @@ class SignaturServiceTest {
                 .thenReturn(Optional.of(aufseherZertifikat));
         when(pkiService.signData(any(String.class), any(DigitalesZertifikat.class)))
                 .thenReturn("NEW_SIGNATURE");
-        doNothing().when(schiessnachweisService).signiereEintrag(anyLong(), any(), any());
+        doNothing().when(schiessnachweisService).signiereEintrag(any(SchiessnachweisEintrag.class), any(), any());
 
-        signaturService.signEintrag(eintrag, aufseher, verein);
+        signaturService.signEintrag(eintrag, aufseher);
 
         // Sollte neue Signatur und neues Zertifikat setzen
         assertEquals("NEW_SIGNATURE", eintrag.getDigitaleSignatur());

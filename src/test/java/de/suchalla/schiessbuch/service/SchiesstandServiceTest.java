@@ -63,10 +63,10 @@ class SchiesstandServiceTest {
     void testFindeSchiesstand() {
         when(schiesstandRepository.findById(1L)).thenReturn(Optional.of(schiesstand));
 
-        Optional<Schiesstand> result = service.findeSchiesstand(1L);
+        Schiesstand result = service.findeSchiesstand(1L);
 
-        assertTrue(result.isPresent());
-        assertEquals(schiesstand, result.get());
+        assertNotNull(result);
+        assertEquals(schiesstand, result);
     }
 
     @Test
@@ -91,7 +91,6 @@ class SchiesstandServiceTest {
 
     @Test
     void testLoescheSchiesstandOhneEintraege() {
-        schiesstand.setEintraege(new HashSet<>());
         when(schiesstandRepository.findById(1L)).thenReturn(Optional.of(schiesstand));
         when(zertifikatRepository.findBySchiesstand(schiesstand)).thenReturn(List.of());
         when(eintragRepository.findBySchiesstand(schiesstand)).thenReturn(List.of());
@@ -104,7 +103,6 @@ class SchiesstandServiceTest {
 
     @Test
     void testLoescheSchiesstandMitEintraegenWirftException() {
-        schiesstand.setEintraege(new HashSet<>(Arrays.asList(new de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag())));
         when(schiesstandRepository.findById(1L)).thenReturn(Optional.of(schiesstand));
         when(zertifikatRepository.findBySchiesstand(schiesstand)).thenReturn(List.of());
         when(eintragRepository.findBySchiesstand(schiesstand)).thenReturn(List.of(new de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag()));

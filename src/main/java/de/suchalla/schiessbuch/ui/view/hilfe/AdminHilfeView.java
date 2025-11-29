@@ -43,13 +43,6 @@ public class AdminHilfeView extends VerticalLayout implements BeforeEnterObserve
                 .getParameters()
                 .getOrDefault("from", java.util.Collections.singletonList(""))
                 .get(0);
-
-        if (fromRoute != null && !fromRoute.isEmpty()) {
-            UI.getCurrent().getPage().executeJs(
-                    "setTimeout(() => { const element = document.getElementById($0); if(element) element.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 100)",
-                    getSectionIdFromRoute(fromRoute)
-            );
-        }
     }
 
     private void createContent() {

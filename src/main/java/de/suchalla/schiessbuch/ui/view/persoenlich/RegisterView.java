@@ -44,7 +44,6 @@ public class RegisterView extends VerticalLayout {
 
     private final BenutzerService benutzerService;
     private final EmailService emailService;
-
     private final TextField vornameField = new TextField("Vorname");
     private final TextField nachnameField = new TextField("Nachname");
     private final EmailField emailField = new EmailField("E-Mail-Adresse");

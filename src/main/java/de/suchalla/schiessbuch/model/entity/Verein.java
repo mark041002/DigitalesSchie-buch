@@ -34,9 +34,6 @@ public class Verein {
     @Column(nullable = false)
     private String name;
 
-    // Vereinsnummer removed from model
-
-    @Column(length = 500)
     private String adresse;
 
     @Column(length = 1000)
@@ -62,11 +59,6 @@ public class Verein {
     @ToString.Exclude
     @JsonIgnore
     private Set<Vereinsmitgliedschaft> mitgliedschaften = new HashSet<>();
-
-    @OneToOne(mappedBy = "verein", cascade = CascadeType.ALL)
-    @ToString.Exclude
-    @JsonIgnore
-    private Schiesstand schiesstand;
 
     @PrePersist
     protected void onCreate() {

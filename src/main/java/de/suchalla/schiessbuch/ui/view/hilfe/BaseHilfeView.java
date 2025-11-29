@@ -67,13 +67,11 @@ public abstract class BaseHilfeView extends VerticalLayout {
         leftArrow.setAlignItems(FlexComponent.Alignment.CENTER);
         leftArrow.getStyle().set("gap", "var(--lumo-space-s)");
 
-        // Center area: Übersicht (zentral)
         HorizontalLayout centerArea = new HorizontalLayout();
         centerArea.setWidthFull();
         centerArea.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         centerArea.setAlignItems(FlexComponent.Alignment.CENTER);
 
-        // Right area: next icon
         HorizontalLayout rightArrow = new HorizontalLayout();
         rightArrow.setAlignItems(FlexComponent.Alignment.CENTER);
 
@@ -95,7 +93,6 @@ public abstract class BaseHilfeView extends VerticalLayout {
                 .set("background", "var(--lumo-primary-color)")
                 .set("color", "white")
                 .set("min-width", "88px");
-            // Icon should appear before the text (default)
             prevButton.setIconAfterText(false);
             prevButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate(HilfeNavigation.getPageRoute(role, previousPage))));
             leftArrow.add(prevButton);
@@ -110,7 +107,6 @@ public abstract class BaseHilfeView extends VerticalLayout {
                 .set("background", "var(--lumo-primary-color)")
                 .set("color", "white")
                 .set("min-width", "88px");
-            // Icon should appear after the text
             nextButton.setIconAfterText(true);
             nextButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate(HilfeNavigation.getPageRoute(role, nextPage))));
             rightArrow.add(nextButton);
@@ -154,12 +150,10 @@ public abstract class BaseHilfeView extends VerticalLayout {
                 .set("border-radius", "var(--lumo-border-radius-l)")
                 .set("padding", "var(--lumo-space-l)")
             .set("box-shadow", "var(--lumo-box-shadow-s)");
-        // Center the section within its parent: keep it responsive with a max width
         card.getStyle()
             .set("margin", "0 auto")
             .set("max-width", "900px");
 
-        // Header with icon and title
         HorizontalLayout header = new HorizontalLayout();
         header.setAlignItems(FlexComponent.Alignment.CENTER);
         header.setSpacing(true);

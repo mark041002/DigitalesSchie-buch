@@ -10,8 +10,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-// AntPathRequestMatcher is deprecated in recent Spring Security versions.
-// Use the varargs `requestMatchers(String...)` overload instead.
 
 /**
  * Security-Konfiguration für Spring Security und Vaadin.

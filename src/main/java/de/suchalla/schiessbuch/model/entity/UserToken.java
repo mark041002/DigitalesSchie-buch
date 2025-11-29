@@ -25,14 +25,14 @@ public class UserToken {
     @Column(nullable = false, unique = true, length = 128)
     private String token;
 
-    @Column(name = "ablaufdatum", nullable = false)
+    @Column(nullable = false)
     private LocalDateTime ablaufdatum;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "typ", nullable = false)
+    @Column(nullable = false)
     private UserTokenTyp typ;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "benutzer_id", nullable = false)
     private Benutzer benutzer;
 

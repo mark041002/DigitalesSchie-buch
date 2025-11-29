@@ -1,6 +1,7 @@
 
 package de.suchalla.schiessbuch.service;
 
+import de.suchalla.schiessbuch.model.entity.*;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -122,8 +123,8 @@ public class EmailService {
     }
 
     @Async
-    public void notifySignatureRequest(de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag eintrag) {
-        de.suchalla.schiessbuch.model.entity.Verein verein = eintrag.getSchiesstand() != null ? eintrag.getSchiesstand().getVerein() : null;
+    public void notifySignatureRequest(SchiessnachweisEintrag eintrag) {
+        Verein verein = eintrag.getSchiesstand() != null ? eintrag.getSchiesstand().getVerein() : null;
         if (verein == null) {
             log.warn("Kein Verein für Eintrag {} gefunden, überspringe Signatur-Benachrichtigung", eintrag.getId());
             return;
@@ -141,7 +142,7 @@ public class EmailService {
         java.util.Set<Long> sentUserIds = new java.util.HashSet<>();
         java.util.Set<String> sentEmails = new java.util.HashSet<>();
 
-        java.util.List<de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft> chefs =
+        java.util.List<Vereinsmitgliedschaft> chefs =
                 mitgliedschaftRepository.findByVereinAndIstVereinschef(verein, true);
         for (var m : chefs) {
             var b = m.getBenutzer();
@@ -160,7 +161,7 @@ public class EmailService {
             }
         }
 
-        java.util.List<de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft> aufseher =
+        java.util.List<Vereinsmitgliedschaft> aufseher =
                 mitgliedschaftRepository.findByVereinAndIstAufseher(verein, true);
         for (var m : aufseher) {
             var b = m.getBenutzer();
@@ -181,7 +182,7 @@ public class EmailService {
     }
 
     @Async
-    public void notifyMembershipRequest(de.suchalla.schiessbuch.model.entity.Verein verein, de.suchalla.schiessbuch.model.entity.Benutzer antragsteller) {
+    public void notifyMembershipRequest(Verein verein, Benutzer antragsteller) {
         Map<String, Object> vars = new java.util.HashMap<>();
         vars.put("username", "Empfänger");
         vars.put("applicantName", antragsteller.getVollstaendigerName());
@@ -195,7 +196,7 @@ public class EmailService {
         java.util.Set<Long> sentUserIds = new java.util.HashSet<>();
         java.util.Set<String> sentEmails = new java.util.HashSet<>();
 
-        java.util.List<de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft> chefs =
+        java.util.List<Vereinsmitgliedschaft> chefs =
                 mitgliedschaftRepository.findByVereinAndIstVereinschef(verein, true);
         for (var m : chefs) {
             var b = m.getBenutzer();
@@ -216,8 +217,8 @@ public class EmailService {
     }
 
     @Async
-    public void notifyEntrySigned(de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag eintrag) {
-        de.suchalla.schiessbuch.model.entity.Benutzer schuetze = eintrag.getSchuetze();
+    public void notifyEntrySigned(SchiessnachweisEintrag eintrag) {
+        Benutzer schuetze = eintrag.getSchuetze();
         if (schuetze != null && schuetze.isEmailNotificationsEnabled()) {
             Map<String, Object> vars = new java.util.HashMap<>();
             vars.put("username", schuetze.getVollstaendigerName());
@@ -225,6 +226,32 @@ public class EmailService {
             vars.put("actionUrl", resolveBaseUrl() + "/meine-eintraege");
             this.sendMail(schuetze.getEmail(), "Digitales Schießbuch - Eintrag signiert", "entry-signed.html", vars);
         }
-    }  
+    }
+
+    @Async
+    public void notifyCertificateRevoked(DigitalesZertifikat zertifikat) {
+        Benutzer benutzer = zertifikat.getBenutzer();
+        if (benutzer == null || benutzer.getEmail() == null || benutzer.getEmail().isBlank()) {
+            log.warn("Zertifikat {} hat keinen zugeordneten Benutzer oder keine E-Mail-Adresse, überspringe Benachrichtigung", zertifikat.getId());
+            return;
+        }
+
+        if (!Boolean.TRUE.equals(benutzer.isEmailNotificationsEnabled())) {
+            log.info("Benutzer {} hat E-Mail-Benachrichtigungen deaktiviert, überspringe Widerrufs-Benachrichtigung", benutzer.getEmail());
+            return;
+        }
+
+        Map<String, Object> vars = new java.util.HashMap<>();
+        vars.put("username", benutzer.getVollstaendigerName());
+        vars.put("seriennummer", zertifikat.getSeriennummer() != null ? zertifikat.getSeriennummer() : "-");
+        vars.put("zertifikatsTyp", zertifikat.getZertifikatsTyp() != null ? zertifikat.getZertifikatsTyp() : "-");
+        vars.put("widerrufenAm", zertifikat.getWiderrufenAm() != null ?
+                zertifikat.getWiderrufenAm().toLocalDate().format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")) : "-");
+        vars.put("widerrufsGrund", zertifikat.getWiderrufsGrund() != null && !zertifikat.getWiderrufsGrund().isBlank() ?
+                zertifikat.getWiderrufsGrund() : "Kein Grund angegeben");
+
+        this.sendMail(benutzer.getEmail(), "Digitales Schießbuch - Zertifikat widerrufen", "certificate-revoked.html", vars);
+        log.info("Zertifikats-Widerrufs-Benachrichtigung an {} gesendet", benutzer.getEmail());
+    }
 }
 

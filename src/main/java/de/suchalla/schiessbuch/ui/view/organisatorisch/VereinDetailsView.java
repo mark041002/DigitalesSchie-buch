@@ -17,7 +17,6 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
-import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.VereinService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
@@ -43,7 +42,6 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
 
     private final VereinService vereinService;
     private final VereinsmitgliedschaftService mitgliedschaftService;
-    private final VereinRepository vereinRepository;
     private final Benutzer currentUser;
 
     private final TextField nameField = new TextField("Vereinsname");
@@ -54,11 +52,9 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
 
     public VereinDetailsView(SecurityService securityService,
                              VereinService vereinService,
-                             VereinsmitgliedschaftService mitgliedschaftService,
-                             VereinRepository vereinRepository) {
+                             VereinsmitgliedschaftService mitgliedschaftService) {
         this.vereinService = vereinService;
         this.mitgliedschaftService = mitgliedschaftService;
-        this.vereinRepository = vereinRepository;
         this.currentUser = securityService.getAuthenticatedUser();
 
         setSpacing(false);
@@ -78,15 +74,12 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
         if (vereinIdParam.isPresent()) {
             try {
                 Long vereinId = Long.parseLong(vereinIdParam.get());
-                Verein verein = vereinRepository.findById(vereinId).orElse(null);
-                if (verein != null) {
-                    aktuellerVerein = verein;
-                    ladeVereinsdaten();
-                } else {
-                    Notification.show("Verein nicht gefunden").addThemeVariants(NotificationVariant.LUMO_ERROR);
-                }
+                aktuellerVerein = vereinService.findeVerein(vereinId);
+                ladeVereinsdaten();
             } catch (NumberFormatException e) {
                 Notification.show("Ungültige Vereins-ID").addThemeVariants(NotificationVariant.LUMO_ERROR);
+            } catch (IllegalArgumentException e) {
+                Notification.show("Verein nicht gefunden").addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         } else {
             // Fallback: Lade den ersten Verein, bei dem der Benutzer Vereinschef ist
@@ -173,16 +166,28 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
             return;
         }
 
+        try {
             mitgliedschaftService.findeMitgliedschaften(currentUser).stream()
-                .filter(m -> Boolean.TRUE.equals(m.getIstVereinschef()))
-                .findFirst()
-                .ifPresent(dto -> {
-                    Long vereinId = dto.getVerein().getId();
-                    aktuellerVerein = vereinRepository.findById(vereinId).orElse(null);
-                    ladeVereinsdaten();
-                });        if (aktuellerVerein == null) {
-            Notification.show("Kein Verein gefunden, bei dem Sie Vereinschef sind")
-                    .addThemeVariants(NotificationVariant.LUMO_WARNING);
+                    .filter(m -> Boolean.TRUE.equals(m.getIstVereinschef()))
+                    .findFirst()
+                    .ifPresent(dto -> {
+                        Long vereinId = dto.getVerein().getId();
+                        try {
+                            aktuellerVerein = vereinService.findeVerein(vereinId);
+                            ladeVereinsdaten();
+                        } catch (IllegalArgumentException e) {
+                            log.error("Verein nicht gefunden: {}", vereinId, e);
+                        }
+                    });
+
+            if (aktuellerVerein == null) {
+                Notification.show("Kein Verein gefunden, bei dem Sie Vereinschef sind")
+                        .addThemeVariants(NotificationVariant.LUMO_WARNING);
+            }
+        } catch (Exception e) {
+            log.error("Fehler beim Laden des Vereins", e);
+            Notification.show("Fehler beim Laden des Vereins")
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
     }
 

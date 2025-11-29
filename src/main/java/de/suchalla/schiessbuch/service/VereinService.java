@@ -58,4 +58,20 @@ public class VereinService {
         return vereinRepository.findAllNames();
     }
 
+    /**
+     * Findet einen Verein anhand seiner ID.
+     *
+     * @param id Die Vereins-ID
+     * @return Der Verein
+     * @throws IllegalArgumentException wenn der Verein nicht gefunden wird oder ID null ist
+     */
+    @Transactional(readOnly = true)
+    public Verein findeVerein(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Vereins-ID darf nicht null sein");
+        }
+        return vereinRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Verein mit ID " + id + " nicht gefunden"));
+    }
+
 }

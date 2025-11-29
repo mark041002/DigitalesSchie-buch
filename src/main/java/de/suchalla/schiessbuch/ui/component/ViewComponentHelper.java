@@ -109,29 +109,6 @@ public final class ViewComponentHelper {
     }
 
     /**
-     * Erstellt eine Warnung-Box mit Icon und Text.
-     *
-     * @param text Der Warnungstext
-     * @return Warning-Box-Komponente
-     */
-    public static Div createWarningBox(String text) {
-        Div warningBox = new Div();
-        warningBox.addClassName("warning-box");
-        warningBox.setWidthFull();
-
-        Icon warningIcon = VaadinIcon.WARNING.create();
-        warningIcon.setSize("20px");
-
-        Paragraph beschreibung = new Paragraph(text);
-        beschreibung.getStyle()
-                .set("color", "var(--lumo-warning-text-color)")
-                .set("margin", "0");
-
-        warningBox.add(warningIcon, beschreibung);
-        return warningBox;
-    }
-
-    /**
      * Erstellt einen Formular-Container.
      *
      * @return Formular-Container-Komponente
@@ -161,9 +138,7 @@ public final class ViewComponentHelper {
                 .set("display", "flex")
                 .set("flex-direction", "column")
                 .set("overflow-x", "auto")
-                .set("overflow-y", "auto")
-                .set("min-height", "400px")
-                .set("margin-bottom", "var(--lumo-space-l)");
+                .set("min-height", "400px");
         return gridContainer;
     }
 
@@ -196,7 +171,6 @@ public final class ViewComponentHelper {
             .set("align-items", "center")
             .set("text-align", "center")
             .set("padding", "var(--lumo-space-xl)")
-            // Allow the empty state to expand inside flex containers (fills available grid area)
             .set("flex", "1 1 auto")
             .set("min-height", "300px")
             .set("box-sizing", "border-box")
@@ -233,39 +207,6 @@ public final class ViewComponentHelper {
                 new FormLayout.ResponsiveStep("500px", 2)
         );
         return formLayout;
-    }
-
-    /**
-     * Erstellt ein responsives FormLayout mit 3 Spalten auf großen Bildschirmen.
-     * - Mobil (0px): 1 Spalte
-     * - Tablet (500px+): 2 Spalten
-     * - Desktop (900px+): 3 Spalten
-     *
-     * @return Responsive FormLayout mit 3 Spalten
-     */
-    public static FormLayout createResponsiveFormLayout3Columns() {
-        FormLayout formLayout = new FormLayout();
-        formLayout.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("500px", 2),
-                new FormLayout.ResponsiveStep("900px", 3)
-        );
-        return formLayout;
-    }
-
-    /**
-     * Erstellt einen Abschnitts-Header (H3) für Formulare.
-     *
-     * @param title Der Titel des Abschnitts
-     * @return H3-Element mit Styling
-     */
-    public static H3 createSectionHeader(String title) {
-        H3 header = new H3(title);
-        header.getStyle()
-                .set("margin-top", "var(--lumo-space-l)")
-                .set("margin-bottom", "var(--lumo-space-m)")
-                .set("color", "var(--lumo-primary-text-color)");
-        return header;
     }
 
     // ==================== Hilfe-System Komponenten ====================
@@ -387,47 +328,6 @@ public final class ViewComponentHelper {
     }
 
     /**
-     * Erstellt eine Hilfe-Section mit Icon und Titel.
-     *
-     * @param id Die Section-ID für Anchor-Navigation
-     * @param title Der Titel der Section
-     * @param icon Das VaadinIcon für die Section
-     * @param iconColor Die Farbe des Icons
-     * @return Hilfe-Section-Komponente
-     */
-    public static Div createHelpSection(String id, String title, VaadinIcon icon, String iconColor) {
-        Div section = new Div();
-        section.setId(id);
-        section.getStyle()
-                .set("background", "var(--lumo-base-color)")
-                .set("border", "1px solid var(--lumo-contrast-10pct)")
-                .set("border-radius", "var(--lumo-border-radius-l)")
-                .set("padding", "var(--lumo-space-l)")
-                .set("margin-bottom", "var(--lumo-space-l)")
-                .set("box-shadow", "var(--lumo-box-shadow-xs)")
-                .set("scroll-margin-top", "100px");
-
-        HorizontalLayout header = new HorizontalLayout();
-        header.setAlignItems(FlexComponent.Alignment.CENTER);
-        header.setSpacing(true);
-        header.getStyle().set("margin-bottom", "var(--lumo-space-m)");
-
-        Icon iconComponent = icon.create();
-        iconComponent.setSize("32px");
-        iconComponent.getStyle().set("color", iconColor);
-
-        H2 sectionTitle = new H2(title);
-        sectionTitle.getStyle()
-                .set("margin", "0")
-                .set("color", "var(--lumo-header-text-color)");
-
-        header.add(iconComponent, sectionTitle);
-        section.add(header);
-
-        return section;
-    }
-
-    /**
      * Erstellt eine standardisierte Filter-Box mit definiertem Styling.
      *
      * @param content das zu einzufügende Komponenten-Layout (z.B. ein HorizontalLayout)
@@ -448,21 +348,6 @@ public final class ViewComponentHelper {
             filterBox.add(content);
         }
         return filterBox;
-    }
-
-    /**
-     * Erstellt eine Filter-Box und erlaubt zusätzliche Anpassungen über einen Consumer.
-     *
-     * @param content der Inhalt der Box
-     * @param customizer ein Consumer, der zusätzliche style- oder andere Einstellungen vornimmt
-     * @return vorkonfiguriertes Div
-     */
-    public static Div createFilterBox(com.vaadin.flow.component.Component content, java.util.function.Consumer<Div> customizer) {
-        Div box = createFilterBox(content);
-        if (customizer != null) {
-            customizer.accept(box);
-        }
-        return box;
     }
 
 }

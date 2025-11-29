@@ -127,12 +127,13 @@ public class MeineVereineView extends VerticalLayout {
         infoBox.add(infoIcon, beschreibung);
         contentWrapper.add(infoBox);
 
-        // Grid-Container mit weißem Hintergrund (standardisiert)
         Div gridContainer = ViewComponentHelper.createGridContainer();
 
-        // Grid mit modernem Styling
         grid.addClassName("rounded-grid");
-        grid.setSizeFull();
+        grid.setWidthFull();
+        grid.getStyle()
+                .set("flex", "1 1 auto")
+                .set("min-height", "0");
         grid.addColumn(mitgliedschaft -> mitgliedschaft.getVerein().getName())
                 .setHeader("Verein")
                 .setFlexGrow(1);
@@ -250,14 +251,12 @@ public class MeineVereineView extends VerticalLayout {
         layout.setPadding(false);
         layout.setWidthFull();
 
-        // Info-Box über die gesamte Breite und mit Standard-Info-Box-Styling
         Div infoBox = new Div();
         infoBox.addClassName("info-box");
         infoBox.setWidthFull();
 
         Icon infoIcon = VaadinIcon.INFO_CIRCLE.create();
         infoIcon.setSize("20px");
-        // Keine explizite Farbe setzen, Standard-Info-Box-Styling übernimmt das Blau
 
         Span infoText = new Span("Suchen Sie nach Namen oder Adresse (Teiltext möglich). Wählen Sie einen Verein aus der Liste aus — vollständiger Name und Adresse werden angezeigt. 'Beitreten' sendet eine Beitrittsanfrage.");
         infoText.getStyle().set("margin-left", "var(--lumo-space-s)");
@@ -285,7 +284,6 @@ public class MeineVereineView extends VerticalLayout {
 
         final List<Verein> alleVereine = loadAlleVereine();
 
-        // Hilfsmethode zum (rek)aufbauen der Ergebnisliste
         java.util.function.Consumer<List<Verein>> refreshResults = matches -> {
             ergebnisContainer.removeAll();
             if (matches == null || matches.isEmpty()) {

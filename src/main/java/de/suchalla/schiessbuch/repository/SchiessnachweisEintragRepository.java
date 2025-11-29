@@ -74,8 +74,6 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
      */
     long countBySchuetzeAndStatus(Benutzer schuetze, EintragStatus status);
 
-    // Note: findByIdWithDetails wurde entfernt - findById mit @EntityGraph ersetzt alle WITH...() Methoden
-
     /**
      * Findet einen Eintrag mit allen Beziehungen inkl. Verein über Schiesstand.
      * Verhindert LazyInitializationException beim Zugriff auf schiesstand.verein.

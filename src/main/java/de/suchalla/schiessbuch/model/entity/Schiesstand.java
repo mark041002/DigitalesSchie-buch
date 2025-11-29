@@ -62,12 +62,6 @@ public class Schiesstand {
     @Column(name = "aktualisiert_am")
     private LocalDateTime aktualisiertAm;
 
-    @OneToMany(mappedBy = "schiesstand", cascade = CascadeType.ALL)
-    @Builder.Default
-    @ToString.Exclude
-    @JsonIgnore
-    private Set<SchiessnachweisEintrag> eintraege = new HashSet<>();
-
     @PrePersist
     protected void onCreate() {
         erstelltAm = LocalDateTime.now();

@@ -28,15 +28,6 @@ public interface VereinRepository extends JpaRepository<Verein, Long> {
     List<Verein> findByVerbaendeContaining(Verband verband);
 
     /**
-     * Findet einen Verein anhand der Vereinsnummer.
-     *
-     * @param vereinsNummer Die Vereinsnummer
-     * @return Optional mit Verein
-     */
-    // Method findByVereinsNummer removed as Vereinsnummer was deprecated
-
-
-    /**
      * Findet alle Vereine mit Verband und Mitgliedschaften.
      *
      * @return Liste aller Vereine

@@ -26,30 +26,18 @@ public class SignaturService {
 
     private final PkiService pkiService;
     private final DigitalesZertifikatRepository zertifikatRepository;
-    private final SchiessnachweisEintragRepository eintragRepository;
     private final SchiessnachweisService schiessnachweisService;
     private final EmailService notificationService;
-
-    /**
-     * Signiert einen Schießnachweis-Eintrag anhand der ID.
-     */
-    @Transactional
-    public void signEintragMitId(Long eintragId, Benutzer aufseher, Verein verein) {
-        SchiessnachweisEintrag eintrag = eintragRepository.findById(eintragId)
-                .orElseThrow(() -> new IllegalArgumentException("Eintrag nicht gefunden"));
-        signEintrag(eintrag, aufseher, verein);
-    }
 
     /**
      * Signiert einen Schießnachweis-Eintrag mit dem Zertifikat des Aufsehers.
      *
      * @param eintrag Der zu signierende Eintrag
      * @param aufseher Der Aufseher, der signiert
-     * @param verein Der Verein, in dem signiert wird
      * @throws RuntimeException wenn die Signierung fehlschlägt
      */
     @Transactional
-    public void signEintrag(SchiessnachweisEintrag eintrag, Benutzer aufseher, Verein verein) {
+    public void signEintrag(SchiessnachweisEintrag eintrag, Benutzer aufseher) {
         try {
             log.info("Starte Signierung für Eintrag-ID: {} durch Aufseher: {}", eintrag.getId(), aufseher.getId());
 
@@ -68,7 +56,7 @@ public class SignaturService {
             eintrag.setDigitaleSignatur(signature);
             eintrag.setZertifikat(aufseherZertifikat);
 
-            schiessnachweisService.signiereEintrag(eintrag.getId(), aufseher, signature);
+            schiessnachweisService.signiereEintrag(eintrag, aufseher, signature);
             log.info("Eintrag {} erfolgreich signiert", eintrag.getId());
 
             // Benachrichtige den Schützen asynchron über die erfolgreiche Signierung

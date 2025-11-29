@@ -30,9 +30,9 @@ import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
-import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.PdfExportService;
+import de.suchalla.schiessbuch.service.VereinService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
 import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
@@ -60,12 +60,12 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
     private final VereinsmitgliedschaftService mitgliedschaftService;
     private final PdfExportService pdfExportService;
     private final Benutzer currentUser;
-    private final VereinRepository vereinRepository;
+    private final VereinService vereinService;
 
     private final Grid<Vereinsmitgliedschaft> mitgliederGrid = new Grid<>(Vereinsmitgliedschaft.class, false);
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
-    // Tabs as class fields so we can select them from beforeEnter
+    // Tabs als Variablen damit wir sie in beforeEnter nutzen können
     private Tab genehmigtTab;
     private Tab beantragtTab;
     private Tab abgelehntTab;
@@ -89,10 +89,10 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
     public MitgliedschaftenVerwaltenView(SecurityService securityService,
                                          VereinsmitgliedschaftService mitgliedschaftService,
                                          PdfExportService pdfExportService,
-                                         VereinRepository vereinRepository) {
+                                         VereinService vereinService) {
         this.mitgliedschaftService = mitgliedschaftService;
         this.pdfExportService = pdfExportService;
-        this.vereinRepository = vereinRepository;
+        this.vereinService = vereinService;
         this.currentUser = securityService.getAuthenticatedUser();
 
         setSpacing(false);
@@ -114,7 +114,11 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
                     .findFirst()
                     .ifPresent(m -> {
                         Long vereinId = m.getVerein().getId();
-                        aktuellerVerein = vereinRepository.findById(vereinId).orElse(null);
+                        try {
+                            aktuellerVerein = vereinService.findeVerein(vereinId);
+                        } catch (IllegalArgumentException e) {
+                            log.error("Verein nicht gefunden: {}", vereinId, e);
+                        }
                     });
         }
     }
@@ -163,7 +167,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
         tabsContainer.addClassName("tabs-container");
         tabsContainer.setWidthFull();
 
-        // Tabs fÃ¼r Status-Filter
+        // Tabs fuer Status-Filter
         genehmigtTab = new Tab("Aktive Mitglieder");
         beantragtTab = new Tab("Zur Genehmigung");
         abgelehntTab = new Tab("Abgelehnte");

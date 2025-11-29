@@ -51,10 +51,8 @@ public class SchiessnachweisEintrag {
     @Column(nullable = false)
     private LocalDate datum;
 
-    @Column(name = "anzahl_schuesse")
     private Integer anzahlSchuesse;
 
-    @Column(name = "ergebnis")
     private String ergebnis;
 
     @Column(length = 100)

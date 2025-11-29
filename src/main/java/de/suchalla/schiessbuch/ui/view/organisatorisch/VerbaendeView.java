@@ -91,7 +91,10 @@ public class VerbaendeView extends VerticalLayout {
 
         grid.setColumnReorderingAllowed(true);
         grid.addClassName("rounded-grid");
-        grid.setSizeFull();
+        grid.setWidthFull();
+        grid.getStyle()
+                .set("flex", "1 1 auto")
+                .set("min-height", "0");
 
         grid.addColumn(Verband::getName).setHeader("Verbandsname").setSortable(true).setFlexGrow(1);
         grid.addColumn(Verband::getBeschreibung).setHeader("Beschreibung").setFlexGrow(2);

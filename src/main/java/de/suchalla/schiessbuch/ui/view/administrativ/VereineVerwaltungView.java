@@ -130,7 +130,6 @@ public class VereineVerwaltungView extends VerticalLayout {
         grid.addColumn(Verein::getName)
                 .setHeader("Name")
                 .setFlexGrow(1);
-        // Vereinsnummer removed from view
         grid.addColumn(verein -> verein.getMitgliedschaften() != null ? verein.getMitgliedschaften().size() : 0)
                 .setHeader("Mitglieder")
                 .setFlexGrow(0)
@@ -170,8 +169,7 @@ public class VereineVerwaltungView extends VerticalLayout {
                     layout.add(mitgliederBtn, detailsBtn, loeschenBtn);
                     return layout;
                 }).setHeader("Aktionen")
-                .setFlexGrow(0)
-                .setPartNameGenerator(item -> "actions-cell-padding");
+                .setFlexGrow(0);
         
         grid.getColumns().forEach(c -> c.setAutoWidth(true));
         grid.addThemeVariants(
@@ -340,7 +338,7 @@ public class VereineVerwaltungView extends VerticalLayout {
                 buttonLayout.setSpacing(true);
                 buttonLayout.getStyle().set("gap", "var(--lumo-space-xs)");
 
-                Button entfernenBtn = new Button("Entfernen", ev -> {
+                Button entfernenBtn = new Button("Entfernen", e -> {
                     mitgliedschaftService.mitgliedEntfernen(m.getId());
                     Notification.show("Mitglied entfernt").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                     dialog.close();

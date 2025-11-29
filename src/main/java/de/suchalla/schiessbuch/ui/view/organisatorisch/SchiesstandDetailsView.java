@@ -78,15 +78,12 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
         if (schiesstandIdParam.isPresent()) {
             try {
                 Long schiesstandId = Long.parseLong(schiesstandIdParam.get());
-                Optional<Schiesstand> schiesstandOptional = schiesstandService.findeSchiesstand(schiesstandId);
-                if (schiesstandOptional.isPresent()) {
-                    aktuellerSchiesstand = schiesstandOptional.get();
-                    ladeSchiesstanddaten();
-                } else {
-                    Notification.show("Schießstand nicht gefunden").addThemeVariants(NotificationVariant.LUMO_ERROR);
-                }
+                aktuellerSchiesstand = schiesstandService.findeSchiesstand(schiesstandId);
+                ladeSchiesstanddaten();
             } catch (NumberFormatException e) {
                 Notification.show("Ungültige Schießstand-ID").addThemeVariants(NotificationVariant.LUMO_ERROR);
+            } catch (IllegalArgumentException e) {
+                Notification.show("Schießstand nicht gefunden").addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         } else {
             // Fallback: Lade den ersten Schießstand, bei dem der Benutzer Aufseher ist

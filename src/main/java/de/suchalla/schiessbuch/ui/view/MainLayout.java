@@ -21,7 +21,6 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.html.Span;
-// removed duplicate explicit import
 
 /**
  * Haupt-Layout der Anwendung mit Navigation.
@@ -43,7 +42,6 @@ public class MainLayout extends AppLayout {
 
     private final SecurityService securityService;
         private final Benutzer currentUser;
-        // Buttons for updating username dynamically
         private Button profilButtonDesktop;
         private Button profilButtonMobile;
 
@@ -400,8 +398,6 @@ public class MainLayout extends AppLayout {
                 .set("border", "none")
                 .set("transition", "all 0.2s ease");
 
-        // Hover-Effekt: entfernt, JS-Datei gelöscht
-
         return details;
     }
 
@@ -409,10 +405,7 @@ public class MainLayout extends AppLayout {
      * Erstellt ein SideNavItem mit Debouncing-Schutz gegen mehrfaches Klicken.
      */
     private SideNavItem createDebouncedSideNavItem(Icon icon) {
-        SideNavItem item = new SideNavItem("Eintragsverwaltung", EintraegeVerwaltungView.class, icon);
 
-        // Debouncing: entfernt, JS-Datei gelöscht
-
-        return item;
+        return new SideNavItem("Eintragsverwaltung", EintraegeVerwaltungView.class, icon);
     }
 }

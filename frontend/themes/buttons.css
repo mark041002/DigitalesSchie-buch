@@ -54,5 +54,13 @@ vaadin-button:hover:not([disabled]) {
     transform: rotate(15deg);
 }
 
-/* Note: .card-hover moved to cards.css to avoid duplication */
-/* Note: Grid Row Hover moved to cards.css to avoid duplication */
+/* Action Button Hover Effects (Dashboard Quick Actions) */
+.action-button-hover {
+    transition: all 0.2s ease;
+}
+
+.action-button-hover:hover {
+    background: var(--lumo-primary-color-10pct) !important;
+    border-color: var(--lumo-primary-color) !important;
+    transform: translateY(-2px);
+}

@@ -31,8 +31,6 @@ class SchiesstandTest {
         assertEquals("Stand A", schiesstand.getName());
         assertEquals(SchiesstandTyp.VEREINSGEBUNDEN, schiesstand.getTyp());
         assertEquals(verein, schiesstand.getVerein());
-        assertNotNull(schiesstand.getEintraege());
-        assertTrue(schiesstand.getEintraege().isEmpty());
     }
 
     @Test

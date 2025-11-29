@@ -24,6 +24,7 @@ import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.repository.BenutzerRepository;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import de.suchalla.schiessbuch.service.BenutzerService;
+import de.suchalla.schiessbuch.service.EmailService;
 import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
 import de.suchalla.schiessbuch.ui.view.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
@@ -47,6 +48,7 @@ public class ZertifikateView extends VerticalLayout {
     private final DigitalesZertifikatRepository zertifikatRepository;
     private final BenutzerRepository benutzerRepository;
     private final BenutzerService benutzerService;
+    private final EmailService emailService;
     private Tab gueltigTab;
     private Tab widerrufenTab;
     private Tab aktuellerTab;
@@ -55,10 +57,12 @@ public class ZertifikateView extends VerticalLayout {
 
     public ZertifikateView(DigitalesZertifikatRepository zertifikatRepository,
                           BenutzerRepository benutzerRepository,
-                          BenutzerService benutzerService) {
+                          BenutzerService benutzerService,
+                          EmailService emailService) {
         this.zertifikatRepository = zertifikatRepository;
         this.benutzerRepository = benutzerRepository;
         this.benutzerService = benutzerService;
+        this.emailService = emailService;
         setSpacing(false);
         setPadding(false);
         setSizeFull();
@@ -105,7 +109,10 @@ public class ZertifikateView extends VerticalLayout {
 
         grid.addClassName("rounded-grid");
         grid.setColumnReorderingAllowed(true);
-        grid.setSizeFull();
+        grid.setWidthFull();
+        grid.getStyle()
+                .set("flex", "1 1 auto")
+                .set("min-height", "0");
 
         grid.addColumn(zertifikat -> {
             if (zertifikat.getBenutzer() != null) {
@@ -237,13 +244,13 @@ public class ZertifikateView extends VerticalLayout {
 
         layout.add(info, grundField);
 
-        Button widerrufenButton = new Button("Widerrufen", event -> {
+        Button widerrufenButton = new Button("Widerrufen", e -> {
             loescheZertifikat(zertifikat, grundField.getValue());
             dialog.close();
         });
         widerrufenButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
 
-        Button abbrechenButton = new Button("Abbrechen", event -> dialog.close());
+        Button abbrechenButton = new Button("Abbrechen", e -> dialog.close());
 
         dialog.add(layout);
         dialog.getFooter().add(abbrechenButton, widerrufenButton);
@@ -322,6 +329,10 @@ public class ZertifikateView extends VerticalLayout {
 
             // Speichere das Zertifikat als widerrufen
             zertifikatRepository.save(zertifikat);
+
+            // Sende E-Mail-Benachrichtigung an den Benutzer
+            emailService.notifyCertificateRevoked(zertifikat);
+
             Notification.show("Zertifikat erfolgreich widerrufen")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             updateGrid();
@@ -363,8 +374,7 @@ public class ZertifikateView extends VerticalLayout {
         }
 
         // Admin sieht alle Zertifikate
-        boolean isAdmin = auth != null && auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
         List<DigitalesZertifikat> zertifikate;
         if (aktuellerTab == gueltigTab) {

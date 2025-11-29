@@ -115,7 +115,7 @@ public class ProfilView extends VerticalLayout {
                 .set("font-weight", "600");
 
         // Name und E-Mail sowie die Benachrichtigungs-Div (unterhalb der E-Mail) werden in createEmailRow erzeugt
-        card.add(cardTitle, createNameRow(card), createEmailRow(card));
+        card.add(cardTitle, createNameRow(), createEmailRow(card));
         return card;
     }
 
@@ -125,7 +125,6 @@ public class ProfilView extends VerticalLayout {
             return;
         }
 
-        // Try to find the actual parent container of the infoCard and operate on it
         Optional<Component> parentOpt = infoCard.getParent();
         if (parentOpt.isPresent() && parentOpt.get() instanceof HasComponents) {
             Component parentComp = parentOpt.get();
@@ -135,7 +134,6 @@ public class ProfilView extends VerticalLayout {
             parent.remove(infoCard);
             infoCard = createInfoCard();
             infoCard.getStyle().set("margin-bottom", "var(--lumo-space-l)");
-            // Recompute size and add back at same index if possible
             int childCount = parentComp.getChildren().toList().size();
             if (idx <= childCount) {
                 parent.addComponentAtIndex(idx, infoCard);
@@ -143,7 +141,6 @@ public class ProfilView extends VerticalLayout {
                 parent.add(infoCard);
             }
         } else {
-            // Fallback to operate on this layout if parent not available
             int idx = getChildren().toList().indexOf(infoCard);
             if (idx < 0) idx = 0;
             remove(infoCard);
@@ -153,7 +150,7 @@ public class ProfilView extends VerticalLayout {
         }
     }
 
-    private Div createNameRow(Div card) {
+    private Div createNameRow() {
         Div nameRow = new Div();
         nameRow.getStyle()
                 .set("display", "flex")
@@ -218,7 +215,6 @@ public class ProfilView extends VerticalLayout {
                     benutzerToUpdate.setNachname(neuerName.substring(neuerName.indexOf(' ') + 1));
                 }
                 benutzerService.aktualisiereBenutzer(benutzerToUpdate);
-                // Aktualisiere auch das lokale currentUser-Objekt
                 currentUser.setVorname(benutzerToUpdate.getVorname());
                 currentUser.setNachname(benutzerToUpdate.getNachname());
                 Notification.show("Name erfolgreich geändert")

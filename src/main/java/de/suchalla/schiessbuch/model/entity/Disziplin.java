@@ -34,7 +34,6 @@ public class Disziplin {
     @EqualsAndHashCode.Include
     private String kennziffer;
 
-    @Column(length = 1000)
     private String programm;
 
     @Column(name = "waffe_klasse")
@@ -50,12 +49,6 @@ public class Disziplin {
 
     @Column(name = "aktualisiert_am")
     private LocalDateTime aktualisiertAm;
-
-    @OneToMany(mappedBy = "disziplin", cascade = CascadeType.ALL)
-    @Builder.Default
-    @ToString.Exclude
-    @JsonIgnore
-    private Set<SchiessnachweisEintrag> eintraege = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {

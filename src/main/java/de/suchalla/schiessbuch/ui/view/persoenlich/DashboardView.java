@@ -12,9 +12,9 @@ import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
-import de.suchalla.schiessbuch.repository.SchiesstandRepository;
 import de.suchalla.schiessbuch.model.enums.BenutzerRolle;
 import de.suchalla.schiessbuch.security.SecurityService;
+import de.suchalla.schiessbuch.service.DisziplinService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
 import de.suchalla.schiessbuch.service.VereinsmitgliedschaftService;
 import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
@@ -34,16 +34,16 @@ public class DashboardView extends VerticalLayout {
     private final SecurityService securityService;
     private final SchiessnachweisService schiessnachweisService;
     private final VereinsmitgliedschaftService vereinsmitgliedschaftService;
-    private final SchiesstandRepository schiesstandRepository;
+    private final DisziplinService disziplinService;
 
     public DashboardView(SecurityService securityService,
                          SchiessnachweisService schiessnachweisService,
                          VereinsmitgliedschaftService vereinsmitgliedschaftService,
-                         SchiesstandRepository schiesstandRepository) {
+                         DisziplinService disziplinService) {
         this.securityService = securityService;
         this.schiessnachweisService = schiessnachweisService;
         this.vereinsmitgliedschaftService = vereinsmitgliedschaftService;
-        this.schiesstandRepository = schiesstandRepository;
+        this.disziplinService = disziplinService;
 
         setSpacing(false);
         setPadding(false);
@@ -125,7 +125,7 @@ public class DashboardView extends VerticalLayout {
                     .findFirst()
                     .orElse(null);
                 if (verein != null) {
-                    List<Schiesstand> schiesstaende = schiesstandRepository.findByVerein(verein);
+                    List<Schiesstand> schiesstaende = disziplinService.findeSchiesstaendeVonVerein(verein);
                     offeneEintraege = schiesstaende.stream()
                         .mapToLong(schiesstand -> schiessnachweisService.findeUnsignierteEintraege(schiesstand).size())
                         .sum();
@@ -187,10 +187,8 @@ public class DashboardView extends VerticalLayout {
 
         // Click-Handling, nur wenn clickable (route != null)
         if (route != null) {
-            card.getElement().executeJs(
-                    "this.addEventListener('click', () => {" +
-                    "  window.location.href = '" + route + "';" +
-                    "});"
+            card.addClickListener(e ->
+                getUI().ifPresent(ui -> ui.navigate(route))
             );
         }
 
@@ -332,21 +330,10 @@ public class DashboardView extends VerticalLayout {
                 .set("align-items", "center")
                 .set("justify-content", "center");
 
-        button.getElement().executeJs(
-                "this.addEventListener('mouseenter', () => {" +
-                        "  this.style.background = 'var(--lumo-primary-color-10pct)';" +
-                        "  this.style.borderColor = 'var(--lumo-primary-color)';" +
-                        "  this.style.transform = 'translateY(-2px)';" +
-                        "});" +
-                        "this.addEventListener('mouseleave', () => {" +
-                        "  this.style.background = 'var(--lumo-contrast-5pct)';" +
-                        "  this.style.borderColor = 'transparent';" +
-                        "  this.style.transform = 'translateY(0)';" +
-                        "});" +
-                        "this.addEventListener('click', () => {" +
-                        "  window.location.href = '" + route + "';" +
-                        "});"
+        button.addClickListener(e ->
+            getUI().ifPresent(ui -> ui.navigate(route))
         );
+        button.addClassName("action-button-hover");
 
         Icon iconComponent = icon.create();
         iconComponent.setSize("32px");

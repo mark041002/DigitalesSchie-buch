@@ -93,7 +93,10 @@ public class MitgliederVerwaltungView extends VerticalLayout {
 
         grid.addClassName("rounded-grid");
         grid.setColumnReorderingAllowed(true);
-        grid.setSizeFull();
+        grid.setWidthFull();
+        grid.getStyle()
+                .set("flex", "1 1 auto")
+                .set("min-height", "0");
 
         grid.addColumn(Benutzer::getId)
                 .setHeader("ID")

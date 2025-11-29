@@ -13,7 +13,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import de.suchalla.schiessbuch.model.entity.Disziplin;
 import de.suchalla.schiessbuch.model.entity.Verband;
-import de.suchalla.schiessbuch.security.SecurityService;
 import de.suchalla.schiessbuch.service.DisziplinService;
 import de.suchalla.schiessbuch.service.VerbandService;
 import de.suchalla.schiessbuch.ui.component.ViewComponentHelper;
@@ -80,8 +79,7 @@ public class VerbaendeView extends VerticalLayout {
         Button disziplinenButton = new Button("Disziplinen", e -> zeigeDisziplinen(verband));
         disziplinenButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_PRIMARY);
 
-        HorizontalLayout layout = new HorizontalLayout(disziplinenButton);
-        return layout;
+        return new HorizontalLayout(disziplinenButton);
     }
 
     private void zeigeDisziplinen(Verband verband) {

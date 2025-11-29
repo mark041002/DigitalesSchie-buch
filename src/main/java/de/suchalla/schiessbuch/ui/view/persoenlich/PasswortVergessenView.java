@@ -77,7 +77,6 @@ public class PasswortVergessenView extends VerticalLayout {
             // Benutzer suchen
             Benutzer benutzer = benutzerService.findeBenutzerByEmail(email);
 
-            // Aus Sicherheitsgründen immer eine Erfolgsmeldung anzeigen, auch wenn die E-Mail nicht existiert
             if (benutzer != null) {
                 String token = benutzerService.erstellePasswortResetToken(benutzer);
 

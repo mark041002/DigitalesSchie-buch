@@ -206,9 +206,11 @@ public class MeineEintraegeView extends VerticalLayout {
         // Grid-Container mit weißem Hintergrund
         Div gridContainer = ViewComponentHelper.createGridContainer();
 
-        // Grid mit modernem Styling - jetzt mit DTOs (flache Struktur)
         grid.addClassName("rounded-grid");
-        grid.setSizeFull();
+        grid.setWidthFull();
+        grid.getStyle()
+                .set("flex", "1 1 auto")
+                .set("min-height", "0");
         grid.addColumn(dto -> dto.getDatum() == null ? "" : dateFormatter.format(dto.getDatum()))
                 .setHeader("Datum")
                 .setSortable(true);
@@ -218,7 +220,9 @@ public class MeineEintraegeView extends VerticalLayout {
                 .setSortable(true);
 
         // Vereinsspalte anzeigen (direkt aus DTO)
-        grid.addColumn(eintrag -> eintrag.getSchiesstand() != null && eintrag.getSchiesstand().getVerein() != null ? eintrag.getSchiesstand().getVerein().getName() : null != null ? eintrag.getSchiesstand() != null && eintrag.getSchiesstand().getVerein() != null ? eintrag.getSchiesstand().getVerein().getName() : null : "-")
+        grid.addColumn(eintrag -> eintrag.getSchiesstand() != null && eintrag.getSchiesstand().getVerein() != null
+                ? eintrag.getSchiesstand().getVerein().getName()
+                : "-")
                 .setHeader("Verein")
                 .setSortable(true);
 

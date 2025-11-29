@@ -43,24 +43,14 @@ public class SchuetzeHilfeView extends VerticalLayout implements BeforeEnterObse
                 .getParameters()
                 .getOrDefault("from", java.util.Collections.singletonList(""))
                 .get(0);
-
-        // Scroll to the relevant section after page load
-        if (fromRoute != null && !fromRoute.isEmpty()) {
-            UI.getCurrent().getPage().executeJs(
-                    "setTimeout(() => { const element = document.getElementById($0); if(element) element.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 100)",
-                    getSectionIdFromRoute(fromRoute)
-            );
-        }
     }
 
     private void createContent() {
-        // Back button
         Button backButton = new Button("← Zurück zur Hilfe-Übersicht", VaadinIcon.ARROW_LEFT.create());
         backButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         backButton.addClickListener(e -> getUI().ifPresent(ui -> ui.navigate("hilfe")));
         backButton.getStyle().set("margin-bottom", "var(--lumo-space-m)");
 
-        // Header
         H1 title = new H1("Hilfe für Schützen");
         title.getStyle()
                 .set("color", "var(--lumo-primary-text-color)")
@@ -108,7 +98,6 @@ public class SchuetzeHilfeView extends VerticalLayout implements BeforeEnterObse
         howTo.add(new ListItem("Sehen Sie sich Ihre neuesten Einträge an"));
         howTo.add(new ListItem("Nutzen Sie die Schnellzugriff-Buttons für häufige Aktionen"));
 
-        // Placeholder for screenshot
         Div imagePlaceholder = createImagePlaceholder("dashboard-overview.png", "Dashboard Übersicht");
 
         section.add(description, featuresTitle, features, howToTitle, howTo, imagePlaceholder);
@@ -142,7 +131,7 @@ public class SchuetzeHilfeView extends VerticalLayout implements BeforeEnterObse
         howTo.add(new ListItem("Verwenden Sie die Export-Buttons, um Ihre Daten zu exportieren"));
         howTo.add(new ListItem("Bei unbestätigten Einträgen können Sie diese noch bearbeiten oder löschen"));
 
-        // Placeholder for screenshot
+
         Div imagePlaceholder = createImagePlaceholder("meine-eintraege.png", "Meine Einträge Übersicht");
 
         section.add(description, featuresTitle, features, howToTitle, howTo, imagePlaceholder);
@@ -186,7 +175,7 @@ public class SchuetzeHilfeView extends VerticalLayout implements BeforeEnterObse
                 "Sie können den Eintrag solange noch bearbeiten, bis er bestätigt wurde."
         );
 
-        // Placeholder for screenshot
+
         Div imagePlaceholder = createImagePlaceholder("neuer-eintrag-formular.png", "Formular für neuen Eintrag");
 
         section.add(description, featuresTitle, features, howToTitle, howTo, tippBox, imagePlaceholder);
@@ -224,7 +213,7 @@ public class SchuetzeHilfeView extends VerticalLayout implements BeforeEnterObse
                 "des gewünschten Vereins oder an einen Administrator."
         );
 
-        // Placeholder for screenshot
+
         Div imagePlaceholder = createImagePlaceholder("meine-vereine.png", "Meine Vereine Übersicht");
 
         section.add(description, featuresTitle, features, howToTitle, howTo, tippBox, imagePlaceholder);
@@ -263,7 +252,7 @@ public class SchuetzeHilfeView extends VerticalLayout implements BeforeEnterObse
                 "zu Ihren Einträgen und Vereinen erhalten können."
         );
 
-        // Placeholder for screenshot
+
         Div imagePlaceholder = createImagePlaceholder("profil-bearbeiten.png", "Profil bearbeiten");
 
         section.add(description, featuresTitle, features, howToTitle, howTo, tippBox, imagePlaceholder);

@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Service für Schießstandsverwaltung.
@@ -33,6 +32,7 @@ public class SchiesstandService {
     private final DigitalesZertifikatRepository zertifikatRepository;
     private final BenutzerRepository benutzerRepository;
     private final PkiService pkiService;
+    private final EmailService emailService;
 
     /**
      * Konstruktor.
@@ -42,17 +42,20 @@ public class SchiesstandService {
      * @param zertifikatRepository Repository für digitale Zertifikate
      * @param benutzerRepository Repository für Benutzer
      * @param pkiService Service für PKI-Zertifikatsverwaltung
+     * @param emailService Service für E-Mail-Benachrichtigungen
      */
     public SchiesstandService(SchiesstandRepository schiesstandRepository,
                               SchiessnachweisEintragRepository eintragRepository,
                               DigitalesZertifikatRepository zertifikatRepository,
                               BenutzerRepository benutzerRepository,
-                              PkiService pkiService) {
+                              PkiService pkiService,
+                              EmailService emailService) {
         this.schiesstandRepository = schiesstandRepository;
         this.eintragRepository = eintragRepository;
         this.zertifikatRepository = zertifikatRepository;
         this.benutzerRepository = benutzerRepository;
         this.pkiService = pkiService;
+        this.emailService = emailService;
     }
 
     /**
@@ -68,11 +71,13 @@ public class SchiesstandService {
      * Findet einen Schießstand anhand der ID.
      *
      * @param id Die Schießstand-ID
-     * @return Optional mit Schießstand
+     * @return Der Schießstand
+     * @throws IllegalArgumentException wenn der Schießstand nicht gefunden wird
      */
     @Transactional(readOnly = true)
-    public Optional<Schiesstand> findeSchiesstand(Long id) {
-        return schiesstandRepository.findById(id);
+    public Schiesstand findeSchiesstand(Long id) {
+        return schiesstandRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Schießstand mit ID " + id + " nicht gefunden"));
     }
 
     /**
@@ -133,16 +138,18 @@ public class SchiesstandService {
         
         // Altes Zertifikat widerrufen, falls vorhanden
         if (alterAufseher != null) {
-            Optional<DigitalesZertifikat> altesZertifikat = zertifikatRepository
-                    .findByBenutzerAndSchiesstand(alterAufseher, schiesstand);
-            if (altesZertifikat.isPresent()) {
-                DigitalesZertifikat zert = altesZertifikat.get();
-                zert.setWiderrufen(true);
-                zert.setWiderrufenAm(LocalDateTime.now());
-                zert.setWiderrufsGrund("Schießstand-Aufseher-Funktion beendet");
-                zertifikatRepository.save(zert);
-                log.info("Zertifikat von {} für Schießstand {} widerrufen (SN: {})", 
-                    alterAufseher.getVollstaendigerName(), schiesstand.getName(), zert.getSeriennummer());
+            DigitalesZertifikat altesZertifikat = zertifikatRepository
+                    .findByBenutzerAndSchiesstand(alterAufseher, schiesstand).orElse(null);
+            if (altesZertifikat != null) {
+                altesZertifikat.setWiderrufen(true);
+                altesZertifikat.setWiderrufenAm(LocalDateTime.now());
+                altesZertifikat.setWiderrufsGrund("Schießstand-Aufseher-Funktion beendet");
+                zertifikatRepository.save(altesZertifikat);
+                log.info("Zertifikat von {} für Schießstand {} widerrufen (SN: {})",
+                    alterAufseher.getVollstaendigerName(), schiesstand.getName(), altesZertifikat.getSeriennummer());
+
+                // Sende E-Mail-Benachrichtigung an den Benutzer
+                emailService.notifyCertificateRevoked(altesZertifikat);
             }
             
             // Rolle auf SCHUETZE zurücksetzen, falls keine anderen Aufseherfunktionen
@@ -164,15 +171,15 @@ public class SchiesstandService {
             // Zertifikat für neuen Aufseher erstellen
             try {
                 // Prüfen, ob bereits ein Zertifikat für diesen Schießstand existiert
-                Optional<DigitalesZertifikat> bestehendesZertifikat = 
-                    zertifikatRepository.findByBenutzerAndSchiesstand(neuerAufseher, schiesstand);
-                
-                if (bestehendesZertifikat.isEmpty()) {
+                DigitalesZertifikat bestehendesZertifikat =
+                    zertifikatRepository.findByBenutzerAndSchiesstand(neuerAufseher, schiesstand).orElse(null);
+
+                if (bestehendesZertifikat == null) {
                     DigitalesZertifikat neuesZertifikat = pkiService.createSchiesstandaufseheCertificate(neuerAufseher, schiesstand);
-                    log.info("Zertifikat für neuen Schießstand-Aufseher {} erstellt (SN: {})", 
+                    log.info("Zertifikat für neuen Schießstand-Aufseher {} erstellt (SN: {})",
                         neuerAufseher.getVollstaendigerName(), neuesZertifikat.getSeriennummer());
                 } else {
-                    log.info("Schießstand-Aufseher {} hat bereits ein gültiges Zertifikat für Schießstand {}", 
+                    log.info("Schießstand-Aufseher {} hat bereits ein gültiges Zertifikat für Schießstand {}",
                         neuerAufseher.getVollstaendigerName(), schiesstand.getName());
                 }
             } catch (Exception e) {

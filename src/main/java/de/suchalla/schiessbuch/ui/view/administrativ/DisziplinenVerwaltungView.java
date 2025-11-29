@@ -69,7 +69,7 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
     public void beforeEnter(BeforeEnterEvent event) {
         String idStr = null;
         if (event.getLocation().getQueryParameters().getParameters().containsKey("verbandId")) {
-            idStr = event.getLocation().getQueryParameters().getParameters().get("verbandId").get(0);
+            idStr = event.getLocation().getQueryParameters().getParameters().get("verbandId").getFirst();
         }
         if (idStr != null) {
             try {
@@ -211,7 +211,7 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
         upload.setMaxFiles(1);
         upload.setWidthFull();
         upload.setDropLabel(new Paragraph("CSV-Datei hier ablegen oder auswählen"));
-        upload.addSucceededListener(event -> {
+        upload.addSucceededListener(e -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(buffer.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 int count = 0;

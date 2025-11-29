@@ -55,7 +55,5 @@ public class DigitalesZertifikatMapper implements BaseMapper<DigitalesZertifikat
 
         return builder.build();
     }
-
-    // Note: toDTOList() wird von BaseMapper bereitgestellt
 }
 

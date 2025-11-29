@@ -37,16 +37,13 @@ public class HilfeView extends VerticalLayout implements HasUrlParameter<String>
 
     @Override
     public void setParameter(BeforeEvent event, @OptionalParameter String parameter) {
-        // This method is required but we'll use query parameters instead
     }
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        // No special actions needed before entering
     }
 
     private void createContent() {
-        // Header
         H1 title = new H1("Hilfe & Anleitung");
         title.getStyle()
                 .set("color", "var(--lumo-primary-text-color)")
@@ -198,7 +195,6 @@ public class HilfeView extends VerticalLayout implements HasUrlParameter<String>
     }
 
     private void navigateToRoleHelp(String role) {
-        // Navigate to the first help page for the selected role
         final String targetUrl = switch (role) {
             case "schuetze" -> "hilfe/schuetze/dashboard";
             case "aufseher" -> "hilfe/aufseher/eintragsverwaltung";

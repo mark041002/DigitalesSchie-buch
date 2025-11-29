@@ -29,6 +29,19 @@ public class SchiessnachweisService {
     private final SchiesstandRepository schiesstandRepository;
 
     /**
+     * Findet einen Eintrag anhand der ID.
+     *
+     * @param id Die ID des Eintrags
+     * @return Der Eintrag
+     * @throws IllegalArgumentException wenn der Eintrag nicht gefunden wird
+     */
+    @Transactional(readOnly = true)
+    public SchiessnachweisEintrag findeEintrag(Long id) {
+        return eintragRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Eintrag mit ID " + id + " nicht gefunden"));
+    }
+
+    /**
      * Erstellt einen neuen Schießnachweis-Eintrag.
      *
      * @param eintrag Der zu erstellende Eintrag
@@ -109,9 +122,7 @@ public class SchiessnachweisService {
      * @throws IllegalStateException wenn Eintrag bereits signiert
      */
     @Transactional
-    public void signiereEintrag(Long eintragId, Benutzer aufseher, String signatur) {
-        SchiessnachweisEintrag eintrag = eintragRepository.findById(eintragId)
-                .orElseThrow(() -> new IllegalArgumentException("Eintrag nicht gefunden"));
+    public void signiereEintrag(SchiessnachweisEintrag eintrag, Benutzer aufseher, String signatur) {
 
         if (eintrag.getStatus() != EintragStatus.UNSIGNIERT) {
             throw new IllegalStateException("Eintrag wurde bereits bearbeitet");

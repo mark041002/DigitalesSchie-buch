@@ -469,6 +469,9 @@ public class VereinsmitgliedschaftService {
                         zert.setWiderrufsGrund("Vereinschef-Funktion beendet");
                         zertifikatRepository.save(zert);
                         log.info("Zertifikat von {} widerrufen (SN: {})", alterChef.getVollstaendigerName(), zert.getSeriennummer());
+
+                        // Sende E-Mail-Benachrichtigung an den Benutzer
+                        notificationService.notifyCertificateRevoked(zert);
                     }
 
                     // Rolle auf SCHUETZE zurücksetzen, falls keine anderen Aufseherfunktionen

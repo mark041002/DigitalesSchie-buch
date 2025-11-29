@@ -74,12 +74,10 @@ class SchiessnachweisServiceTest {
         Benutzer aufseher = TestDataFactory.createBenutzer(2L, "aufseher@example.com");
         eintrag.setStatus(EintragStatus.UNSIGNIERT);
 
-        when(eintragRepository.findById(1L)).thenReturn(Optional.of(eintrag));
         when(eintragRepository.save(any(SchiessnachweisEintrag.class))).thenReturn(eintrag);
 
-        service.signiereEintrag(1L, aufseher, "signature123");
+        service.signiereEintrag(eintrag, aufseher, "signature123");
 
-        verify(eintragRepository).findById(1L);
         verify(eintragRepository).save(eintrag);
         assertEquals(EintragStatus.SIGNIERT, eintrag.getStatus());
         assertEquals(aufseher, eintrag.getAufseher());
@@ -91,10 +89,8 @@ class SchiessnachweisServiceTest {
     void testSigniereEintragBereitsSigniert() {
         eintrag.setStatus(EintragStatus.SIGNIERT);
 
-        when(eintragRepository.findById(1L)).thenReturn(Optional.of(eintrag));
-
         assertThrows(IllegalStateException.class, () -> {
-            service.signiereEintrag(1L, schuetze, "sig");
+            service.signiereEintrag(eintrag, schuetze, "sig");
         });
 
         verify(eintragRepository, never()).save(any());

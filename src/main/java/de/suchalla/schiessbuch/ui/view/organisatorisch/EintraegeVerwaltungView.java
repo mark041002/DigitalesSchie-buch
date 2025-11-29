@@ -26,15 +26,14 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.router.PreserveOnRefresh;
 import de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.model.enums.EintragStatus;
-import de.suchalla.schiessbuch.repository.SchiesstandRepository;
 import de.suchalla.schiessbuch.security.SecurityService;
+import de.suchalla.schiessbuch.service.DisziplinService;
 import de.suchalla.schiessbuch.service.SchiessnachweisService;
 import de.suchalla.schiessbuch.service.PdfExportService;
 import de.suchalla.schiessbuch.service.SignaturService;
@@ -64,9 +63,9 @@ import java.util.stream.Collectors;
 public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnterObserver {
 
     private final SchiessnachweisService schiessnachweisService;
-    private final SchiesstandRepository schiesstandRepository;
     private final PdfExportService pdfExportService;
     private final SignaturService signaturService;
+    private final DisziplinService disziplinService;
 
     private final Grid<SchiessnachweisEintrag> grid = new Grid<>(SchiessnachweisEintrag.class, false);
     private final DateTimeFormatter dateFormatter;
@@ -75,9 +74,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     private final DatePicker vonDatum = new DatePicker("Von");
     private final DatePicker bisDatum = new DatePicker("Bis");
     private final Button filterButton = new Button("Filtern");
-    private Div filterContainer;
     private Div emptyStateMessage;
-    private Anchor pdfDownload;
 
     private final Benutzer currentUser;
     private Schiesstand aktuellerSchiesstand;
@@ -87,18 +84,17 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     private com.vaadin.flow.component.grid.Grid.Column<SchiessnachweisEintrag> actionsColumn;
 
     private List<SchiessnachweisEintrag> aktuelleFiltierteEintraege = List.of();
-    private Long uebergebeneSchiesstandId; // Über URL übergebene Schießstand-ID
     private boolean contentCreated = false; // Flag um mehrfaches Erstellen zu verhindern
 
     public EintraegeVerwaltungView(SecurityService securityService,
                                    SchiessnachweisService schiessnachweisService,
-                                   SchiesstandRepository schiesstandRepository,
+                                   DisziplinService disziplinService,
                                    PdfExportService pdfExportService,
                                    SignaturService signaturService) {
         this.schiessnachweisService = schiessnachweisService;
-        this.schiesstandRepository = schiesstandRepository;
         this.pdfExportService = pdfExportService;
         this.signaturService = signaturService;
+        this.disziplinService = disziplinService;
         this.currentUser = securityService.getAuthenticatedUser();
 
         // Formatter für Datumsausgabe
@@ -118,81 +114,30 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
             return;
         }
 
-        // Prüfe Query-Parameter
-        QueryParameters queryParams = event.getLocation().getQueryParameters();
-        if (queryParams.getParameters().containsKey("schiesstandId")) {
-            try {
-                uebergebeneSchiesstandId = Long.parseLong(
-                    queryParams.getParameters().get("schiesstandId").get(0)
-                );
-            } catch (NumberFormatException e) {
-                log.warn("Ungültige schiesstandId: {}", e.getMessage());
-            }
-        }
-
         ladeSchiesstand();
         createContent();
         contentCreated = true;
     }
 
     /**
-     * Lädt den Schießstand des aktuellen Benutzers oder den über URL-Parameter angegebenen.
+     * Lädt den Schießstand des aktuellen Benutzers.
      */
     private void ladeSchiesstand() {
-        // Wenn eine schiesstandId über URL übergeben wurde, verwende diese
-        if (uebergebeneSchiesstandId != null) {
-            aktuellerSchiesstand = schiesstandRepository.findById(uebergebeneSchiesstandId)
-                    .orElse(null);
-            if (aktuellerSchiesstand != null) {
-                log.info("Schießstand über URL geladen: {}", aktuellerSchiesstand.getName());
-                return;
-            }
+        if (currentUser == null) {
+            return;
         }
 
-        // Sonst: Standard-Logik - lade Schießstand des aktuellen Benutzers
-        if (currentUser != null) {
-            log.info("Lade Schießstand für Benutzer: {} {} (ID: {})", currentUser.getVorname(), currentUser.getNachname(), currentUser.getId());
-            log.info("Anzahl Vereinsmitgliedschaften: {}", currentUser.getVereinsmitgliedschaften().size());
-            
-            // Lade ALLE Schießstände mit eager loading
-            // (Nicht nur die der Vereine, in denen der Benutzer Mitglied ist, 
-            // da ein Standaufseher einem Schießstand zugeordnet sein kann, ohne Vereinsmitglied zu sein)
-            List<Schiesstand> alleSchiesstaende = schiesstandRepository.findAllWithVerein();
-            log.info("Anzahl aller Schießstände im System: {}", alleSchiesstaende.size());
+        log.info("Lade Schießstand für Benutzer: {} {} (ID: {})",
+                currentUser.getVorname(), currentUser.getNachname(), currentUser.getId());
 
-            // Filtere: Nur Schießstände, bei denen der Benutzer als Standaufseher eingetragen ist
-            // ODER Aufseher/Vereinschef im Verein ist
-            aktuellerSchiesstand = alleSchiesstaende.stream()
-                    .filter(schiesstand -> {
-
-                        // Prüfe ob Benutzer als Aufseher direkt im Schießstand eingetragen ist
-                        boolean istStandaufseher = schiesstand.getAufseher() != null &&
-                                                   schiesstand.getAufseher().getId().equals(currentUser.getId());
-
-                        // Prüfe ob Benutzer Aufseher ODER Vereinschef im Verein des Schießstands ist
-                        boolean istVereinsAufseherOderChef = false;
-                        if (!currentUser.getVereinsmitgliedschaften().isEmpty() && schiesstand.getVerein() != null) {
-                            istVereinsAufseherOderChef = currentUser.getVereinsmitgliedschaften().stream()
-                                    .anyMatch(m -> m.getVerein().getId().equals(schiesstand.getVerein().getId()) &&
-                                                 (Boolean.TRUE.equals(m.getIstAufseher()) ||
-                                                  Boolean.TRUE.equals(m.getIstVereinschef())));
-                        }
-
-                        boolean berechtigt = istStandaufseher || istVereinsAufseherOderChef;
-
-                        log.debug("Schießstand: {}, Standaufseher: {}, VereinsAufseherOderChef: {}, Berechtigt: {}",
-                                 schiesstand.getName(), istStandaufseher, istVereinsAufseherOderChef, berechtigt);
-
-                        return berechtigt;
-                    })
-                    .findFirst()
-                    .orElse(null);
-            
-            if (aktuellerSchiesstand != null) {
-                log.info("Schießstand geladen: {} (ID: {})", aktuellerSchiesstand.getName(), aktuellerSchiesstand.getId());
-            } else {
-                log.warn("Kein berechtigter Schießstand gefunden für Benutzer: {} {}", currentUser.getVorname(), currentUser.getNachname());
-            }
+        try {
+            aktuellerSchiesstand = disziplinService.findeBerechtigtenSchiesstand(currentUser);
+            log.info("Schießstand geladen: {} (ID: {})",
+                    aktuellerSchiesstand.getName(), aktuellerSchiesstand.getId());
+        } catch (IllegalArgumentException e) {
+            log.warn("Kein berechtigter Schießstand gefunden für Benutzer: {} {}: {}",
+                    currentUser.getVorname(), currentUser.getNachname(), e.getMessage());
+            aktuellerSchiesstand = null;
         }
     }
 
@@ -254,9 +199,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         alleTab = new Tab("Alle Einträge");
 
         // Setze initialen Tab
-        aktuellerTab = unsigniertTab;
-
-        Tabs tabs = new Tabs(unsigniertTab, signiertTab, abgelehntTab, alleTab);
+        aktuellerTab = unsigniertTab;Tabs tabs = new Tabs(unsigniertTab, signiertTab, abgelehntTab, alleTab);
         tabs.setWidthFull();
 
         tabs.addSelectedChangeListener(event -> {
@@ -329,7 +272,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         filterButton.setIcon(new Icon(VaadinIcon.FILTER));
 
-        pdfDownload = new Anchor(createPdfResource(), "");
+        Anchor pdfDownload = new Anchor(createPdfResource(), "");
         pdfDownload.getElement().setAttribute("download", true);
         Button pdfButton = new Button("PDF exportieren", new Icon(VaadinIcon.DOWNLOAD));
         pdfButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
@@ -395,7 +338,10 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     private void configureGrid() {
         grid.addClassName("rounded-grid");
         grid.setColumnReorderingAllowed(true);
-        grid.setSizeFull();
+        grid.setWidthFull();
+        grid.getStyle()
+                .set("flex", "1 1 auto")
+                .set("min-height", "0");
 
         grid.addColumn(e -> e.getSchuetze() != null ? e.getSchuetze().getVollstaendigerName() : "-")
                 .setHeader("Schütze")
@@ -465,12 +411,12 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Eintrag löschen");
         dialog.add(new Paragraph("Möchten Sie diesen Eintrag wirklich löschen?"));
-        Button loeschenButton = new Button("Löschen", event -> {
+        Button loeschenButton = new Button("Löschen", e -> {
             deleteEintrag(eintragId);
             dialog.close();
         });
         loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
-        Button abbrechenButton = new Button("Abbrechen", event -> dialog.close());
+        Button abbrechenButton = new Button("Abbrechen", e -> dialog.close());
         HorizontalLayout buttons = new HorizontalLayout(loeschenButton, abbrechenButton);
         dialog.add(buttons);
         dialog.open();
@@ -489,15 +435,16 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
 
     /**
      * Signiert einen Eintrag mit PKI-Zertifikat.
-     * Service-Layer lädt die Entity intern und führt die Signierung durch.
      */
     private void signiereEintrag(Long eintragId) {
         try {
             log.info("Starte PKI-Signierung für Eintrag {} in EintraegeVerwaltungView", eintragId);
 
-            // SignaturService wird die Entity intern laden und signieren
-            // Wir übergeben nur die IDs
-            signaturService.signEintragMitId(eintragId, currentUser, aktuellerSchiesstand.getVerein());
+            // Lade den Eintrag
+            SchiessnachweisEintrag eintrag = schiessnachweisService.findeEintrag(eintragId);
+
+            // Signiere den Eintrag
+            signaturService.signEintrag(eintrag, currentUser);
 
             Notification.show("Eintrag erfolgreich mit PKI-Zertifikat signiert")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);

@@ -4,6 +4,7 @@ import de.suchalla.schiessbuch.model.entity.Disziplin;
 import de.suchalla.schiessbuch.model.entity.Schiesstand;
 import de.suchalla.schiessbuch.repository.DisziplinRepository;
 import de.suchalla.schiessbuch.repository.SchiesstandRepository;
+import de.suchalla.schiessbuch.repository.SchiessnachweisEintragRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +36,9 @@ class DisziplinServiceTest {
 
     @Mock
     private SchiesstandRepository schiesstandRepository;
+
+    @Mock
+    private SchiessnachweisEintragRepository eintragRepository;
 
     @InjectMocks
     private DisziplinService disziplinService;
@@ -102,10 +107,10 @@ class DisziplinServiceTest {
         Long schiesstandId = 1L;
         when(schiesstandRepository.findById(schiesstandId)).thenReturn(Optional.of(testSchiesstand));
 
-        Optional<Schiesstand> result = disziplinService.findeSchiesstand(schiesstandId);
+        Schiesstand result = disziplinService.findeSchiesstand(schiesstandId);
 
-        assertTrue(result.isPresent());
-        assertEquals(testSchiesstand, result.get());
+        assertNotNull(result);
+        assertEquals(testSchiesstand, result);
         verify(schiesstandRepository).findById(schiesstandId);
     }
 
@@ -163,14 +168,15 @@ class DisziplinServiceTest {
     @Test
     void testLoescheSchiesstand_Success() {
         Long schiesstandId = 1L;
-        testSchiesstand.setEintraege(new HashSet<>());
 
         when(schiesstandRepository.findById(schiesstandId)).thenReturn(Optional.of(testSchiesstand));
+        when(eintragRepository.findBySchiesstand(testSchiesstand)).thenReturn(Collections.emptyList());
         doNothing().when(schiesstandRepository).delete(testSchiesstand);
 
         disziplinService.loescheSchiesstand(schiesstandId);
 
         verify(schiesstandRepository).findById(schiesstandId);
+        verify(eintragRepository).findBySchiesstand(testSchiesstand);
         verify(schiesstandRepository).delete(testSchiesstand);
     }
 
@@ -190,11 +196,11 @@ class DisziplinServiceTest {
     @Test
     void testLoescheSchiesstand_HasEntries() {
         Long schiesstandId = 1L;
-        testSchiesstand.setEintraege(new HashSet<>(Arrays.asList(
-                new de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag()
-        )));
+        de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag eintrag =
+                new de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag();
 
         when(schiesstandRepository.findById(schiesstandId)).thenReturn(Optional.of(testSchiesstand));
+        when(eintragRepository.findBySchiesstand(testSchiesstand)).thenReturn(Collections.singletonList(eintrag));
 
         assertThrows(IllegalStateException.class, () -> {
             disziplinService.loescheSchiesstand(schiesstandId);

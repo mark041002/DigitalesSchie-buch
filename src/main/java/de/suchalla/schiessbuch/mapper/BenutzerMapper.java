@@ -56,8 +56,6 @@ public class BenutzerMapper implements BaseMapper<Benutzer, BenutzerDTO> {
                 .build();
     }
 
-    // Note: toDTOList() wird von BaseMapper bereitgestellt
-
     /**
      * Konvertiert Liste von Entities zu Liste von Listen-DTOs.
      */
