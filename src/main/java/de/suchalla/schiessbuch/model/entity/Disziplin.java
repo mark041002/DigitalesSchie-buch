@@ -44,6 +44,10 @@ public class Disziplin {
     @JsonIgnore
     private Verband verband;
 
+    @Column(name = "archiviert", nullable = false)
+    @Builder.Default
+    private Boolean archiviert = false;
+
     @Column(name = "erstellt_am", nullable = false, updatable = false)
     private LocalDateTime erstelltAm;
 

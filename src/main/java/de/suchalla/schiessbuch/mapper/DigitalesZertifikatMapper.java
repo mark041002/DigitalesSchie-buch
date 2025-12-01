@@ -5,7 +5,7 @@ import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
 import org.springframework.stereotype.Component;
 
 /**
- * Mapper für DigitalesZertifikat-Entity <-> DigitalesZertifikatDTO.
+ * Mapper für DigitalesZertifikat-Entity zu DigitalesZertifikatDTO.
  * Das privateKeyPEM-Feld wird aus Sicherheitsgründen nicht in DTOs gemappt.
  *
  * @author Markus Suchalla

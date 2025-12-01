@@ -84,7 +84,7 @@ public class PasswortVergessenView extends VerticalLayout {
                 vars.put("username", benutzer.getVollstaendigerName());
                 vars.put("token", token);
 
-                emailService.sendMail(benutzer.getEmail(), "Digitales Schießbuch - Passwort zurücksetzen", "password-reset.html", vars);
+                emailService.sendMail(benutzer.getEmail(), "Digitales Schießbuch - Passwort zurücksetzen", "passwort-reset.html", vars);
                 log.info("Passwort-Reset-Link an {} gesendet", email);
             }
 

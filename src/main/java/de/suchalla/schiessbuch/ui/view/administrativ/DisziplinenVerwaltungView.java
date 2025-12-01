@@ -52,7 +52,7 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
     private Div emptyStateMessage;
     private final TextField kennzifferField = new TextField("Kennziffer");
     private final TextArea programmField = new TextArea("Programm / Beschreibung");
-    private final TextField waffeKlasseField = new TextField("Waffe/Klasse (z.B. über 9mm)");
+    private final TextField waffeKlasseField = new TextField("Waffe/Disziplin");
     private Verband aktuellerVerband;
 
     public DisziplinenVerwaltungView(DisziplinService disziplinService, VerbandService verbandService) {
@@ -151,7 +151,7 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
         csvTitle.getStyle().set("margin-top", "0").set("margin-bottom", "var(--lumo-space-m)");
 
         Paragraph csvInfo = new Paragraph(
-            "Format: Die CSV-Datei sollte bis zu drei Spalten enthalten: Kennziffer,Programm,WaffeKlasse. " +
+            "Format: Die CSV-Datei sollte bis zu drei Spalten enthalten: Kennziffer,Programm,Waffe/Disziplin. " +
             "Die erste Zeile kann eine Überschrift sein (wird ignoriert). " +
             "Beispiel: \"1114/1001,25m Schießen,über 9mm\""
         );
@@ -187,13 +187,25 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
         grid.addColumn(d -> d.getProgramm() != null ? d.getProgramm() : "")
             .setHeader("Programm")
             .setFlexGrow(1);
+        grid.addColumn(d -> d.getWaffeKlasse() != null ? d.getWaffeKlasse() : "")
+            .setHeader("Waffe/Disziplin")
+            .setFlexGrow(1);
+        grid.addComponentColumn(d -> {
+            com.vaadin.flow.component.html.Span statusSpan = new com.vaadin.flow.component.html.Span(
+                Boolean.TRUE.equals(d.getArchiviert()) ? "Archiviert" : "Aktiv"
+            );
+            statusSpan.getElement().getThemeList().add(
+                Boolean.TRUE.equals(d.getArchiviert()) ? "badge error" : "badge success"
+            );
+            return statusSpan;
+        })
+            .setHeader("Status")
+            .setWidth("120px")
+            .setFlexGrow(0);
         grid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen")
-                .setWidth("120px")
+                .setWidth("260px")
                 .setFlexGrow(0);
-
-                
-        grid.getColumns().forEach(c -> c.setAutoWidth(true));
         grid.addThemeVariants(
                 com.vaadin.flow.component.grid.GridVariant.LUMO_ROW_STRIPES,
                 com.vaadin.flow.component.grid.GridVariant.LUMO_WRAP_CELL_CONTENT
@@ -247,15 +259,35 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
     }
 
     private HorizontalLayout createActionButtons(Disziplin disziplin) {
-        Button loeschenButton = new Button("Löschen", VaadinIcon.TRASH.create());
-        loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
-        loeschenButton.addClickListener(e -> zeigeLoeschDialog(disziplin));
-
-        HorizontalLayout actions = new HorizontalLayout(loeschenButton);
+        HorizontalLayout actions = new HorizontalLayout();
         actions.setSpacing(false);
         actions.setPadding(false);
         actions.setMargin(false);
-        actions.getStyle().set("gap", "8px");
+        actions.setWidthFull();
+        actions.getStyle()
+                .set("gap", "8px")
+                .set("flex-wrap", "wrap");
+
+        if (Boolean.TRUE.equals(disziplin.getArchiviert())) {
+            // Archivierte Disziplin: Aktivieren + Löschen Button
+            Button aktivierenButton = new Button("Aktivieren", VaadinIcon.CHECK_CIRCLE.create());
+            aktivierenButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_SMALL);
+            aktivierenButton.addClickListener(e -> aktiviereDisziplin(disziplin));
+
+            Button loeschenButton = new Button("Löschen", VaadinIcon.TRASH.create());
+            loeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+            loeschenButton.addClickListener(e -> zeigeEndgueltigLoeschenDialog(disziplin));
+
+            actions.add(aktivierenButton, loeschenButton);
+        } else {
+            // Aktive Disziplin: Archivieren Button
+            Button archivierenButton = new Button("Archivieren", VaadinIcon.ARCHIVE.create());
+            archivierenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+            archivierenButton.addClickListener(e -> zeigeArchivierDialog(disziplin));
+
+            actions.add(archivierenButton);
+        }
+
         return actions;
     }
 
@@ -286,21 +318,69 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
         }
     }
 
-    private void zeigeLoeschDialog(Disziplin disziplin) {
+    private void zeigeArchivierDialog(Disziplin disziplin) {
         ConfirmDialog dialog = new ConfirmDialog();
-        dialog.setHeader("Disziplin löschen");
-        dialog.setText("Sind Sie sicher, dass Sie die Disziplin \"" + disziplin.getKennziffer() + "\" löschen möchten?");
+        dialog.setHeader("Disziplin archivieren");
+        dialog.setText("Sind Sie sicher, dass Sie die Disziplin \"" + disziplin.getKennziffer() +
+                "\" archivieren möchten? Sie wird nicht mehr bei der Auswahl für neue Einträge angezeigt, " +
+                "bleibt aber für bestehende Einträge verfügbar.");
         dialog.setCancelable(true);
-        dialog.setConfirmText("Löschen");
-        dialog.setRejectText("Abbrechen");
-        dialog.addConfirmListener(e -> loescheDisziplin(disziplin));
+        dialog.setConfirmText("Archivieren");
+        dialog.setCancelText("Abbrechen");
+        dialog.addConfirmListener(e -> archiviereDisziplin(disziplin));
         dialog.open();
     }
 
-    private void loescheDisziplin(Disziplin disziplin) {
+    private void archiviereDisziplin(Disziplin disziplin) {
         try {
             disziplinService.loescheDisziplin(disziplin.getId());
-            Notification.show("Disziplin erfolgreich gelöscht")
+            Notification.show("Disziplin erfolgreich archiviert")
+                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            updateGrid();
+        } catch (Exception e) {
+            Notification.show("Fehler: " + e.getMessage())
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
+    }
+
+    private void aktiviereDisziplin(Disziplin disziplin) {
+        try {
+            disziplinService.aktiviereDisziplin(disziplin.getId());
+            Notification.show("Disziplin erfolgreich aktiviert")
+                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            updateGrid();
+        } catch (Exception e) {
+            Notification.show("Fehler: " + e.getMessage())
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
+    }
+
+    private void zeigeEndgueltigLoeschenDialog(Disziplin disziplin) {
+        // Zähle betroffene Einträge
+        long anzahlEintraege = disziplinService.zaehleEintraegeVonDisziplin(disziplin.getId());
+
+        ConfirmDialog dialog = new ConfirmDialog();
+        dialog.setHeader("Disziplin endgültig löschen");
+
+        String warnung = "WARNUNG: Sie sind dabei, die Disziplin \"" + disziplin.getKennziffer() +
+                "\" endgültig zu löschen.\n\n" +
+                "Dies wird auch " + anzahlEintraege + " Schießnachweis-Eintrag" +
+                (anzahlEintraege == 1 ? "" : "e") + " unwiderruflich löschen!\n\n" +
+                "Diese Aktion kann NICHT rückgängig gemacht werden!";
+
+        dialog.setText(warnung);
+        dialog.setCancelable(true);
+        dialog.setConfirmText("Endgültig löschen");
+        dialog.setConfirmButtonTheme("error primary");
+        dialog.setCancelText("Abbrechen");
+        dialog.addConfirmListener(e -> endgueltigLoescheDisziplin(disziplin));
+        dialog.open();
+    }
+
+    private void endgueltigLoescheDisziplin(Disziplin disziplin) {
+        try {
+            disziplinService.loescheDisziplinMitEintraegen(disziplin.getId());
+            Notification.show("Disziplin und alle zugehörigen Einträge wurden gelöscht")
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             updateGrid();
         } catch (Exception e) {
@@ -311,7 +391,7 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
 
     private void updateGrid() {
         List<Disziplin> disziplinen = aktuellerVerband != null
-            ? disziplinService.findeDisziplinenVonVerbandEntities(aktuellerVerband.getId())
+            ? disziplinService.findeAlleDisziplinenVonVerband(aktuellerVerband.getId())
             : List.of();
         grid.setItems(disziplinen);
         grid.getDataProvider().refreshAll();

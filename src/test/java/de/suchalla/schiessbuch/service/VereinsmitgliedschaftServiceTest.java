@@ -3,6 +3,7 @@ package de.suchalla.schiessbuch.service;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.model.entity.Benutzer;
 import de.suchalla.schiessbuch.model.entity.Verein;
+import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
 import de.suchalla.schiessbuch.model.enums.MitgliedschaftsStatus;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import de.suchalla.schiessbuch.repository.VereinRepository;
@@ -34,6 +35,9 @@ class VereinsmitgliedschaftServiceTest {
 
     @Mock
     private DigitalesZertifikatRepository zertifikatRepository;
+
+    @Mock
+    private de.suchalla.schiessbuch.repository.BenutzerRepository benutzerRepository;
 
     @Mock
     private EmailService notificationService;
@@ -159,7 +163,15 @@ class VereinsmitgliedschaftServiceTest {
         mitgliedschaft.setStatus(MitgliedschaftsStatus.AKTIV);
         mitgliedschaft.setAktiv(true);
 
+        // Mock-Zertifikat erstellen, damit kein neues erstellt werden muss
+        DigitalesZertifikat mockZertifikat = DigitalesZertifikat.builder()
+                .id(1L)
+                .seriennummer("test-123")
+                .build();
+
         when(mitgliedschaftRepository.findById(1L)).thenReturn(Optional.of(mitgliedschaft));
+        when(benutzerRepository.findById(1L)).thenReturn(Optional.of(benutzer));
+        when(zertifikatRepository.findByBenutzer(benutzer)).thenReturn(Optional.of(mockZertifikat));
         when(mitgliedschaftRepository.save(any(Vereinsmitgliedschaft.class))).thenReturn(mitgliedschaft);
 
         service.setzeAufseherStatus(1L, true);

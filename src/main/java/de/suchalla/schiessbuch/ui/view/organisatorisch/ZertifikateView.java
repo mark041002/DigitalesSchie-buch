@@ -131,7 +131,13 @@ public class ZertifikateView extends VerticalLayout {
         grid.addColumn(DigitalesZertifikat::getZertifikatsTyp)
                 .setHeader("Typ")
                 .setAutoWidth(true)
-                .setFlexGrow(1);
+                .setFlexGrow(1)
+                .setSortable(true)
+                .setComparator((z1, z2) -> {
+                    String typ1 = z1.getZertifikatsTyp() != null ? z1.getZertifikatsTyp() : "";
+                    String typ2 = z2.getZertifikatsTyp() != null ? z2.getZertifikatsTyp() : "";
+                    return typ1.compareToIgnoreCase(typ2);
+                });
 
         grid.addColumn(zertifikat -> {
             if (zertifikat.getVerein() != null) {
@@ -143,7 +149,25 @@ public class ZertifikateView extends VerticalLayout {
         })
                 .setHeader("Verein/Schießstand")
                 .setAutoWidth(true)
-                .setFlexGrow(1);
+                .setFlexGrow(1)
+                .setSortable(true)
+                .setComparator((z1, z2) -> {
+                    String name1 = "";
+                    if (z1.getVerein() != null) {
+                        name1 = z1.getVerein().getName();
+                    } else if (z1.getSchiesstand() != null) {
+                        name1 = z1.getSchiesstand().getName();
+                    }
+
+                    String name2 = "";
+                    if (z2.getVerein() != null) {
+                        name2 = z2.getVerein().getName();
+                    } else if (z2.getSchiesstand() != null) {
+                        name2 = z2.getSchiesstand().getName();
+                    }
+
+                    return name1.compareToIgnoreCase(name2);
+                });
 
         grid.addColumn(DigitalesZertifikat::getSeriennummer)
                 .setHeader("Seriennummer")
@@ -157,15 +181,17 @@ public class ZertifikateView extends VerticalLayout {
 
         grid.addComponentColumn(this::createStatusBadge)
                 .setHeader("Status")
+                .setWidth("120px")
+                .setFlexGrow(0);
+
+        grid.addColumn(zertifikat -> zertifikat.getWiderrufenAm() != null ? formatDatum(zertifikat.getWiderrufenAm()) : "-")
+                .setHeader("Widerrufen am")
                 .setAutoWidth(true)
                 .setFlexGrow(0);
 
-        grid.addColumn(zertifikat -> zertifikat.getWiderrufenAm() != null ? formatDatum(zertifikat.getWiderrufenAm()) : "-");
-
         grid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen")
-                .setWidth("120px")
-                .setAutoWidth(true)
+                .setWidth("280px")
                 .setFlexGrow(0);
 
 
@@ -176,25 +202,36 @@ public class ZertifikateView extends VerticalLayout {
     }
 
     private HorizontalLayout createActionButtons(DigitalesZertifikat zertifikat) {
+        HorizontalLayout actions = new HorizontalLayout();
+        actions.setSpacing(false);
+        actions.setPadding(false);
+        actions.setWidthFull();
+        actions.getStyle()
+                .set("gap", "8px")
+                .set("flex-wrap", "wrap");
+
         Button detailsButton = new Button("Details", VaadinIcon.EYE.create());
         detailsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
         detailsButton.addClickListener(e -> zeigeDetailsDialog(zertifikat));
+        actions.add(detailsButton);
+
         if (aktuellerTab == gueltigTab) {
-            // Nur anzeigen, wenn der aktuelle Benutzer berechtigt ist (Admin oder Vereinschef des betroffenen Vereins)
-            if (userCanRevoke(zertifikat)) {
+            // Widerrufen-Button nur bei Personen-Zertifikaten anzeigen
+            // und nur wenn der aktuelle Benutzer berechtigt ist (Admin oder Vereinschef des betroffenen Vereins)
+            if (zertifikat.getBenutzer() != null && userCanRevoke(zertifikat)) {
                 Button widerrufenButton = new Button("Widerrufen", VaadinIcon.BAN.create());
                 widerrufenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
                 widerrufenButton.addClickListener(e -> zeigeLoeschDialog(zertifikat));
-                return new HorizontalLayout(detailsButton, widerrufenButton);
+                actions.add(widerrufenButton);
             }
-            // Keine Widerrufen-Schaltfläche für nicht berechtigte Benutzer
-            return new HorizontalLayout(detailsButton);
         } else {
             Button endgueltigLoeschenButton = new Button("Endgültig löschen", VaadinIcon.TRASH.create());
             endgueltigLoeschenButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
             endgueltigLoeschenButton.addClickListener(e -> zeigeEndgueltigLoeschenDialog(zertifikat));
-            return new HorizontalLayout(detailsButton, endgueltigLoeschenButton);
+            actions.add(endgueltigLoeschenButton);
         }
+
+        return actions;
     }
 
     private Span createStatusBadge(DigitalesZertifikat zertifikat) {
@@ -263,7 +300,7 @@ public class ZertifikateView extends VerticalLayout {
         dialog.setText("Sind Sie sicher, dass Sie dieses Zertifikat unwiderruflich löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.");
         dialog.setCancelable(true);
         dialog.setConfirmText("Endgültig löschen");
-        dialog.setRejectText("Abbrechen");
+        dialog.setCancelText("Abbrechen");
         dialog.addConfirmListener(e -> endgueltigLoescheZertifikat(zertifikat));
         dialog.open();
     }

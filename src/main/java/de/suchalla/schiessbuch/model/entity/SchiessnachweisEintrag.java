@@ -55,10 +55,8 @@ public class SchiessnachweisEintrag {
 
     private String ergebnis;
 
-    @Column(length = 100)
     private String kaliber;
 
-    @Column(length = 100)
     private String waffenart;
 
     @Column(length = 1000)

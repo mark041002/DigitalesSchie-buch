@@ -93,7 +93,6 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         emptyStateMessage = ViewComponentHelper.createEmptyStateMessage("Noch keine Verbände vorhanden.", VaadinIcon.INSTITUTION);
         emptyStateMessage.setVisible(false);
 
-        // Grid
         grid.addClassName("rounded-grid");
         grid.setColumnReorderingAllowed(true);
         grid.addColumn(Verband::getId)
@@ -110,7 +109,6 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
                 .setHeader("Beschreibung")
                 .setFlexGrow(1);
 
-        // Aktionen-Spalte mit Details und Löschen Buttons
         grid.addComponentColumn(this::createActionButtons)
                 .setHeader("Aktionen")
                 .setWidth("200px")
@@ -181,7 +179,7 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         dialog.setText("Sind Sie sicher, dass Sie den Verband \"" + verband.getName() + "\" löschen möchten?");
         dialog.setCancelable(true);
         dialog.setConfirmText("Löschen");
-        dialog.setRejectText("Abbrechen");
+        dialog.setCancelText("Abbrechen");
         dialog.addConfirmListener(e -> loescheVerband(verband));
         dialog.open();
     }

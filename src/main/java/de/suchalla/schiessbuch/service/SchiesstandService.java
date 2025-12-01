@@ -152,7 +152,7 @@ public class SchiesstandService {
                 emailService.notifyCertificateRevoked(altesZertifikat);
             }
             
-            // Rolle auf SCHUETZE zurücksetzen, falls keine anderen Aufseherfunktionen
+            // Rolle auf SCHÜTZE zurücksetzen, falls keine anderen Aufseherfunktionen
             boolean hatAndereAufseherFunktion = alterAufseher.getVereinsmitgliedschaften().stream()
                 .anyMatch(m -> Boolean.TRUE.equals(m.getIstAufseher()) || Boolean.TRUE.equals(m.getIstVereinschef()));
             

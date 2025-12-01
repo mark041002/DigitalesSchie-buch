@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 /**
  * Entity-Klasse für digitale PKI-Zertifikate.
  * Hierarchie:
- * - Root -> Verein -> Aufseher (für Vereinsmitglieder)
+ * - Root -> Verein -> Aufseher (für Vereine)
  * - Root -> Schießstandaufseher (für gewerbliche Schießstände)
  *
  * @author Markus Suchalla
@@ -40,18 +40,19 @@ public class DigitalesZertifikat {
     private String seriennummer;
 
     @NotBlank(message = "Subject DN darf nicht leer sein")
-    @Column(name = "subject_dn", nullable = false, length = 500)
+    @Column(name = "subject_dn", nullable = false)
     private String subjectDN;
 
     @NotBlank(message = "Issuer DN darf nicht leer sein")
-    @Column(name = "issuer_dn", nullable = false, length = 500)
+    @Column(name = "issuer_dn", nullable = false)
     private String issuerDN;
 
     @NotBlank(message = "Zertifikat PEM darf nicht leer sein")
-    @Column(name = "zertifikat_pem", nullable = false, columnDefinition = "text")
+    @Column(name = "zertifikat_pem",nullable = false, columnDefinition = "text")
     private String zertifikatPEM;
 
-    @Column(name = "private_key_pem", columnDefinition = "text")
+    @NotBlank(message = "Privates PEM darf nicht leer sein")
+    @Column(name = "private_key_pem",nullable = false, columnDefinition = "text")
     private String privateKeyPEM;
 
     @NotNull(message = "Gültig ab darf nicht leer sein")

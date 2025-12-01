@@ -213,9 +213,25 @@ public class MeineEintraegeView extends VerticalLayout {
                 .set("min-height", "0");
         grid.addColumn(dto -> dto.getDatum() == null ? "" : dateFormatter.format(dto.getDatum()))
                 .setHeader("Datum")
-                .setSortable(true);
+                .setSortable(true)
+                .setComparator((e1, e2) -> {
+                    if (e1.getDatum() == null && e2.getDatum() == null) return 0;
+                    if (e1.getDatum() == null) return 1;
+                    if (e2.getDatum() == null) return -1;
+                    return e1.getDatum().compareTo(e2.getDatum());
+                });
 
-        grid.addColumn(eintrag -> eintrag.getDisziplin() != null ? eintrag.getDisziplin().getProgramm() : "-")
+        grid.addColumn(eintrag -> {
+                    if (eintrag.getDisziplin() == null) return "-";
+                    String label = eintrag.getDisziplin().getKennziffer();
+                    if (eintrag.getDisziplin().getProgramm() != null && !eintrag.getDisziplin().getProgramm().isEmpty()) {
+                        label += " - " + eintrag.getDisziplin().getProgramm();
+                    }
+                    if (eintrag.getDisziplin().getWaffeKlasse() != null && !eintrag.getDisziplin().getWaffeKlasse().isEmpty()) {
+                        label += " - " + eintrag.getDisziplin().getWaffeKlasse();
+                    }
+                    return label;
+                })
                 .setHeader("Disziplin")
                 .setSortable(true);
 

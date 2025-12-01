@@ -26,11 +26,7 @@ public final class ViewComponentHelper {
 
     /**
      * Erstellt einen standardisierten Content-Wrapper für Views.
-     * - spacing/padding: false
-     * - CSS-Klasse: content-wrapper
-     * - flex: 1 1 auto (erlaubt automatisches Wachsen bei großem Display)
-     * - overflow: auto (erlaubt Scrollen auf mobilen Geräten)
-     * - padding-bottom: für Abstand am unteren Rand
+
      *
      * @return vorkonfigurierter VerticalLayout-Wrapper
      */
@@ -125,7 +121,6 @@ public final class ViewComponentHelper {
      * Erstellt einen Grid-Container mit responsive Styling.
      * Der Container erlaubt horizontales Scrollen auf Mobile für breite Tabellen.
      * Mindesthöhe: 400px, auf großen Displays nutzt es die volle verfügbare Höhe durch flex: 1 1 auto.
-     * Margin-bottom sorgt für Abstand am unteren Rand.
      *
      * @return Grid-Container-Komponente
      */

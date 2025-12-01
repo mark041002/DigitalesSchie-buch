@@ -1,40 +1,11 @@
-/* ==========================================================================
-   Digitales Schießbuch - Zentrale Styles
-   ========================================================================== */
 
-/* Grid/Table Container mit grauem Hintergrund */
-.table-container {
-    background-color: var(--lumo-base-color);
-    border-radius: var(--lumo-border-radius-l);
-    padding: var(--lumo-space-m);
-    box-shadow: var(--lumo-box-shadow-s);
+:root {
+    --primary-gradient: linear-gradient(135deg, var(--lumo-primary-color) 0%, var(--lumo-primary-color-50pct) 100%);
+    --background-gradient: linear-gradient(135deg, var(--lumo-contrast-5pct) 0%, var(--lumo-contrast-10pct) 50%, var(--lumo-contrast-5pct) 100%);
 }
 
-/* Glassmorphism-Effekt */
-.glass-effect {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-/* Moderne Divider */
-.divider {
-    height: 1px;
-    background: linear-gradient(90deg,
-    transparent,
-    var(--lumo-contrast-20pct),
-    transparent);
-    margin: var(--lumo-space-m) 0;
-}
-
-/* Zebra-Streifen für bessere Lesbarkeit */
-.striped-layout > *:nth-child(even) {
-    background-color: var(--lumo-contrast-5pct);
-}
-
-/* Tooltip-Style */
-[title] {
-    position: relative;
+html {
+    scroll-behavior: smooth;
 }
 
 /* Focus-Ring für Accessibility */
@@ -44,14 +15,40 @@
     border-radius: var(--lumo-border-radius-s);
 }
 
+/* ==========================================================================
+   Layout-Komponenten
+   ========================================================================== */
+
+/* View Container */
+.view-container {
+    background: var(--background-gradient);
+    min-height: calc(100vh - 60px);
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Content Wrapper - zentrierte Inhalte */
+.content-wrapper {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: var(--lumo-space-l);
+    box-sizing: border-box;
+    width: 100%;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+}
+
 /* Header mit Gradient */
 .gradient-header {
     width: 100%;
-    background: linear-gradient(135deg, var(--lumo-primary-color) 0%, var(--lumo-primary-color-50pct) 100%);
+    background: var(--primary-gradient);
     color: var(--lumo-primary-contrast-color);
     padding: var(--lumo-space-l);
     border-radius: var(--lumo-border-radius-l);
-    margin-bottom: var(--lumo-space-l);
     box-shadow: var(--lumo-box-shadow-m);
     box-sizing: border-box;
 }
@@ -68,13 +65,12 @@
     margin-top: var(--lumo-space-xs);
 }
 
-/* Inline subtitle variant: place the subtitle on the right side of the title
-   when the header container has the modifier class 'header-inline-subtitle'. */
 .gradient-header.header-inline-subtitle {
     display: flex;
     align-items: center;
     gap: var(--lumo-space-m);
 }
+
 .gradient-header.header-inline-subtitle .subtitle {
     display: inline-block;
     margin-top: 0;
@@ -83,6 +79,198 @@
     color: #ffffff;
     opacity: 0.95;
 }
+
+/* Form Container */
+.form-container {
+    width: 100%;
+    background: var(--lumo-base-color);
+    padding: var(--lumo-space-l);
+    border-radius: var(--lumo-border-radius-l);
+    box-shadow: var(--lumo-box-shadow-s);
+    border: 1px solid var(--lumo-contrast-10pct);
+    margin-bottom: var(--lumo-space-l);
+    box-sizing: border-box;
+}
+
+/* Grid Container */
+.grid-container {
+    width: 100%;
+    background: var(--lumo-base-color);
+    padding: var(--lumo-space-l);
+    border-radius: var(--lumo-border-radius-l);
+    box-shadow: var(--lumo-box-shadow-s);
+    border: 1px solid var(--lumo-contrast-10pct);
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+    overflow-x: auto;
+}
+
+/* Rounded Grid */
+.rounded-grid {
+    border-radius: var(--lumo-border-radius-m);
+    overflow: hidden;
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 400px;
+}
+
+/* Button Container */
+.button-container {
+    display: flex;
+    gap: var(--lumo-space-s);
+    flex-wrap: wrap;
+    margin-top: var(--lumo-space-m);
+}
+
+/* Schnellzugriff-Buttons - Responsive Flexbox-Styles */
+.quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--lumo-space-m);
+    justify-content: space-around;
+    align-items: stretch;
+    width: 100%;
+    margin-bottom: var(--lumo-space-l);
+}
+
+vaadin-grid::part(cell),
+vaadin-grid::part(header-cell),
+vaadin-grid::part(row):not([part~="details"]) ::slotted(*) {
+    text-align: left;
+}
+
+/* ==========================================================================
+   Cards und Grid-Komponenten
+   ========================================================================== */
+
+/* Stats Grid - für Dashboard */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--lumo-space-m);
+    margin-bottom: var(--lumo-space-l);
+}
+
+/* Stat Card - für Dashboard */
+.stat-card {
+    background: var(--lumo-base-color);
+    padding: var(--lumo-space-l);
+    border-radius: var(--lumo-border-radius-l);
+    box-shadow: var(--lumo-box-shadow-s);
+    border: 1px solid var(--lumo-contrast-10pct);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--lumo-box-shadow-m);
+}
+
+/* Detail Row - für Zertifikat-Details */
+.detail-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: var(--lumo-space-m);
+    padding: var(--lumo-space-s) 0;
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row .label {
+    font-weight: 600;
+    color: var(--lumo-secondary-text-color);
+}
+
+.detail-row .value {
+    color: var(--lumo-body-text-color);
+    word-break: break-word;
+}
+
+/* Empty State Nachricht */
+.empty-state {
+    text-align: center;
+    padding: var(--lumo-space-xl);
+    color: var(--lumo-secondary-text-color);
+    font-size: var(--lumo-font-size-m);
+    background: var(--lumo-contrast-5pct);
+    border-radius: var(--lumo-border-radius-m);
+    border: 2px dashed var(--lumo-contrast-20pct);
+    margin: var(--lumo-space-m);
+}
+
+/* Grid Row Hovern */
+vaadin-grid::part(row):hover {
+    background-color: var(--lumo-primary-color-10pct);
+}
+
+/* ==========================================================================
+   Button und Interaktions-Styling
+   ========================================================================== */
+
+/* Button für neuen Eintrag - schlicht grün, Hover weiß */
+.neuer-eintrag-btn {
+    background: var(--lumo-success-color);
+    color: white;
+    border-radius: 24px;
+    box-shadow: none;
+    font-weight: 600;
+    padding: 0.5em 1.8em;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+    border: none;
+}
+
+.neuer-eintrag-btn:hover,
+.neuer-eintrag-btn:focus {
+    background: white;
+    color: var(--lumo-success-color);
+    transform: translateY(-2px) scale(1.04);
+}
+
+/* Dunklerer Error-Button (Löschen-Button) */
+vaadin-button[theme~="error"] {
+    --lumo-error-color: #d32f2f;
+    --lumo-error-color-50pct: rgba(211, 47, 47, 0.5);
+    --lumo-error-color-10pct: rgba(211, 47, 47, 0.1);
+    --lumo-error-text-color: #d32f2f;
+    background-color: var(--lumo-error-color);
+    color: var(--lumo-error-contrast-color);
+}
+
+vaadin-button[theme~="error"]:hover:not([disabled]) {
+    background-color: #b71c1c;
+}
+
+/* Button Hover Animationen */
+vaadin-button {
+    transition: all 0.2s ease;
+}
+
+vaadin-button:hover:not([disabled]) {
+    transform: translateY(-2px);
+    box-shadow: var(--lumo-box-shadow-s);
+}
+
+/* Aktions Button Hover (Dashboard) */
+.action-button-hover {
+    transition: all 0.2s ease;
+}
+
+.action-button-hover:hover {
+    background: var(--lumo-primary-color-10pct) !important;
+    border-color: var(--lumo-primary-color) !important;
+    transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   Infoboxen
+   ========================================================================== */
 
 /* Info Box */
 .info-box {
@@ -112,127 +300,213 @@
     flex: 1;
 }
 
-/* Warning Box */
-.warning-box {
+/* Filter Box */
+.filter-box {
     width: 100%;
-    background: var(--lumo-warning-color-10pct);
-    border-left: 4px solid var(--lumo-warning-color);
-    border-radius: var(--lumo-border-radius-m);
+    background: var(--lumo-contrast-5pct);
     padding: var(--lumo-space-m);
-    margin-bottom: var(--lumo-space-l);
-    box-shadow: var(--lumo-box-shadow-xs);
-    display: flex;
-    align-items: flex-start;
-    gap: var(--lumo-space-m);
+    border-radius: var(--lumo-border-radius-m);
+    margin-bottom: var(--lumo-space-m);
+    border: 1px solid var(--lumo-contrast-10pct);
     box-sizing: border-box;
 }
 
-.warning-box vaadin-icon {
-    flex-shrink: 0;
-    margin-top: 2px;
-    color: var(--lumo-warning-color);
-}
+/* ==========================================================================
+   Sidebar
+   ========================================================================== */
 
-.warning-box p {
-    color: var(--lumo-warning-text-color);
-    margin: 0;
-    flex: 1;
-}
-
-/* Error Box */
-.error-box {
-    width: 100%;
-    border: 2px solid var(--lumo-error-color);
-    border-radius: var(--lumo-border-radius-l);
-    background-color: var(--lumo-error-color-10pct);
-    padding: var(--lumo-space-l);
-    box-shadow: var(--lumo-box-shadow-s);
-}
-
-.error-box h3 {
-    color: var(--lumo-error-text-color);
-    margin-top: 0;
-}
-
-/* Success Box */
-.success-box {
-    width: 100%;
-    border: 2px solid var(--lumo-success-color);
-    border-radius: var(--lumo-border-radius-l);
-    background-color: var(--lumo-success-color-10pct);
-    padding: var(--lumo-space-l);
-    box-shadow: var(--lumo-box-shadow-s);
-}
-
-.success-box h3 {
-    color: var(--lumo-success-text-color);
-    margin-top: 0;
-}
-
-/* Note: Stats Grid, Stat Card, Quick Access Container moved to cards.css to avoid duplication */
-
-/* Detail Row - für Zertifikat-Details */
-.detail-row {
-    display: grid;
-    grid-template-columns: 180px 1fr;
-    gap: var(--lumo-space-m);
-    padding: var(--lumo-space-s) 0;
-    border-bottom: 1px solid var(--lumo-contrast-10pct);
-}
-
-.detail-row:last-child {
-    border-bottom: none;
-}
-
-.detail-row .label {
-    font-weight: 600;
-    color: var(--lumo-secondary-text-color);
-}
-
-.detail-row .value {
-    color: var(--lumo-body-text-color);
-    word-break: break-word;
-}
-
-/* Note: Empty State, Cards Container, Card moved to cards.css to avoid duplication */
-/* Note: neuer-eintrag-btn moved to buttons.css to avoid duplication */
-
-/* Note: All Dialog Styling moved to dialogs.css to avoid duplication */
-/* Note: Error Button styling moved to buttons.css to avoid duplication */
-
-/* Badge Farben für Status */
-.badge-success {
-    background-color: #27ae60 ; /* Grün */
-    color: #fff ;
-}
-.badge-warning {
-    background-color: #f1c40f ; /* Gelb */
-    color: #fff ;
-}
-.badge-error {
-    background-color: #e74c3c ; /* Rot */
-    color: #fff ;
-}
-.badge {
-    padding: 0.25em 0.75em;
-    border-radius: 1em;
-    font-size: 0.95em;
-    font-weight: 500;
+/* Kopfzeile nur für Desktops zeigen */
+.header-desktop-only {
     display: inline-flex;
-    align-items: center;
-    gap: 0.5em;
 }
 
-/* Grid cell alignment helpers */
-.align-numeric {
+/* Hintergrundfarbe für den gesamten Bereich */
+vaadin-app-layout [slot="drawer"] {
+    background: var(--lumo-base-color);
+    width: auto;
+    min-width: 280px;
+}
+
+/* Drawer selbst - dynamische Breite basierend auf Inhalt */
+vaadin-app-layout vaadin-drawer-toggle ~ [slot="drawer"] {
+    width: auto;
+    min-width: 280px;
+    box-sizing: border-box;
     display: flex;
-    justify-content: flex-end;
-    align-items: center;
+    flex-direction: column;
+    height: 100%;
+    background: var(--lumo-base-color);
 }
 
-.align-center {
+/* AppLayout Drawer Part */
+vaadin-app-layout::part(drawer) {
+    width: auto;
+    min-width: 280px;
+    background: var(--lumo-base-color);
+}
+
+/* Responsive Drawer Klasse - Flexbox Container */
+.responsive-drawer {
+    width: auto;
+    min-width: 280px;
+    padding: var(--lumo-space-m);
+    box-sizing: border-box;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--lumo-base-color);
 }
 
+/* Alle direkten Kinder von responsive-drawer */
+.responsive-drawer > * {
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+/* Mobile User Section - standardmäßig versteckt (Desktop) */
+.mobile-user-section {
+    display: none;
+}
+
+/* Alle SideNav Elemente */
+vaadin-side-nav {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* SideNav Items */
+vaadin-side-nav-item {
+    width: 100%;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+/* Details Elemente in der Sidebar */
+vaadin-details {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Details Summary */
+vaadin-details::part(summary) {
+    width: 100%;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+/* Details Content */
+vaadin-details::part(content) {
+    width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
+    max-height: none;
+    height: auto;
+}
+
+/* Details wenn geöffnet */
+vaadin-details[opened]::part(content) {
+    max-height: none;
+    overflow: visible;
+}
+
+/* ==========================================================================
+   Responsive Anpassungen
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: var(--lumo-space-m);
+        flex: 1 1 auto;
+    }
+
+    .grid-container {
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        max-width: 100%;
+        padding: var(--lumo-space-s);
+        margin: 0;
+        min-width: 0;
+    }
+
+    .grid-container vaadin-grid {
+        min-width: 900px;
+        width: auto;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--lumo-space-s);
+        justify-content: center;
+    }
+
+    .quick-actions > * {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+
+    vaadin-grid {
+        font-size: 0.875rem;
+    }
+
+    vaadin-app-layout vaadin-drawer-toggle ~ [slot="drawer"] {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .responsive-drawer {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .header-desktop-only {
+        display: none;
+    }
+
+    .mobile-user-section {
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .grid-container vaadin-grid {
+        min-width: 1000px;
+    }
+
+    .quick-actions > * {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+
+    .gradient-header {
+        padding: var(--lumo-space-m);
+    }
+
+    .gradient-header h2 {
+        font-size: var(--lumo-font-size-l);
+    }
+}
+
+/* ==========================================================================
+   Print-Optimierungen
+   ========================================================================== */
+
+@media print {
+    .no-print {
+        display: none;
+    }
+
+    vaadin-grid {
+        box-shadow: none;
+    }
+}

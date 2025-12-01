@@ -38,7 +38,7 @@ import java.util.LinkedHashSet;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PdfExportService {
+public class  PdfExportService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
@@ -69,7 +69,6 @@ public class PdfExportService {
         }
         log.info("============================");
 
-        // Erstelle mutable Kopie für Sortierung (falls immutable Liste übergeben wurde)
         List<SchiessnachweisEintrag> sortierteEintraege = new ArrayList<>(eintraege);
         
         // Sortiere Einträge nach Datum aufsteigend (nulls last)
@@ -138,6 +137,47 @@ public class PdfExportService {
                 contentStream.endText();
 
                 yPosition -= 30;
+
+                // Sammle zuerst alle Aufseher-Namen und Seriennummern für PKI-Hinweis
+                Map<String, Set<String>> aufseherToSns = new LinkedHashMap<>();
+                for (SchiessnachweisEintrag eintrag : eintraege) {
+                    String aufseherName = eintrag.getAufseher() != null ? eintrag.getAufseher().getVollstaendigerName() : null;
+                    if (aufseherName != null && !aufseherName.equals("-")) {
+                        String sn = eintrag.getZertifikat() != null ? eintrag.getZertifikat().getSeriennummer() : null != null ?
+                                eintrag.getZertifikat() != null ? eintrag.getZertifikat().getSeriennummer() : null : "PKI-signiert";
+                        aufseherToSns.computeIfAbsent(aufseherName, k -> new LinkedHashSet<>()).add(sn);
+                    }
+                }
+
+                // PKI-Zertifikatsdetails VOR der Tabelle ausgeben
+                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+                contentStream.beginText();
+                contentStream.newLineAtOffset(margin, yPosition);
+                contentStream.showText("PKI-Zertifikatsdetails der Aufseher:");
+                contentStream.endText();
+
+                yPosition -= 18;
+                contentStream.setFont(PDType1Font.HELVETICA, 10);
+
+                if (!aufseherToSns.isEmpty()) {
+                    for (Map.Entry<String, Set<String>> entry : aufseherToSns.entrySet()) {
+                        String name = entry.getKey();
+                        String sns = String.join(", ", entry.getValue());
+                        contentStream.beginText();
+                        contentStream.newLineAtOffset(margin, yPosition);
+                        contentStream.showText("- " + name + " -> SN: " + sns);
+                        contentStream.endText();
+                        yPosition -= 15;
+                    }
+                } else {
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(margin, yPosition);
+                    contentStream.showText("WARNUNG: Keine PKI-Zertifikate gefunden!");
+                    contentStream.endText();
+                    yPosition -= 15;
+                }
+
+                yPosition -= 15;
             }
 
             // Zentrierte Tabelle erstellen
@@ -180,8 +220,6 @@ public class PdfExportService {
             cell7.setFont(PDType1Font.HELVETICA_BOLD);
             cell7.setFontSize(10);
 
-            Map<String, Set<String>> aufseherToSns = new LinkedHashMap<>();
-
             for (SchiessnachweisEintrag eintrag : eintraege) {
                 Row<PDPage> row = table.createRow(15);
 
@@ -197,56 +235,12 @@ public class PdfExportService {
                 String aufseherName = eintrag.getAufseher() != null ? eintrag.getAufseher().getVollstaendigerName() : "-";
                 row.createCell(15, aufseherName).setFontSize(9);
 
-                // Sammle Aufseher-Namen und Seriennummern für PKI-Hinweis
-                if (aufseherName != null && !aufseherName.equals("-")) {
-                    String sn = eintrag.getZertifikat() != null ? eintrag.getZertifikat().getSeriennummer() : null != null ? 
-                            eintrag.getZertifikat() != null ? eintrag.getZertifikat().getSeriennummer() : null : "PKI-signiert";
-                    aufseherToSns.computeIfAbsent(aufseherName, k -> new LinkedHashSet<>())
-                            .add(sn);
-                }
-
                 String signiertAm = eintrag.getSigniertAm() != null ?
                         eintrag.getSigniertAm().format(DATETIME_FORMATTER) : "-";
                 row.createCell(10, signiertAm).setFontSize(8);
             }
 
             table.draw();
-
-            // PKI-Zertifikatsdetails nach der Tabelle: jetzt pro Aufseher einmal die SN(s) ausgeben
-            PDPage lastPage = document.getPage(document.getNumberOfPages() - 1);
-            try (PDPageContentStream contentStream = new PDPageContentStream(document, lastPage,
-                    PDPageContentStream.AppendMode.APPEND, true)) {
-
-                float footerY = margin + 150;
-
-                // PKI-Zertifikatsdetails
-                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
-                contentStream.beginText();
-                contentStream.newLineAtOffset(margin, footerY);
-                contentStream.showText("PKI-Zertifikatsdetails für die Aufseher:");
-                contentStream.endText();
-
-                footerY -= 15;
-                contentStream.setFont(PDType1Font.HELVETICA, 10);
-
-                if (!aufseherToSns.isEmpty()) {
-                    for (Map.Entry<String, Set<String>> entry : aufseherToSns.entrySet()) {
-                        String name = entry.getKey();
-                        String sns = String.join(", ", entry.getValue());
-                        contentStream.beginText();
-                        contentStream.newLineAtOffset(margin, footerY);
-                        contentStream.showText("- " + name + " -> SN: " + sns);
-                        contentStream.endText();
-                        footerY -= 12;
-                    }
-                } else {
-                    contentStream.beginText();
-                    contentStream.newLineAtOffset(margin, footerY);
-                    contentStream.showText("WARNUNG: Keine PKI-Zertifikate gefunden!");
-                    contentStream.endText();
-                    footerY -= 12;
-                }
-            }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             document.save(outputStream);
@@ -331,6 +325,47 @@ public class PdfExportService {
                 contentStream.endText();
 
                 yPosition -= 30;
+
+                // Sammle zuerst alle Aufseher-Namen und Seriennummern für PKI-Hinweis
+                Map<String, Set<String>> aufseherToSeriennummer = new LinkedHashMap<>();
+                for (SchiessnachweisEintrag eintrag : eintraege) {
+                    String aufName = eintrag.getAufseher() != null ? eintrag.getAufseher().getVollstaendigerName() : null;
+                    if (aufName != null && !aufName.equals("-")) {
+                        String sn = eintrag.getZertifikat() != null ? eintrag.getZertifikat().getSeriennummer() : null != null ?
+                                eintrag.getZertifikat() != null ? eintrag.getZertifikat().getSeriennummer() : null : "PKI-signiert";
+                        aufseherToSeriennummer.computeIfAbsent(aufName, k -> new LinkedHashSet<>()).add(sn);
+                    }
+                }
+
+                // PKI-Zertifikatsdetails VOR der Tabelle ausgeben
+                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+                contentStream.beginText();
+                contentStream.newLineAtOffset(margin, yPosition);
+                contentStream.showText("PKI-Zertifikatsdetails der Aufseher:");
+                contentStream.endText();
+
+                yPosition -= 18;
+                contentStream.setFont(PDType1Font.HELVETICA, 10);
+
+                if (!aufseherToSeriennummer.isEmpty()) {
+                    for (Map.Entry<String, Set<String>> entry : aufseherToSeriennummer.entrySet()) {
+                        String name = entry.getKey();
+                        String sns = String.join(", ", entry.getValue());
+                        contentStream.beginText();
+                        contentStream.newLineAtOffset(margin, yPosition);
+                        contentStream.showText("- " + name + " -> SN: " + sns);
+                        contentStream.endText();
+                        yPosition -= 15;
+                    }
+                } else {
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(margin, yPosition);
+                    contentStream.showText("WARNUNG: Keine PKI-Zertifikate gefunden!");
+                    contentStream.endText();
+                    yPosition -= 15;
+                }
+
+                yPosition -= 15;
             }
 
             float tableWidth = pageWidth - (2 * margin);
@@ -371,8 +406,6 @@ public class PdfExportService {
             h8.setFont(PDType1Font.HELVETICA_BOLD);
             h8.setFontSize(10);
 
-            Map<String, Set<String>> aufseherToSns = new LinkedHashMap<>();
-
             for (SchiessnachweisEintrag eintrag : eintraege) {
                 Row<PDPage> row = table.createRow(15);
                 row.createCell(10, eintrag.getDatum() != null ? eintrag.getDatum().format(DATE_FORMATTER) : "-").setFontSize(8);
@@ -383,45 +416,10 @@ public class PdfExportService {
                 row.createCell(15, eintrag.getErgebnis() != null ? eintrag.getErgebnis() : "-").setFontSize(9);
                 String aufName = eintrag.getAufseher() != null ? eintrag.getAufseher().getVollstaendigerName() : "-";
                 row.createCell(14, aufName).setFontSize(9);
-                if (aufName != null && !aufName.equals("-")) {
-                    String sn = eintrag.getZertifikat() != null ? eintrag.getZertifikat().getSeriennummer() : null != null ? 
-                            eintrag.getZertifikat() != null ? eintrag.getZertifikat().getSeriennummer() : null : "PKI-signiert";
-                    aufseherToSns.computeIfAbsent(aufName, k -> new LinkedHashSet<>()).add(sn);
-                }
                 row.createCell(10, eintrag.getSigniertAm() != null ? eintrag.getSigniertAm().format(DATETIME_FORMATTER) : "-").setFontSize(8);
             }
 
             table.draw();
-
-            PDPage lastPage = document.getPage(document.getNumberOfPages() - 1);
-            try (PDPageContentStream contentStream = new PDPageContentStream(document, lastPage,
-                    PDPageContentStream.AppendMode.APPEND, true)) {
-                float footerY = margin + 150;
-                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
-                contentStream.beginText();
-                contentStream.newLineAtOffset(margin, footerY);
-                contentStream.showText("PKI-Zertifikatsdetails für die Aufseher:");
-                contentStream.endText();
-                footerY -= 15;
-                contentStream.setFont(PDType1Font.HELVETICA, 10);
-                if (!aufseherToSns.isEmpty()) {
-                    for (Map.Entry<String, Set<String>> entry : aufseherToSns.entrySet()) {
-                        String name = entry.getKey();
-                        String sns = String.join(", ", entry.getValue());
-                        contentStream.beginText();
-                        contentStream.newLineAtOffset(margin, footerY);
-                        contentStream.showText("- " + name + " -> SN: " + sns);
-                        contentStream.endText();
-                        footerY -= 12;
-                    }
-                } else {
-                    contentStream.beginText();
-                    contentStream.newLineAtOffset(margin, footerY);
-                    contentStream.showText("WARNUNG: Keine PKI-Zertifikate gefunden!");
-                    contentStream.endText();
-                    footerY -= 12;
-                }
-            }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             document.save(outputStream);

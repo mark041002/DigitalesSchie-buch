@@ -38,24 +38,30 @@ public class DisziplinService {
 
 
     /**
-     * Findet alle Disziplinen eines Verbands.
+     * Findet alle nicht-archivierten Disziplinen eines Verbands.
+     * Diese Methode wird für die Auswahl bei neuen Einträgen verwendet.
      *
      * @param verbandid Die Verband-ID
-     * @return Liste der Disziplinen als DTOs
+     * @return Liste der nicht-archivierten Disziplinen
      */
     @Transactional(readOnly = true)
     public List<Disziplin> findeDisziplinenVonVerband(Long verbandid) {
-        List<Disziplin> entities = disziplinRepository.findByVerbandId(verbandid);
+        List<Disziplin> entities = disziplinRepository.findByVerbandIdAndArchiviert(verbandid, false);
         return entities;
     }
 
     /**
-     * Löscht eine Disziplin.
+     * Archiviert eine Disziplin statt sie zu löschen.
+     * Archivierte Disziplinen bleiben für bestehende Schießnachweis-Einträge verfügbar,
+     * werden aber nicht mehr bei der Auswahl für neue Einträge angezeigt.
      *
      * @param disziplinId Die Disziplin-ID
      */
     public void loescheDisziplin(Long disziplinId) {
-        disziplinRepository.deleteById(disziplinId);
+        Disziplin disziplin = disziplinRepository.findById(disziplinId)
+                .orElseThrow(() -> new IllegalArgumentException("Disziplin nicht gefunden"));
+        disziplin.setArchiviert(true);
+        disziplinRepository.save(disziplin);
     }
 
     /**
@@ -92,14 +98,74 @@ public class DisziplinService {
     }
 
     /**
-     * Findet alle Disziplinen eines Verbands als Entities (für interne Verwendung).
+     * Findet alle nicht-archivierten Disziplinen eines Verbands als Entities (für interne Verwendung).
      *
      * @param verbandId Die Verband-ID
-     * @return Liste der Disziplinen als Entities
+     * @return Liste der nicht-archivierten Disziplinen als Entities
      */
     @Transactional(readOnly = true)
     public List<Disziplin> findeDisziplinenVonVerbandEntities(Long verbandId) {
-        return disziplinRepository.findByVerbandId(verbandId);
+        return disziplinRepository.findByVerbandIdAndArchiviert(verbandId, false);
+    }
+
+    /**
+     * Findet alle Disziplinen eines Verbands (auch archivierte) für Admin-Ansicht.
+     *
+     * @param verbandId Die Verband-ID
+     * @return Liste aller Disziplinen
+     */
+    @Transactional(readOnly = true)
+    public List<Disziplin> findeAlleDisziplinenVonVerband(Long verbandId) {
+        return disziplinRepository.findAllByVerbandId(verbandId);
+    }
+
+    /**
+     * Aktiviert eine archivierte Disziplin wieder.
+     *
+     * @param disziplinId Die Disziplin-ID
+     */
+    public void aktiviereDisziplin(Long disziplinId) {
+        Disziplin disziplin = disziplinRepository.findById(disziplinId)
+                .orElseThrow(() -> new IllegalArgumentException("Disziplin nicht gefunden"));
+        disziplin.setArchiviert(false);
+        disziplinRepository.save(disziplin);
+    }
+
+    /**
+     * Zählt die Anzahl der Einträge für eine bestimmte Disziplin.
+     *
+     * @param disziplinId Die Disziplin-ID
+     * @return Anzahl der Einträge
+     */
+    @Transactional(readOnly = true)
+    public long zaehleEintraegeVonDisziplin(Long disziplinId) {
+        Disziplin disziplin = disziplinRepository.findById(disziplinId)
+                .orElseThrow(() -> new IllegalArgumentException("Disziplin nicht gefunden"));
+        return eintragRepository.countByDisziplin(disziplin);
+    }
+
+    /**
+     * Löscht eine Disziplin endgültig inklusive aller zugehörigen Einträge.
+     * WARNUNG: Diese Aktion kann nicht rückgängig gemacht werden!
+     * Sollte nur für archivierte Disziplinen verwendet werden.
+     *
+     * @param disziplinId Die Disziplin-ID
+     */
+    public void loescheDisziplinMitEintraegen(Long disziplinId) {
+        Disziplin disziplin = disziplinRepository.findById(disziplinId)
+                .orElseThrow(() -> new IllegalArgumentException("Disziplin nicht gefunden"));
+
+        // Sicherheitscheck: Nur archivierte Disziplinen dürfen gelöscht werden
+        if (!Boolean.TRUE.equals(disziplin.getArchiviert())) {
+            throw new IllegalStateException("Nur archivierte Disziplinen können gelöscht werden. Bitte archivieren Sie die Disziplin zuerst.");
+        }
+
+        // Lösche alle Einträge, die diese Disziplin verwenden
+        var eintraege = eintragRepository.findByDisziplin(disziplin);
+        eintragRepository.deleteAll(eintraege);
+
+        // Lösche die Disziplin selbst
+        disziplinRepository.delete(disziplin);
     }
 
     /**

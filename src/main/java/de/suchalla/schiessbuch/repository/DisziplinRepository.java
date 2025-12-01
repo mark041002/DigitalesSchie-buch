@@ -22,4 +22,21 @@ public interface DisziplinRepository extends JpaRepository<Disziplin, Long> {
      * @return Liste der Disziplinen
      */
     List<Disziplin> findByVerbandId(Long verbandId);
+
+    /**
+     * Findet alle nicht-archivierten Disziplinen eines Verbands.
+     *
+     * @param verbandId Die ID des Verbands
+     * @param archiviert Der Archivierungsstatus (false für aktive Disziplinen)
+     * @return Liste der nicht-archivierten Disziplinen
+     */
+    List<Disziplin> findByVerbandIdAndArchiviert(Long verbandId, Boolean archiviert);
+
+    /**
+     * Findet alle Disziplinen eines Verbands (auch archivierte).
+     *
+     * @param verbandId Die ID des Verbands
+     * @return Liste aller Disziplinen
+     */
+    List<Disziplin> findAllByVerbandId(Long verbandId);
 }

@@ -286,8 +286,8 @@ public class SchiesstaendeVerwaltungView extends VerticalLayout {
         dialog.setHeader("Schießstand löschen");
         dialog.setText("Sind Sie sicher, dass Sie den Schießstand \"" + schiesstand.getName() + "\" löschen möchten?");
         dialog.setCancelable(true);
+        dialog.setCancelText("Abbrechen");
         dialog.setConfirmText("Löschen");
-        dialog.setRejectText("Abbrechen");
         dialog.addConfirmListener(e -> loescheSchiesstand(schiesstand));
         dialog.open();
     }

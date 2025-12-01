@@ -31,11 +31,10 @@ class ZertifikatVerifizierungsServiceTest {
     private ZertifikatVerifizierungsService service;
 
     private DigitalesZertifikat zertifikat;
-    private Benutzer benutzer;
 
     @BeforeEach
     void setUp() {
-        benutzer = TestDataFactory.createBenutzer(1L, "user@example.com");
+        Benutzer benutzer = TestDataFactory.createBenutzer(1L, "user@example.com");
         zertifikat = TestDataFactory.createZertifikat(1L, "AUFSEHER", benutzer);
     }
 

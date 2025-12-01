@@ -116,7 +116,7 @@ public class SchiessnachweisService {
     /**
      * Signiert einen Eintrag.
      *
-     * @param eintragId Die Eintrags-ID
+     * @param eintrag Der Eintrag
      * @param aufseher  Der Aufseher
      * @param signatur  Die digitale Signatur
      * @throws IllegalStateException wenn Eintrag bereits signiert

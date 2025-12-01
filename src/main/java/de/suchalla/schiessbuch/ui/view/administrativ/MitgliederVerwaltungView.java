@@ -194,7 +194,6 @@ public class MitgliederVerwaltungView extends VerticalLayout {
 
         Button loeschenButton = new Button("Ja, löschen", e -> {
             try {
-                // Use deletion by id to avoid passing a detached entity into the service
                 if (benutzer.getId() != null) {
                     benutzerService.loescheBenutzerById(benutzer.getId());
                 } else {

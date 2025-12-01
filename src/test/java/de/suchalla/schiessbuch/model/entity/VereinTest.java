@@ -70,7 +70,7 @@ class VereinTest {
         String toString = verein.toString();
         assertNotNull(toString);
         assertTrue(toString.contains("Schützenverein Teststadt"));
-        assertTrue(toString.contains("SV-12345"));
+        assertTrue(toString.contains("id=1"));
     }
 
     @Test

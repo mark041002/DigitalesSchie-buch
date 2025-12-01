@@ -80,13 +80,11 @@ public class VerbaendeView extends VerticalLayout {
         );
         contentWrapper.add(infoBox);
 
-        // Empty State Message
         emptyStateMessage = ViewComponentHelper.createEmptyStateMessage(
                 "Noch keine Verbände vorhanden.", VaadinIcon.RECORDS
         );
         emptyStateMessage.setVisible(false);
 
-        // Grid-Container
         Div gridContainer = ViewComponentHelper.createGridContainer();
 
         grid.setColumnReorderingAllowed(true);

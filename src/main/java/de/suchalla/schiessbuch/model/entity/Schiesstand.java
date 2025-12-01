@@ -50,7 +50,6 @@ public class Schiesstand {
     @JsonIgnore
     private Benutzer aufseher;
 
-    @Column(length = 500)
     private String adresse;
 
     @Column(length = 1000)

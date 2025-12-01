@@ -182,20 +182,7 @@ public class VereinsmitgliedschaftService {
      */
     @Transactional(readOnly = true)
     public List<Vereinsmitgliedschaft> findeBeitrittsanfragen(Verein verein) {
-        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftsStatus.BEANTRAGT);
-        return entities;
-    }
-
-    /**
-     * Gibt alle aktiven Mitgliedschaften für einen Verein als DTOs zurück.
-     *
-     * @param verein Der Verein
-     * @return Liste der Mitgliedschaften als DTOs
-     */
-    @Transactional(readOnly = true)
-    public List<Vereinsmitgliedschaft> findeAktiveMitgliedschaften(Verein verein) {
-        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftsStatus.AKTIV);
-        return entities;
+        return mitgliedschaftRepository.findByVereinAndStatus(verein, MitgliedschaftsStatus.BEANTRAGT);
     }
 
     /**
@@ -217,8 +204,7 @@ public class VereinsmitgliedschaftService {
      */
     @Transactional(readOnly = true)
     public List<Vereinsmitgliedschaft> findeMitgliedschaften(Benutzer benutzer) {
-        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByBenutzer(benutzer);
-        return entities;
+        return mitgliedschaftRepository.findByBenutzer(benutzer);
     }
 
     /**
@@ -339,15 +325,22 @@ public class VereinsmitgliedschaftService {
                 }
             }
 
-            // Wenn Aufseher-Status entzogen wird, Zertifikat-Gültigkeit beenden
+            // Wenn Aufseher-Status entzogen wird, Zertifikat widerrufen
             if (warVorherAufseher && !istAufseher) {
                 Optional<DigitalesZertifikat> zertifikat = zertifikatRepository.findByBenutzer(benutzer);
                 if (zertifikat.isPresent()) {
                     DigitalesZertifikat cert = zertifikat.get();
-                    // Setze gueltigBis auf jetzt, damit das Zertifikat ab jetzt ungültig ist
+                    // Setze Widerruf-Felder
+                    cert.setWiderrufen(true);
+                    cert.setWiderrufenAm(LocalDateTime.now());
+                    cert.setWiderrufsGrund("Aufseher-Funktion beendet");
                     cert.setGueltigBis(LocalDateTime.now());
                     zertifikatRepository.save(cert);
-                    log.info("Zertifikat von {} widerrufen (Aufseher-Status entzogen)", benutzer.getVollstaendigerName());
+                    log.info("Zertifikat von {} widerrufen (Aufseher-Status entzogen, SN: {})",
+                            benutzer.getVollstaendigerName(), cert.getSeriennummer());
+
+                    // Sende E-Mail-Benachrichtigung an den Benutzer
+                    notificationService.notifyCertificateRevoked(cert);
                 }
 
                 // Rolle auf SCHUETZE zurücksetzen, falls keine anderen Aufseherfunktionen
@@ -374,13 +367,11 @@ public class VereinsmitgliedschaftService {
      */
     @Transactional(readOnly = true)
     public List<Verband> findeVerbaendeVonBenutzer(Benutzer benutzer) {
-        List<de.suchalla.schiessbuch.model.entity.Verband> entities =
-                mitgliedschaftRepository.findByBenutzer(benutzer).stream()
-                .filter((Vereinsmitgliedschaft m) -> m.getStatus() == MitgliedschaftsStatus.AKTIV && m.getAktiv())
-                .flatMap((Vereinsmitgliedschaft m) -> m.getVerein().getVerbaende().stream())
-                .distinct()
-                .collect(java.util.stream.Collectors.toList());
-        return entities;
+        return mitgliedschaftRepository.findByBenutzer(benutzer).stream()
+        .filter((Vereinsmitgliedschaft m) -> m.getStatus() == MitgliedschaftsStatus.AKTIV && m.getAktiv())
+        .flatMap((Vereinsmitgliedschaft m) -> m.getVerein().getVerbaende().stream())
+        .distinct()
+        .collect(java.util.stream.Collectors.toList());
     }
 
     /**
@@ -423,8 +414,7 @@ public class VereinsmitgliedschaftService {
      */
     @Transactional(readOnly = true)
     public List<Vereinsmitgliedschaft> findeAlleMitgliedschaften(Verein verein) {
-        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVerein(verein);
-        return entities;
+        return mitgliedschaftRepository.findByVerein(verein);
     }
 
     /**
@@ -436,8 +426,7 @@ public class VereinsmitgliedschaftService {
      */
     @Transactional(readOnly = true)
     public List<Vereinsmitgliedschaft> findeMitgliedschaftenNachStatus(Verein verein, MitgliedschaftsStatus status) {
-        List<Vereinsmitgliedschaft> entities = mitgliedschaftRepository.findByVereinAndStatus(verein, status);
-        return entities;
+        return mitgliedschaftRepository.findByVereinAndStatus(verein, status);
     }
 
 

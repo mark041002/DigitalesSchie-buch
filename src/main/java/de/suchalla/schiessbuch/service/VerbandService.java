@@ -7,6 +7,7 @@ import de.suchalla.schiessbuch.model.entity.DigitalesZertifikat;
 import de.suchalla.schiessbuch.model.entity.Vereinsmitgliedschaft;
 import de.suchalla.schiessbuch.repository.DigitalesZertifikatRepository;
 import de.suchalla.schiessbuch.repository.DisziplinRepository;
+import de.suchalla.schiessbuch.repository.SchiessnachweisEintragRepository;
 import de.suchalla.schiessbuch.repository.VerbandRepository;
 import de.suchalla.schiessbuch.repository.VereinRepository;
 import de.suchalla.schiessbuch.repository.VereinsmitgliedschaftRepository;
@@ -32,6 +33,7 @@ public class VerbandService {
     private final DigitalesZertifikatRepository zertifikatRepository;
     private final VereinsmitgliedschaftRepository mitgliedschaftRepository;
     private final DisziplinRepository disziplinRepository;
+    private final SchiessnachweisEintragRepository eintragRepository;
     private final VereinsmitgliedschaftService vereinsmitgliedschaftService;
 
     /**
@@ -146,16 +148,29 @@ public class VerbandService {
 
 
     /**
-     * Löscht einen Verband.
+     * Löscht einen Verband samt aller abhängiger Disziplinen und deren Einträge.
+     * WARNUNG: Diese Aktion kann nicht rückgängig gemacht werden!
+     * Löscht in korrekter Reihenfolge:
+     * 1. Alle Schießnachweis-Einträge der Disziplinen
+     * 2. Alle Disziplinen des Verbands
+     * 3. Den Verband selbst
      *
      * @param verbandId Die Verbands-ID
-     * @throws IllegalStateException wenn der Verband noch Disziplinen hat
      */
     public void loescheVerband(Long verbandId) {
-        // Prüfe, ob es abhängige Disziplinen gibt
-        if (!disziplinRepository.findByVerbandId(verbandId).isEmpty()) {
-            throw new IllegalStateException("Verband kann nicht gelöscht werden, da noch Disziplinen zugeordnet sind");
+        // Finde alle Disziplinen des Verbands
+        var disziplinen = disziplinRepository.findByVerbandId(verbandId);
+
+        // Lösche für jede Disziplin alle Schießnachweis-Einträge
+        for (var disziplin : disziplinen) {
+            var eintraege = eintragRepository.findByDisziplin(disziplin);
+            eintragRepository.deleteAll(eintraege);
         }
+
+        // Lösche alle Disziplinen
+        disziplinRepository.deleteAll(disziplinen);
+
+        // Lösche den Verband
         verbandRepository.deleteById(verbandId);
     }
 
@@ -180,13 +195,6 @@ public class VerbandService {
         return vereinRepository.findById(id).orElse(null);
     }
 
-    /**
-     * Findet einen Verein anhand der Vereinsnummer.
-     *
-     * @param vereinsNummer Die Vereinsnummer
-     * @return Verein oder null
-     */
-    // Methode findeVereinByVereinsNummer entfernt, da die Vereinsnummer nicht mehr verwendet wird
 
     /**
      * Findet alle Vereine als DTOs.
@@ -222,24 +230,36 @@ public class VerbandService {
 
     /**
      * Löscht einen Verein samt aller abhängiger Entities.
+     * WARNUNG: Diese Aktion kann nicht rückgängig gemacht werden!
      * Löscht in korrekter Reihenfolge:
-     * 1. Digitale Zertifikate des Vereins
-     * 2. Mitgliedschaften (falls keine aktiven vorhanden)
-     * 3. Den Verein selbst
+     * 1. Alle Schießnachweis-Einträge, die Zertifikate des Vereins verwenden
+     * 2. Digitale Zertifikate des Vereins
+     * 3. Mitgliedschaften werden als inaktiv markiert
+     * 4. Den Verein selbst
      *
      * @param vereinId Die Vereins-ID
-     * @throws IllegalStateException wenn Verein noch aktive Mitglieder hat
      * @throws IllegalArgumentException wenn Verein nicht gefunden
      */
     public void loescheVerein(Long vereinId) {
         Verein verein = vereinRepository.findById(vereinId)
                 .orElseThrow(() -> new IllegalArgumentException("Verein nicht gefunden"));
 
-        // 1. Lösche alle Zertifikate des Vereins (Foreign Key Constraint)
+        // 1. Finde alle Zertifikate des Vereins
         List<DigitalesZertifikat> zertifikate = zertifikatRepository.findByVerein(verein);
+
+        // 2. Lösche alle Schießnachweis-Einträge, die diese Zertifikate verwenden
+        for (DigitalesZertifikat zertifikat : zertifikate) {
+            // Finde alle Einträge, die dieses Zertifikat verwenden
+            var eintraege = eintragRepository.findAll().stream()
+                    .filter(e -> e.getZertifikat() != null && e.getZertifikat().getId().equals(zertifikat.getId()))
+                    .toList();
+            eintragRepository.deleteAll(eintraege);
+        }
+
+        // 3. Lösche alle Zertifikate des Vereins
         zertifikatRepository.deleteAll(zertifikate);
 
-        // 2. Mitgliedschaften nicht löschen, sondern als inaktiv markieren
+        // 4. Mitgliedschaften nicht löschen, sondern als inaktiv markieren
         if (!verein.getMitgliedschaften().isEmpty()) {
             for (Vereinsmitgliedschaft mitgliedschaft : verein.getMitgliedschaften()) {
                 mitgliedschaft.setAktiv(false);
@@ -248,7 +268,7 @@ public class VerbandService {
             }
         }
 
-        // 3. Lösche den Verein
+        // 5. Lösche den Verein
         vereinRepository.delete(verein);
     }
 }

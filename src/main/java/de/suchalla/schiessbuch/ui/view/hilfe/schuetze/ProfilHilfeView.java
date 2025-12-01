@@ -62,10 +62,6 @@ public class ProfilHilfeView extends BaseHilfeView {
         passwordSteps.add(new ListItem("Klicken Sie auf 'Passwort ändern'"));
         passwordSteps.add(new ListItem("Sie werden automatisch ausgeloggt und müssen sich mit dem neuen Passwort anmelden"));
 
-        /*Div warningBox = createWarningBox(
-                "Wichtig: Wenn Sie Ihre E-Mail-Adresse ändern, wird eine Bestätigungs-E-Mail an die neue Adresse gesendet. " +
-                "Sie müssen diese bestätigen, bevor die Änderung wirksam wird."
-        );*/
 
 
 

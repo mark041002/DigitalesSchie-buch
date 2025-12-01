@@ -35,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 import jakarta.annotation.security.PermitAll;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * View zum Erstellen neuer Schießnachweis-Einträge.
@@ -109,6 +110,7 @@ public class NeuerEintragView extends VerticalLayout {
         // Formular konfigurieren - nur wichtige Felder mit Icons
         datum.setValue(LocalDate.now());
         datum.setRequired(true);
+        datum.setLocale(Locale.GERMANY);  // Deutsches Datumsformat
 
         // Schießstand: Mit Icon
         schiesstand.setItems(disziplinService.findeAlleSchiesstaendeEntities());
@@ -131,7 +133,16 @@ public class NeuerEintragView extends VerticalLayout {
         disziplin.setEnabled(false);
         disziplin.setRequired(true);
         disziplin.setPlaceholder("Bitte zuerst Verband auswählen");
-        disziplin.setItemLabelGenerator(d -> d.getKennziffer() + (d.getProgramm() != null ? " - " + d.getProgramm() : ""));
+        disziplin.setItemLabelGenerator(d -> {
+            String label = d.getKennziffer();
+            if (d.getProgramm() != null && !d.getProgramm().isEmpty()) {
+                label += " - " + d.getProgramm();
+            }
+            if (d.getWaffeKlasse() != null && !d.getWaffeKlasse().isEmpty()) {
+                label += " - " + d.getWaffeKlasse();
+            }
+            return label;
+        });
 
         // Waffenart: OHNE Icon
         waffenart.setItems(Waffenart.values());

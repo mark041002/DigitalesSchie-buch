@@ -11,7 +11,7 @@ Markus Suchalla
 ## Technologie-Stack
 
 ### Backend
-- **Java 21** - Programmiersprache
+- **Java 23** - Programmiersprache
 - **Spring Boot 3.x** - Application Framework
 - **Spring Data JPA** - Datenzugriff und Persistenz
 - **Spring Security** - Authentifizierung und Autorisierung
@@ -31,47 +31,6 @@ Markus Suchalla
 ### Dokumenten-Generierung
 - **Apache PDFBox** - PDF-Export von Schießnachweisen
 - **HTML Templates** - E-Mail-Benachrichtigungen
-
-## Architektur
-
-Die Anwendung folgt einer mehrschichtigen Architektur (Layered Architecture):
-
-```
-┌─────────────────────────────────────┐
-│     Presentation Layer (Views)      │  Vaadin UI-Komponenten
-├─────────────────────────────────────┤
-│      Service Layer (Business)       │  Geschäftslogik
-├─────────────────────────────────────┤
-│     Repository Layer (Data Access)  │  JPA Repositories
-├─────────────────────────────────────┤
-│       Domain Layer (Entities)       │  JPA Entities & DTOs
-└─────────────────────────────────────┘
-```
-
-### Komponenten
-
-**Domain Layer:**
-- Entities: JPA-Entitäten für Datenbankzugriff
-- DTOs: Data Transfer Objects für sichere Datenübertragung
-- Mapper: Konvertierung zwischen Entities und DTOs
-- Enums: Typsichere Aufzählungen
-
-**Repository Layer:**
-- JPA Repositories mit @EntityGraph für optimierte Queries
-- Custom Queries für komplexe Abfragen
-
-**Service Layer:**
-- Geschäftslogik und Validierung
-- Transaktionsverwaltung
-- E-Mail-Benachrichtigungen
-- PDF-Export
-- PKI/Signatur-Services
-
-**Presentation Layer:**
-- Vaadin Views mit MVC-Pattern
-- Responsive UI-Komponenten
-- Formular-Validierung
-- Rollenbasierte Zugriffskontrolle
 
 ## Funktionsumfang
 
@@ -121,7 +80,7 @@ Die Anwendung folgt einer mehrschichtigen Architektur (Layered Architecture):
 - Java Development Kit (JDK) 23 oder höher
 - Apache Maven 3.8 oder höher
 - PostgreSQL 16 oder höher (optional, H2 für Entwicklung)
-
+- Einen SMTP-Server für E-Mail-Benachrichtigungen (optional, für Tests kann ein lokaler SMTP-Server verwendet werden wie smpt4dev)
 
 ### Datenbank konfigurieren
 
@@ -157,57 +116,16 @@ Die Anwendung ist dann verfügbar unter: `http://localhost:8000`
 ### Docker Deployment
 
 Für Docker-Deployment existiert eine separate Konfiguration:
+Diese ist dafür ausgelegt, auf dem FH Server zu laufen, da sie den SMTP Server der FH verwendet.
+
 
 ```bash
 docker-compose up -d
 ```
 
-## Sicherheitskonzept
-
-### Authentifizierung
-- Spring Security mit formularbasiertem Login
-- Passwort-Hashing mit BCrypt
-- Session-basierte Authentifizierung
-- E-Mail-Verifizierung erforderlich
-
-### Autorisierung
-- Rollenbasierte Zugriffskontrolle
-- Method-Level Security mit @RolesAllowed
-- View-Level Security in Vaadin Routes
-
-### Digitale Signaturen
-- RSA 2048-bit Schlüsselpaare
-- SHA-256 Hash-Algorithmus
-- Öffentliche Schlüssel für Verifikation verfügbar
-
-### Datenschutz
-- Passwörter werden nie im Klartext gespeichert
-- DTOs vermeiden Exposition sensibler Daten
-- Transaktionale Datenbankoperationen
-- HTTPS-Unterstützung (Produktionsumgebung)
-
-## Code-Qualität
-
-### Design Patterns
-- Repository Pattern (Datenzugriff)
-- DTO Pattern (Datenübertragung)
-- Factory Pattern (UI-Komponenten)
-- Service Layer Pattern (Geschäftslogik)
-- Mapper Pattern (Entity-DTO Konvertierung)
-
-### Best Practices
-- Clean Code Prinzipien
-- SOLID Principles
-- @EntityGraph für optimierte JPA Queries
-- Generische Interfaces zur Code-Wiederverwendung
-
-### Dokumentation
-- Inline-Kommentare für komplexe Logik
-- Strukturierte Package-Organisation
-- README-Dokumentation
-
 ## Testing
 
+Um die Tests seperat auszuführen, verwenden Sie den folgenden Befehl:
 ```bash
 # Unit Tests ausführen
 mvn test

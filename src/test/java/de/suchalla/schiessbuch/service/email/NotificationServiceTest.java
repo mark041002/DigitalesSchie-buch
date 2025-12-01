@@ -44,7 +44,9 @@ class NotificationServiceTest {
     void setUp() {
         emailService = new EmailService(mailSender, mitgliedschaftRepository);
         spyService = org.mockito.Mockito.spy(emailService);
-        ReflectionTestUtils.setField(spyService, "configuredBaseUrl", "http://localhost:8000");
+        ReflectionTestUtils.setField(spyService, "baseUrl", "http://localhost:8000");
+        ReflectionTestUtils.setField(spyService, "emailEnabled", true);
+        ReflectionTestUtils.setField(spyService, "from", "test@example.com");
 
         schuetze = TestDataFactory.createBenutzer(1L, "schuetze@example.com");
         chef = TestDataFactory.createBenutzer(2L, "chef@example.com");

@@ -35,7 +35,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 
         LoginI18n.Form i18nForm = i18n.getForm();
         i18nForm.setTitle("Anmeldung");
-        i18nForm.setUsername("Benutzername");
+        i18nForm.setUsername("E-Mail Adresse");
         i18nForm.setPassword("Passwort");
         i18nForm.setSubmit("Anmelden");
         i18nForm.setForgotPassword("Passwort vergessen?");
@@ -43,7 +43,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 
         LoginI18n.ErrorMessage i18nErrorMessage = i18n.getErrorMessage();
         i18nErrorMessage.setTitle("Anmeldung fehlgeschlagen");
-        i18nErrorMessage.setMessage("Bitte überprüfen Sie Ihren Benutzernamen und Ihr Passwort und versuchen Sie es erneut.");
+        i18nErrorMessage.setMessage("Bitte überprüfen Sie Ihre E-Mail Adresse und Ihr Passwort und versuchen Sie es erneut.");
         i18n.setErrorMessage(i18nErrorMessage);
 
         loginForm.setI18n(i18n);

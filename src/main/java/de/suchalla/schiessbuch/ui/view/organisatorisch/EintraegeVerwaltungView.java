@@ -81,7 +81,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
     private EintragStatus aktuellerStatus = EintragStatus.UNSIGNIERT; // Standard: Unsigniert
     private Tab aktuellerTab;
     private Tab alleTab;
-    private com.vaadin.flow.component.grid.Grid.Column<SchiessnachweisEintrag> actionsColumn;
+    private Grid.Column<SchiessnachweisEintrag> actionsColumn;
 
     private List<SchiessnachweisEintrag> aktuelleFiltierteEintraege = List.of();
     private boolean contentCreated = false; // Flag um mehrfaches Erstellen zu verhindern
@@ -158,7 +158,6 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
         contentWrapper.setWidthFull();
 
-        // Header-Bereich
         Div header = new Div();
         header.addClassName("gradient-header");
         header.setWidthFull();
@@ -180,14 +179,12 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         header.add(headerContent);
         contentWrapper.add(header);
 
-        // Info-Box mit modernem Styling
         Div infoBox = ViewComponentHelper.createInfoBox(
                 "Verwalten Sie Schießnachweis-Einträge: Signieren oder lehnen Sie Einträge ab. " +
                 "Nutzen Sie die Filter um gezielt nach Schützen, Aufsehern oder Status zu suchen."
         );
         contentWrapper.add(infoBox);
 
-        // Tabs-Container mit weißem Hintergrund
         Div tabsContainer = new Div();
         tabsContainer.addClassName("tabs-container");
         tabsContainer.setWidthFull();
@@ -199,7 +196,8 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         alleTab = new Tab("Alle Einträge");
 
         // Setze initialen Tab
-        aktuellerTab = unsigniertTab;Tabs tabs = new Tabs(unsigniertTab, signiertTab, abgelehntTab, alleTab);
+        aktuellerTab = unsigniertTab;
+        Tabs tabs = new Tabs(unsigniertTab, signiertTab, abgelehntTab, alleTab);
         tabs.setWidthFull();
 
         tabs.addSelectedChangeListener(event -> {
@@ -216,7 +214,6 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                 aktuellerStatus = null; // Alle
             }
 
-            // Filter aktualisieren (ComboBoxen neu befüllen und Status-Filter anzeigen)
             aktualisiereFilterOptionen();
             updateGrid();
         });
@@ -224,17 +221,14 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         tabsContainer.add(tabs);
         contentWrapper.add(tabsContainer);
 
-        // Filter-Container
         contentWrapper.add(ViewComponentHelper.createFilterBox(createFilterLayout()));
 
 
-        // Empty State Message
         emptyStateMessage = ViewComponentHelper.createEmptyStateMessage("Noch keine Einträge vorhanden.", VaadinIcon.RECORDS);
         emptyStateMessage.setVisible(false);
 
         Div gridContainer = ViewComponentHelper.createGridContainer();
 
-        // Grid direkt konfigurieren
         configureGrid();
 
         gridContainer.add(emptyStateMessage, grid);
@@ -263,7 +257,6 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         aufseherComboBox.setClearButtonVisible(true);
         aufseherComboBox.addValueChangeListener(e -> updateGrid());
 
-        // Datum-Filter standardmäßig leer (Benutzer setzt bei Bedarf)
         vonDatum.setWidth("200px");
 
         bisDatum.setWidth("200px");
@@ -278,7 +271,6 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
         pdfButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
         pdfDownload.add(pdfButton);
 
-        // Alle Filter nebeneinander, responsive mit flex-wrap
         HorizontalLayout filterRow = new HorizontalLayout(
             schuetzenComboBox, aufseherComboBox, vonDatum, bisDatum, filterButton, pdfDownload
         );
@@ -348,8 +340,24 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                 .setSortable(true);
         grid.addColumn(dto -> dto.getDatum() == null ? "" : dateFormatter.format(dto.getDatum()))
             .setHeader("Datum")
-            .setSortable(true);
-        grid.addColumn(eintrag -> eintrag.getDisziplin() != null ? eintrag.getDisziplin().getProgramm() : "-")
+            .setSortable(true)
+            .setComparator((e1, e2) -> {
+                if (e1.getDatum() == null && e2.getDatum() == null) return 0;
+                if (e1.getDatum() == null) return 1;
+                if (e2.getDatum() == null) return -1;
+                return e1.getDatum().compareTo(e2.getDatum());
+            });
+        grid.addColumn(eintrag -> {
+                    if (eintrag.getDisziplin() == null) return "-";
+                    String label = eintrag.getDisziplin().getKennziffer();
+                    if (eintrag.getDisziplin().getProgramm() != null && !eintrag.getDisziplin().getProgramm().isEmpty()) {
+                        label += " - " + eintrag.getDisziplin().getProgramm();
+                    }
+                    if (eintrag.getDisziplin().getWaffeKlasse() != null && !eintrag.getDisziplin().getWaffeKlasse().isEmpty()) {
+                        label += " - " + eintrag.getDisziplin().getWaffeKlasse();
+                    }
+                    return label;
+                })
                 .setHeader("Disziplin");
         grid.addColumn(SchiessnachweisEintrag::getKaliber)
                 .setHeader("Kaliber");
@@ -520,7 +528,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                         .collect(Collectors.toList());
             }
 
-            // Filter nach Schütze (ComboBox)
+            // Filter nach Schütze
             String selektierterSchuetze = schuetzenComboBox.getValue();
             if (selektierterSchuetze != null && !selektierterSchuetze.trim().isEmpty()) {
                 eintraege = eintraege.stream()
@@ -529,7 +537,7 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                         .collect(Collectors.toList());
             }
 
-            // Filter nach Aufseher (ComboBox)
+            // Filter nach Aufseher
             String selektierterAufseher = aufseherComboBox.getValue();
             if (selektierterAufseher != null && !selektierterAufseher.trim().isEmpty()) {
                 eintraege = eintraege.stream()
@@ -562,7 +570,6 @@ public class EintraegeVerwaltungView extends VerticalLayout implements BeforeEnt
                 actionsColumn.setVisible(aktuellerStatus != EintragStatus.SIGNIERT);
             }
 
-            // Zeige/Verstecke Empty State Message
             boolean isEmpty = eintraege.isEmpty();
             grid.setVisible(!isEmpty);
             emptyStateMessage.setVisible(isEmpty);

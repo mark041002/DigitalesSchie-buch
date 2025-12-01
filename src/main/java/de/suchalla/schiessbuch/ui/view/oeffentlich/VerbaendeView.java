@@ -102,6 +102,7 @@ public class VerbaendeView extends VerticalLayout {
             Grid<Disziplin> disziplinGrid = new Grid<>(Disziplin.class, false);
             disziplinGrid.addColumn(Disziplin::getKennziffer).setHeader("Kennziffer");
             disziplinGrid.addColumn(d -> d.getProgramm() != null ? d.getProgramm() : "").setHeader("Programm");
+            disziplinGrid.addColumn(d -> d.getWaffeKlasse() != null ? d.getWaffeKlasse() : "").setHeader("Waffe/Disziplin");
             disziplinGrid.setItems(disziplinen);
             disziplinGrid.setAllRowsVisible(true);
 

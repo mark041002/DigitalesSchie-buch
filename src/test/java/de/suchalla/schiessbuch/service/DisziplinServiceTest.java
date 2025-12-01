@@ -74,23 +74,26 @@ class DisziplinServiceTest {
         Long verbandId = 1L;
         List<Disziplin> disziplinen = Arrays.asList(testDisziplin);
 
-        when(disziplinRepository.findByVerbandId(verbandId)).thenReturn(disziplinen);
+        when(disziplinRepository.findByVerbandIdAndArchiviert(verbandId, false)).thenReturn(disziplinen);
 
         List<Disziplin> result = disziplinService.findeDisziplinenVonVerband(verbandId);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(disziplinRepository).findByVerbandId(verbandId);
+        verify(disziplinRepository).findByVerbandIdAndArchiviert(verbandId, false);
     }
 
     @Test
     void testLoescheDisziplin() {
         Long disziplinId = 1L;
-        doNothing().when(disziplinRepository).deleteById(disziplinId);
+        when(disziplinRepository.findById(disziplinId)).thenReturn(Optional.of(testDisziplin));
+        when(disziplinRepository.save(any(Disziplin.class))).thenReturn(testDisziplin);
 
         disziplinService.loescheDisziplin(disziplinId);
 
-        verify(disziplinRepository).deleteById(disziplinId);
+        verify(disziplinRepository).findById(disziplinId);
+        verify(disziplinRepository).save(testDisziplin);
+        assertTrue(testDisziplin.getArchiviert());
     }
 
     @Test
@@ -132,14 +135,14 @@ class DisziplinServiceTest {
         Long verbandId = 1L;
         List<Disziplin> disziplinen = Arrays.asList(testDisziplin);
 
-        when(disziplinRepository.findByVerbandId(verbandId)).thenReturn(disziplinen);
+        when(disziplinRepository.findByVerbandIdAndArchiviert(verbandId, false)).thenReturn(disziplinen);
 
         List<Disziplin> result = disziplinService.findeDisziplinenVonVerbandEntities(verbandId);
 
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(testDisziplin, result.get(0));
-        verify(disziplinRepository).findByVerbandId(verbandId);
+        verify(disziplinRepository).findByVerbandIdAndArchiviert(verbandId, false);
     }
 
     @Test
@@ -208,6 +211,96 @@ class DisziplinServiceTest {
 
         verify(schiesstandRepository).findById(schiesstandId);
         verify(schiesstandRepository, never()).delete(any());
+    }
+
+    @Test
+    void testFindeAlleDisziplinenVonVerband() {
+        Long verbandId = 1L;
+        Disziplin archiviert = Disziplin.builder()
+                .id(2L)
+                .kennziffer("LG-10m-alt")
+                .archiviert(true)
+                .build();
+        List<Disziplin> disziplinen = Arrays.asList(testDisziplin, archiviert);
+
+        when(disziplinRepository.findAllByVerbandId(verbandId)).thenReturn(disziplinen);
+
+        List<Disziplin> result = disziplinService.findeAlleDisziplinenVonVerband(verbandId);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        verify(disziplinRepository).findAllByVerbandId(verbandId);
+    }
+
+    @Test
+    void testAktiviereDisziplin() {
+        Long disziplinId = 1L;
+        testDisziplin.setArchiviert(true);
+
+        when(disziplinRepository.findById(disziplinId)).thenReturn(Optional.of(testDisziplin));
+        when(disziplinRepository.save(any(Disziplin.class))).thenReturn(testDisziplin);
+
+        disziplinService.aktiviereDisziplin(disziplinId);
+
+        verify(disziplinRepository).findById(disziplinId);
+        verify(disziplinRepository).save(testDisziplin);
+        assertFalse(testDisziplin.getArchiviert());
+    }
+
+    @Test
+    void testZaehleEintraegeVonDisziplin() {
+        Long disziplinId = 1L;
+
+        when(disziplinRepository.findById(disziplinId)).thenReturn(Optional.of(testDisziplin));
+        when(eintragRepository.countByDisziplin(testDisziplin)).thenReturn(5L);
+
+        long anzahl = disziplinService.zaehleEintraegeVonDisziplin(disziplinId);
+
+        assertEquals(5L, anzahl);
+        verify(disziplinRepository).findById(disziplinId);
+        verify(eintragRepository).countByDisziplin(testDisziplin);
+    }
+
+    @Test
+    void testLoescheDisziplinMitEintraegen_Success() {
+        Long disziplinId = 1L;
+        testDisziplin.setArchiviert(true);
+
+        de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag eintrag1 =
+                new de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag();
+        de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag eintrag2 =
+                new de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag();
+        List<de.suchalla.schiessbuch.model.entity.SchiessnachweisEintrag> eintraege =
+                Arrays.asList(eintrag1, eintrag2);
+
+        when(disziplinRepository.findById(disziplinId)).thenReturn(Optional.of(testDisziplin));
+        when(eintragRepository.findByDisziplin(testDisziplin)).thenReturn(eintraege);
+        doNothing().when(eintragRepository).deleteAll(eintraege);
+        doNothing().when(disziplinRepository).delete(testDisziplin);
+
+        disziplinService.loescheDisziplinMitEintraegen(disziplinId);
+
+        verify(disziplinRepository).findById(disziplinId);
+        verify(eintragRepository).findByDisziplin(testDisziplin);
+        verify(eintragRepository).deleteAll(eintraege);
+        verify(disziplinRepository).delete(testDisziplin);
+    }
+
+    @Test
+    void testLoescheDisziplinMitEintraegen_NotArchived() {
+        Long disziplinId = 1L;
+        testDisziplin.setArchiviert(false);
+
+        when(disziplinRepository.findById(disziplinId)).thenReturn(Optional.of(testDisziplin));
+
+        assertThrows(IllegalStateException.class, () -> {
+            disziplinService.loescheDisziplinMitEintraegen(disziplinId);
+        });
+
+        verify(disziplinRepository).findById(disziplinId);
+        verify(eintragRepository, never()).findByDisziplin(any());
+        verify(eintragRepository, never()).deleteAll(any());
+        verify(disziplinRepository, never()).delete(any());
     }
 }
 

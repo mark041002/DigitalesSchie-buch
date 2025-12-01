@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  *   Das privateKeyPEM-Feld der Entity wird aus
  *   Sicherheitsgründen NICHT in dieses DTO gemappt. Private Schlüssel sollten niemals
  *   an Clients geschickt werden.
- *   Verifizierung: Enthält denormalisierte Felder für öffentliche Verifizierung
+ *   Verifizierung: Enthält Felder für öffentliche Verifizierung
  *       ohne Zugriff auf sensible Schlüsseldaten zu benötigen.</li>
  *
  * @author Markus Suchalla
@@ -40,7 +40,6 @@ public class DigitalesZertifikatDTO {
     private Long schiesstandId;
     private Long parentZertifikatId;
 
-    // Denormalisierte Felder für Anzeige (für öffentliche Verifizierung)
     private String benutzerVollstaendigerName;
     private String benutzerEmail;
     private String vereinName;

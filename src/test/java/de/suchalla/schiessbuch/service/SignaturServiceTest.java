@@ -42,12 +42,6 @@ class SignaturServiceTest {
     @Mock
     private SchiessnachweisService schiessnachweisService;
 
-    @Mock
-    private ZertifikatVerifizierungsService zertifikatVerifizierungsService;
-    
-        @Mock
-        private EmailService notificationService;
-
     @InjectMocks
     private SignaturService signaturService;
 

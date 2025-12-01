@@ -58,7 +58,6 @@ public class HilfeView extends VerticalLayout implements HasUrlParameter<String>
                 .set("text-align", "center")
                 .set("font-size", "var(--lumo-font-size-l)");
 
-        // Role buttons in a grid layout
         HorizontalLayout roleButtonsRow1 = new HorizontalLayout();
         roleButtonsRow1.setWidthFull();
         roleButtonsRow1.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
@@ -142,7 +141,6 @@ public class HilfeView extends VerticalLayout implements HasUrlParameter<String>
 
         card.addClickListener(e -> onClick.run());
 
-        // Hover effect
         card.getElement().addEventListener("mouseenter", e -> {
             card.getStyle()
                     .set("transform", "translateY(-5px)")
@@ -157,14 +155,12 @@ public class HilfeView extends VerticalLayout implements HasUrlParameter<String>
                     .set("border-color", "var(--lumo-contrast-10pct)");
         });
 
-        // Icon
         com.vaadin.flow.component.icon.Icon iconComponent = icon.create();
         iconComponent.setSize("48px");
         iconComponent.getStyle()
                 .set("color", color)
                 .set("margin-bottom", "var(--lumo-space-m)");
 
-        // Title
         Div titleDiv = new Div();
         titleDiv.setText(title);
         titleDiv.getStyle()
@@ -173,7 +169,6 @@ public class HilfeView extends VerticalLayout implements HasUrlParameter<String>
                 .set("color", "var(--lumo-header-text-color)")
                 .set("margin-bottom", "var(--lumo-space-xs)");
 
-        // Subtitle
         Div subtitleDiv = new Div();
         subtitleDiv.setText(subtitle);
         subtitleDiv.getStyle()
@@ -182,7 +177,6 @@ public class HilfeView extends VerticalLayout implements HasUrlParameter<String>
                 .set("color", color)
                 .set("margin-bottom", "var(--lumo-space-s)");
 
-        // Description
         Paragraph desc = new Paragraph(description);
         desc.getStyle()
                 .set("font-size", "var(--lumo-font-size-s)")

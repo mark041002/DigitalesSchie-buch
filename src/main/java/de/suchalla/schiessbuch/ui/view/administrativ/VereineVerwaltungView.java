@@ -73,26 +73,21 @@ public class VereineVerwaltungView extends VerticalLayout {
     }
 
     private void createContent() {
-        // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
 
-        // Header-Bereich
         Div header = ViewComponentHelper.createGradientHeader("Vereinsverwaltung");
         contentWrapper.add(header);
 
-        // Info-Box mit modernem Styling
         Div infoBox = ViewComponentHelper.createInfoBox(
                 "Erstellen und verwalten Sie Vereine im System. Jeder Verein muss mindestens einem Verband zugeordnet sein."
         );
         contentWrapper.add(infoBox);
 
-        // Formular-Container
         Div formContainer = ViewComponentHelper.createFormContainer();
 
         H3 erstellenTitle = new H3("Neuen Verein erstellen");
         erstellenTitle.getStyle().set("margin-top", "0").set("margin-bottom", "var(--lumo-space-m)");
 
-        // Formular
         nameField.setRequired(true);
         verbaendeComboBox.setRequired(true);
         verbaendeComboBox.setItems(verbandService.findeAlleVerbaendeEntities());
@@ -115,10 +110,8 @@ public class VereineVerwaltungView extends VerticalLayout {
         formContainer.add(erstellenTitle, formLayout, speichernButton);
         contentWrapper.add(formContainer);
 
-        // Grid-Container mit weißem Hintergrund (standardisiert)
         Div gridContainer = ViewComponentHelper.createGridContainer();
         
-        // Grid
         grid.addClassName("rounded-grid");
         grid.setColumnReorderingAllowed(true);
 
@@ -201,14 +194,6 @@ public class VereineVerwaltungView extends VerticalLayout {
             return;
         }
 
-        // Vereinsnummer not required anymore
-
-        if (verbaende == null || verbaende.isEmpty()) {
-            Notification.show("Mindestens ein Verband ist erforderlich")
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-            return;
-        }
-
         Verein verein = new Verein();
         verein.setName(name);
         verein.setAdresse(adresse);
@@ -270,7 +255,7 @@ public class VereineVerwaltungView extends VerticalLayout {
         dialog.setText("Sind Sie sicher, dass Sie den Verein \"" + verein.getName() + "\" löschen möchten?");
         dialog.setCancelable(true);
         dialog.setConfirmText("Löschen");
-        dialog.setRejectText("Abbrechen");
+        dialog.setCancelText("Abbrechen");
         dialog.addConfirmListener(e -> loescheVerein(vereinId));
         dialog.open();
     }

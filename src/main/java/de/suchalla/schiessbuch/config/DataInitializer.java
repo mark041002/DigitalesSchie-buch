@@ -216,23 +216,6 @@ public class DataInitializer implements CommandLineRunner {
                 vereinRepository.save(verein);
             log.info("Aufseher-Mitgliedschaft erstellt für: {}", aufseher.getVollstaendigerName());
 
-            // Schießstandaufseher-Mitgliedschaft (nicht als Vereinsaufseher, nur als Schießstandaufseher!)
-            Vereinsmitgliedschaft mitgliedschaftSchiesstandAufseher = Vereinsmitgliedschaft.builder()
-                    .benutzer(schiesstandAufseher)
-                    .verein(verein)
-                    .status(MitgliedschaftsStatus.AKTIV)
-                    .beitrittDatum(LocalDate.now().minusYears(2))
-                    .istVereinschef(false)
-                    .istAufseher(false)
-                    .aktiv(true)
-                    .build();
-                mitgliedschaftRepository.save(mitgliedschaftSchiesstandAufseher);
-                schiesstandAufseher.getVereinsmitgliedschaften().add(mitgliedschaftSchiesstandAufseher);
-                verein.getMitgliedschaften().add(mitgliedschaftSchiesstandAufseher);
-                benutzerRepository.save(schiesstandAufseher);
-                vereinRepository.save(verein);
-            log.info("Schießstandaufseher-Mitgliedschaft erstellt für: {}", schiesstandAufseher.getVollstaendigerName());
-
             // Schützen-Mitgliedschaft
             Vereinsmitgliedschaft mitgliedschaftSchuetze = Vereinsmitgliedschaft.builder()
                     .benutzer(schuetze)

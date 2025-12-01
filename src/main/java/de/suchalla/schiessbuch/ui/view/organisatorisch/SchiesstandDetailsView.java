@@ -95,13 +95,11 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
      * Erstellt den Inhalt der View.
      */
     private void createContent() {
-        // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = new VerticalLayout();
         contentWrapper.setSpacing(false);
         contentWrapper.setPadding(false);
         contentWrapper.addClassName("content-wrapper");
 
-        // Header-Bereich
         Div header = new Div();
         header.addClassName("gradient-header");
         header.setWidthFull();
@@ -111,7 +109,6 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
         header.add(title);
         contentWrapper.add(header);
 
-        // Info-Box mit modernem Styling und 100% Breite
         Div infoBox = new Div();
         infoBox.addClassName("info-box");
         infoBox.setWidthFull();
@@ -133,7 +130,6 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
         infoBox.add(infoIcon, description);
         contentWrapper.add(infoBox);
 
-        // Form-Container mit weißem Hintergrund und modernen Styles
         Div formContainer = new Div();
         formContainer.addClassName("form-container");
         formContainer.setWidthFull();
@@ -145,7 +141,6 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
                 .set("margin-bottom", "var(--lumo-space-l)")
                 .set("box-sizing", "border-box");
 
-        // Formular
         FormLayout formLayout = new FormLayout();
         nameField.setRequired(true);
         nameField.setWidthFull();
@@ -164,7 +159,6 @@ public class SchiesstandDetailsView extends VerticalLayout implements BeforeEnte
         );
         formLayout.setColspan(adresseField, 2);
 
-        // Buttons mit Icons
         Button speichernButton = new Button("Speichern", e -> speichereSchiesstanddaten());
         speichernButton.setIcon(VaadinIcon.CHECK.create());
         speichernButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);

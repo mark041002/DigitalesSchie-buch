@@ -32,12 +32,6 @@ class SchiesstandServiceTest {
     @Mock
     private de.suchalla.schiessbuch.repository.SchiessnachweisEintragRepository eintragRepository;
 
-    @Mock
-    private de.suchalla.schiessbuch.repository.BenutzerRepository benutzerRepository;
-
-    @Mock
-    private PkiService pkiService;
-
     @InjectMocks
     private SchiesstandService service;
 

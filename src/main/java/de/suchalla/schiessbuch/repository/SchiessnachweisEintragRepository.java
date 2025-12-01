@@ -93,4 +93,20 @@ public interface SchiessnachweisEintragRepository extends JpaRepository<Schiessn
     @EntityGraph(attributePaths = {"schuetze", "disziplin", "schiesstand", "schiesstand.verein", "aufseher", "zertifikat"})
     List<SchiessnachweisEintrag> findBySchuetze(Benutzer schuetze);
 
+    /**
+     * Zählt Einträge einer bestimmten Disziplin.
+     *
+     * @param disziplin Die Disziplin
+     * @return Anzahl der Einträge
+     */
+    long countByDisziplin(de.suchalla.schiessbuch.model.entity.Disziplin disziplin);
+
+    /**
+     * Findet alle Einträge einer bestimmten Disziplin.
+     *
+     * @param disziplin Die Disziplin
+     * @return Liste der Einträge
+     */
+    List<SchiessnachweisEintrag> findByDisziplin(de.suchalla.schiessbuch.model.entity.Disziplin disziplin);
+
 }

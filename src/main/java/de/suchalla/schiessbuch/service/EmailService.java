@@ -155,7 +155,7 @@ public class EmailService {
                 continue;
             }
             if (Boolean.TRUE.equals(b.isEmailNotificationsEnabled())) {
-                this.sendMail(email, "Digitales Schießbuch - Eintrag zur Signatur", "signature-request.html", vars);
+                this.sendMail(email, "Digitales Schießbuch - Eintrag zur Signatur", "signatur-request.html", vars);
                 if (uid != null) sentUserIds.add(uid);
                 sentEmails.add(email);
             }
@@ -174,7 +174,7 @@ public class EmailService {
                 continue;
             }
             if (Boolean.TRUE.equals(b.isEmailNotificationsEnabled())) {
-                this.sendMail(email, "Digitales Schießbuch - Eintrag zur Signatur", "signature-request.html", vars);
+                this.sendMail(email, "Digitales Schießbuch - Eintrag zur Signatur", "signatur-request.html", vars);
                 if (uid != null) sentUserIds.add(uid);
                 sentEmails.add(email);
             }
@@ -209,7 +209,7 @@ public class EmailService {
                 continue;
             }
             if (Boolean.TRUE.equals(b.isEmailNotificationsEnabled())) {
-                this.sendMail(email, "Digitales Schießbuch - Neue Beitrittsanfrage", "membership-request.html", vars);
+                this.sendMail(email, "Digitales Schießbuch - Neue Beitrittsanfrage", "Mitgliedsanfrage.html", vars);
                 if (uid != null) sentUserIds.add(uid);
                 sentEmails.add(email);
             }
@@ -224,7 +224,7 @@ public class EmailService {
             vars.put("username", schuetze.getVollstaendigerName());
             vars.put("entryId", eintrag.getId());
             vars.put("actionUrl", resolveBaseUrl() + "/meine-eintraege");
-            this.sendMail(schuetze.getEmail(), "Digitales Schießbuch - Eintrag signiert", "entry-signed.html", vars);
+            this.sendMail(schuetze.getEmail(), "Digitales Schießbuch - Eintrag signiert", "eintrag-signiert.html", vars);
         }
     }
 
@@ -250,7 +250,7 @@ public class EmailService {
         vars.put("widerrufsGrund", zertifikat.getWiderrufsGrund() != null && !zertifikat.getWiderrufsGrund().isBlank() ?
                 zertifikat.getWiderrufsGrund() : "Kein Grund angegeben");
 
-        this.sendMail(benutzer.getEmail(), "Digitales Schießbuch - Zertifikat widerrufen", "certificate-revoked.html", vars);
+        this.sendMail(benutzer.getEmail(), "Digitales Schießbuch - Zertifikat widerrufen", "zertifikat-widerrufen.html", vars);
         log.info("Zertifikats-Widerrufs-Benachrichtigung an {} gesendet", benutzer.getEmail());
     }
 }

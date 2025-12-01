@@ -25,6 +25,6 @@ COPY --from=build /app/target/*.jar app.jar
 # Port freigeben
 EXPOSE 8000
 
-# Starte die Anwendung mit Docker-Profil
-ENTRYPOINT ["java", "-Dspring.profiles.active=docker", "-Dvaadin.productionMode=true", "-jar", "app.jar"]
+# Starte die Anwendung mit Docker-Profil und deutscher Locale
+ENTRYPOINT ["java", "-Dspring.profiles.active=docker", "-Dvaadin.productionMode=true", "-Duser.language=de", "-Duser.country=DE", "-jar", "app.jar"]
 

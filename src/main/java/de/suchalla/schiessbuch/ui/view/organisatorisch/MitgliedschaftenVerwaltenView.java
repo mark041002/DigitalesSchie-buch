@@ -167,7 +167,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
         tabsContainer.addClassName("tabs-container");
         tabsContainer.setWidthFull();
 
-        // Tabs fuer Status-Filter
+        // Tabs für Status-Filter
         genehmigtTab = new Tab("Aktive Mitglieder");
         beantragtTab = new Tab("Zur Genehmigung");
         abgelehntTab = new Tab("Abgelehnte");
@@ -179,7 +179,7 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
         tabs = new Tabs(genehmigtTab, beantragtTab, abgelehntTab, alleTab);
         tabs.setWidthFull();
 
-        // CSS fÃ¼r grÃ¶ÃŸeren Indikator-Balken
+        // CSS für Indikator-Balken
         tabs.getElement().getStyle()
                 .set("--lumo-size-xs", "4px")
                 .set("--_lumo-tab-marker-width", "100%");
@@ -310,10 +310,10 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
             filterLayout.removeAll();
 
             if (showDateFilters) {
-                // Mit Datums-Filtern fÃ¼r "Alle" Tab
+                // Mit Datums-Filtern für "Alle" Tab
                 filterLayout.add(suchfeld, vonDatum, bisDatum, filterButton, pdfDownload);
             } else {
-                // Ohne Datums-Filter fÃ¼r andere Tabs
+                // Ohne Datums-Filter für andere Tabs
                 filterLayout.add(suchfeld, pdfDownload);
             }
         }
@@ -348,17 +348,25 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
             })
             .setHeader("Datum")
             .setSortable(true)
+            .setComparator((dto1, dto2) -> {
+                LocalDate date1 = dto1.getStatus() == MitgliedschaftsStatus.ABGELEHNT && dto1.getAustrittDatum() != null
+                    ? dto1.getAustrittDatum() : dto1.getBeitrittDatum();
+                LocalDate date2 = dto2.getStatus() == MitgliedschaftsStatus.ABGELEHNT && dto2.getAustrittDatum() != null
+                    ? dto2.getAustrittDatum() : dto2.getBeitrittDatum();
+                if (date1 == null && date2 == null) return 0;
+                if (date1 == null) return 1;
+                if (date2 == null) return -1;
+                return date1.compareTo(date2);
+            })
             .setAutoWidth(true);
         rolleColumn = mitgliederGrid.addColumn(this::getRolleText)
             .setHeader("Rolle")
             .setAutoWidth(true);
 
-        // Status-Spalte with reference
         statusColumn = mitgliederGrid.addColumn(this::getStatusText)
                 .setHeader("Status")
                 .setAutoWidth(true);
 
-        // Status-Spalte initial verstecken (da wir mit "Aktive Mitglieder" starten)
         statusColumn.setVisible(false);
 
         mitgliederGrid.addComponentColumn(this::createActionButtons)
@@ -382,7 +390,6 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
         // Für beantragte Mitgliedschaften: Genehmigen/Ablehnen
             if (dto.getStatus() == MitgliedschaftsStatus.BEANTRAGT) {
             Button genehmigenButton = new Button("Genehmigen", e -> genehmigen(dto.getId()));
-            // Einheitliches Design: weißer Text auf blauem Hintergrund (Primary)
             genehmigenButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
             Button ablehnenButton = new Button("Ablehnen", e -> zeigeAblehnungsDialog(dto.getId()));
@@ -391,8 +398,6 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
             layout.add(genehmigenButton, ablehnenButton);
         }
 
-        // Für aktive Mitgliedschaften: Entfernen (nur Vereinschef)
-        // Aufseher-Verwaltung nur wenn NICHT im "Alle"-Tab
         if (dto.getStatus() == MitgliedschaftsStatus.AKTIV) {
             boolean istVereinschef = currentUser.getVereinsmitgliedschaften().stream()
                     .anyMatch(m -> m.getVerein().getId().equals(aktuellerVerein.getId()) &&

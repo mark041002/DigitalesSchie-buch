@@ -53,20 +53,16 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
         addClassName("view-container");
         getElement().getThemeList().add("zertifikat-verifizierung-view");
 
-        // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
 
-        // Header-Bereich
         Div header = ViewComponentHelper.createGradientHeader("Zertifikat verifizieren");
         contentWrapper.add(header);
 
-        // Info-Box mit modernem Styling
         Div infoBox = ViewComponentHelper.createInfoBox(
                 "Geben Sie die Seriennummer eines Zertifikats und optional ein Datum ein, um zu prüfen, ob das Zertifikat zu diesem Zeitpunkt gültig war oder ist."
         );
         contentWrapper.add(infoBox);
 
-        // Formular-Container
         Div formContainer = ViewComponentHelper.createFormContainer();
 
         // Eingabefeld für Seriennummer
@@ -182,7 +178,7 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
                     .set("padding", "var(--lumo-space-l)")
                     .set("box-shadow", "var(--lumo-box-shadow-s)");
 
-            H3 fehlerTitel = new H3("❌ Zertifikat nicht gefunden");
+            H3 fehlerTitel = new H3("Zertifikat nicht gefunden");
             fehlerTitel.getStyle()
                     .set("color", "var(--lumo-error-text-color)")
                     .set("margin-top", "0");
@@ -240,7 +236,6 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
             Span pruefzeitWert = new Span(dateFormatter.format(pruefZeitpunkt) + " Uhr");
             pruefzeitDiv.add(pruefzeitLabel, pruefzeitWert);
 
-            // Zertifikatsdetails
             Div details = new Div();
             details.getStyle()
                     .set("display", "grid")
@@ -250,7 +245,6 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
             details.add(createDetailRow("Typ:", getZertifikatsTypBeschreibung(zertifikat.getZertifikatsTyp())));
             details.add(createDetailRow("Seriennummer:", zertifikat.getSeriennummer()));
 
-            // Aufseher-Informationen (falls vorhanden)
             if ("AUFSEHER".equals(zertifikat.getZertifikatsTyp()) && zertifikat.getBenutzerVollstaendigerName() != null) {
                 details.add(createDetailRow("Aufseher:", zertifikat.getBenutzerVollstaendigerName()));
                 if (zertifikat.getBenutzerEmail() != null) {
@@ -258,7 +252,6 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
                 }
             }
 
-            // Vereinsinformationen (falls vorhanden)
             if (zertifikat.getVereinName() != null) {
                 details.add(createDetailRow("Verein:", zertifikat.getVereinName()));
                 if (zertifikat.getVereinAdresse() != null && !zertifikat.getVereinAdresse().isEmpty()) {
@@ -294,7 +287,7 @@ public class ZertifikatVerifizierungView extends VerticalLayout {
                         .set("border-radius", "var(--lumo-border-radius-s)");
 
                 Paragraph hinweisText = new Paragraph(
-                        "ℹ️ Hinweis für Behörden: Dieses Zertifikat wurde verwendet, um Schießnachweise " +
+                        "Hinweis für Behörden: Dieses Zertifikat wurde verwendet, um Schießnachweise " +
                                 "digital zu signieren. Die oben genannte Person hat als Aufseher die Einträge bestätigt."
                 );
                 hinweisText.getStyle()
