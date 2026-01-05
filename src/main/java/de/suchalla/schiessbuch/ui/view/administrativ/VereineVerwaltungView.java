@@ -170,7 +170,6 @@ public class VereineVerwaltungView extends VerticalLayout {
                 com.vaadin.flow.component.grid.GridVariant.LUMO_WRAP_CELL_CONTENT
         );
 
-        // Empty State Message erstellen
         emptyStateMessage = ViewComponentHelper.createEmptyStateMessage(
                 "Noch keine Vereine vorhanden. Erstellen Sie einen neuen Verein über das Formular oben.",
                 VaadinIcon.BUILDING

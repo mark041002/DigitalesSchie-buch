@@ -72,7 +72,6 @@ public class ZertifikateView extends VerticalLayout {
     }
 
     private void createContent() {
-        // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
         contentWrapper.setWidthFull();
 
@@ -80,7 +79,6 @@ public class ZertifikateView extends VerticalLayout {
         Div header = ViewComponentHelper.createGradientHeader("Zertifikatsverwaltung");
         contentWrapper.add(header);
 
-        // Info-Box mit modernem Styling
         Div infoBox = ViewComponentHelper.createInfoBox(
                 "Verwalten Sie Zertifikate für Benutzer und Vereine."
         );
@@ -101,7 +99,6 @@ public class ZertifikateView extends VerticalLayout {
         // Grid-Container mit weißem Hintergrund
         Div gridContainer = ViewComponentHelper.createGridContainer();
 
-        // Empty State Message
         emptyStateMessage = ViewComponentHelper.createEmptyStateMessage(
                 "Noch keine Zertifikate vorhanden.", VaadinIcon.DIPLOMA
         );

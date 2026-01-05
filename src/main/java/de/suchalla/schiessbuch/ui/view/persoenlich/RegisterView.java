@@ -76,7 +76,6 @@ public class RegisterView extends VerticalLayout {
             "Erstellen Sie ein neues Konto für das Digitale Schießbuch."
         );
 
-        // Felder konfigurieren
         vornameField.setRequired(true);
         vornameField.setWidthFull();
 
@@ -95,7 +94,6 @@ public class RegisterView extends VerticalLayout {
         passwortBestaetigenField.setRequired(true);
         passwortBestaetigenField.setWidthFull();
 
-        // Binder konfigurieren
         binder.forField(vornameField)
                 .asRequired("Vorname ist erforderlich")
                 .bind(Benutzer::getVorname, Benutzer::setVorname);
@@ -113,19 +111,16 @@ public class RegisterView extends VerticalLayout {
                 .withValidator(pass -> pass.length() >= 6, "Passwort muss mindestens 6 Zeichen haben")
                 .bind(Benutzer::getPasswort, Benutzer::setPasswort);
 
-        // Vor- und Nachname in einer Zeile mit flexiblem Layout
         HorizontalLayout nameLayout = new HorizontalLayout(vornameField, nachnameField);
         nameLayout.setWidthFull();
         nameLayout.setFlexGrow(1, vornameField, nachnameField);
         nameLayout.getStyle().set("flex-wrap", "wrap");
         nameLayout.getStyle().set("gap", "var(--lumo-space-m)");
 
-        // Register-Button
         registerButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         registerButton.setWidthFull();
         registerButton.addClickListener(e -> registrieren());
 
-        // Login-Link
         RouterLink loginLink = new RouterLink("Bereits registriert? Hier anmelden", LoginView.class);
 
         add(
@@ -190,23 +185,19 @@ public class RegisterView extends VerticalLayout {
         dialog.setCloseOnEsc(false);
         dialog.setCloseOnOutsideClick(false);
 
-        // Dialog-Layout
         VerticalLayout dialogLayout = new VerticalLayout();
         dialogLayout.setPadding(true);
         dialogLayout.setSpacing(true);
         dialogLayout.setAlignItems(Alignment.CENTER);
         dialogLayout.getStyle().set("text-align", "center");
 
-        // Icon
         Icon successIcon = VaadinIcon.CHECK_CIRCLE.create();
         successIcon.setSize("64px");
         successIcon.setColor("var(--lumo-success-color)");
 
-        // Titel
         H2 titel = new H2("Registrierung erfolgreich!");
         titel.getStyle().set("margin-top", "0");
 
-        // Beschreibung
         Paragraph beschreibung = new Paragraph(
             "Wir haben Ihnen eine E-Mail an " + email + " geschickt. " +
             "Bitte bestätigen Sie Ihre E-Mail-Adresse über den Link in der E-Mail, " +
@@ -216,7 +207,6 @@ public class RegisterView extends VerticalLayout {
                 .set("max-width", "500px")
                 .set("margin", "var(--lumo-space-m) 0");
 
-        // Hinweis
         Paragraph hinweis = new Paragraph(
             "Falls Sie keine E-Mail erhalten haben, überprüfen Sie bitte Ihren Spam-Ordner."
         );
@@ -224,7 +214,6 @@ public class RegisterView extends VerticalLayout {
                 .set("font-size", "var(--lumo-font-size-s)")
                 .set("color", "var(--lumo-secondary-text-color)");
 
-        // Button
         Button okButton = new Button("Zur Startseite", e -> {
             dialog.close();
             getUI().ifPresent(ui -> ui.navigate(""));

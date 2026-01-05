@@ -62,7 +62,6 @@ public class MainLayout extends AppLayout {
         DrawerToggle toggle = new DrawerToggle();
         toggle.getElement().setAttribute("aria-label", "Menü");
 
-        // Logo mit Icon
         Icon logoIcon = VaadinIcon.BOOK.create();
         logoIcon.setSize("24px");
         logoIcon.getStyle()
@@ -91,7 +90,6 @@ public class MainLayout extends AppLayout {
 
         String username = currentUser != null ? currentUser.getVollstaendigerName() : "Gast";
 
-        // Hilfe-Button (nur Desktop)
         Button hilfeButton = new Button("Hilfe", VaadinIcon.QUESTION_CIRCLE.create());
         hilfeButton.addClickListener(e -> {
             // Ermittle aktuelle Route für Kontext
@@ -108,7 +106,6 @@ public class MainLayout extends AppLayout {
                 .set("font-weight", "500");
         hilfeButton.addClassName("header-desktop-only");
 
-        // Profil-Button (nur Desktop, rechts)
         profilButtonDesktop = new Button(username, VaadinIcon.USER.create());
         profilButtonDesktop.addClickListener(e ->
                 getUI().ifPresent(ui -> ui.navigate(ProfilView.class))
@@ -120,7 +117,6 @@ public class MainLayout extends AppLayout {
                 .set("font-weight", "500");
         profilButtonDesktop.addClassName("header-desktop-only");
 
-        // Logout-Button (nur Desktop, rechts)
         Button logoutButton = new Button("Abmelden", VaadinIcon.SIGN_OUT.create());
         logoutButton.addClickListener(e -> securityService.logout());
         logoutButton.getStyle()
@@ -163,7 +159,6 @@ public class MainLayout extends AppLayout {
         drawerLayout.addClassName("responsive-drawer");
 
         if (currentUser != null) {
-            // Persönliche Funktionen
             SideNav persoenlichNav = new SideNav();
             persoenlichNav.setWidthFull();
             persoenlichNav.getStyle()
@@ -177,9 +172,6 @@ public class MainLayout extends AppLayout {
             Details persoenlichDetails = createModernDetailsSection("Persönlich", persoenlichNav, VaadinIcon.USER, true, true);
             drawerLayout.add(persoenlichDetails);
 
-            // Vereinsfunktionen (für AUFSEHER, VEREINS_CHEF und ADMIN mit entsprechenden Mitgliedschaften)
-            // WICHTIG: currentUser muss aus SecurityService geladen werden, nicht aus Session
-            // damit Änderungen an Mitgliedschaften sofort sichtbar werden
             Benutzer aktuellerBenutzer = securityService.getAuthenticatedUser();
             boolean istAufseherOderChef = aktuellerBenutzer != null && 
                     aktuellerBenutzer.getVereinsmitgliedschaften() != null &&
@@ -187,12 +179,9 @@ public class MainLayout extends AppLayout {
                             .anyMatch(m -> Boolean.TRUE.equals(m.getIstAufseher()) ||
                                     Boolean.TRUE.equals(m.getIstVereinschef()));
 
-            boolean istSchiesstandAufseher = aktuellerBenutzer != null && 
+            boolean istSchiesstandAufseher = aktuellerBenutzer != null &&
                     aktuellerBenutzer.getRolle() == de.suchalla.schiessbuch.model.enums.BenutzerRolle.SCHIESSSTAND_AUFSEHER;
-            
-            // Zeige Organisatorisches für:
-            // - Aufseher/Vereinschef (nicht Schießstandaufseher) ODER
-            // - Admin mit Aufseher/Vereinschef-Mitgliedschaften
+
             boolean zeigeOrganisatorisches = istAufseherOderChef && !istSchiesstandAufseher;
 
             if (zeigeOrganisatorisches) {
@@ -202,7 +191,6 @@ public class MainLayout extends AppLayout {
                         .set("white-space", "normal")
                         .set("word-wrap", "break-word");
 
-                // Eintragsverwaltung für Aufseher, Vereinschefs und Admins
                 vereinNav.addItem(createDebouncedSideNavItem(
                         VaadinIcon.RECORDS.create()));
 
@@ -228,7 +216,6 @@ public class MainLayout extends AppLayout {
                 drawerLayout.add(vereinDetails);
             }
 
-            // Admin-Funktionen
             if (currentUser.getRolle() == de.suchalla.schiessbuch.model.enums.BenutzerRolle.ADMIN) {
                 SideNav adminNav = new SideNav();
                 adminNav.setWidthFull();
@@ -245,7 +232,6 @@ public class MainLayout extends AppLayout {
                 drawerLayout.add(adminDetails);
             }
 
-            // Schießstandaufseher-Funktionen
             if (currentUser.getRolle() == de.suchalla.schiessbuch.model.enums.BenutzerRolle.SCHIESSSTAND_AUFSEHER) {
                 SideNav schiesstandNav = new SideNav();
                 schiesstandNav.setWidthFull();
@@ -253,14 +239,11 @@ public class MainLayout extends AppLayout {
                         .set("white-space", "normal")
                         .set("word-wrap", "break-word");
 
-                // Eintragsverwaltung für Schießstandaufseher
                 schiesstandNav.addItem(createDebouncedSideNavItem(
                         VaadinIcon.RECORDS.create()));
 
-                // Schießstanddetails
                 schiesstandNav.addItem(new SideNavItem("Schießstanddetails", SchiesstandDetailsView.class, VaadinIcon.COG.create()));
 
-                // Zertifikate
                 schiesstandNav.addItem(new SideNavItem("Meine Zertifikate", ZertifikateView.class,
                         VaadinIcon.DIPLOMA.create()));
 
@@ -269,7 +252,6 @@ public class MainLayout extends AppLayout {
             }
         }
 
-        // Öffentliche Funktionen
         SideNav oeffentlichNav = new SideNav();
         oeffentlichNav.setWidthFull();
         oeffentlichNav.getStyle()
@@ -281,7 +263,6 @@ public class MainLayout extends AppLayout {
         Details oeffentlichDetails = createModernDetailsSection("Öffentlich", oeffentlichNav, VaadinIcon.GLOBE_WIRE, false, false);
         drawerLayout.add(oeffentlichDetails);
 
-        // User-Aktionen in Navigation (nur Mobile) - wird als normale Sektion angezeigt
         if (currentUser != null) {
             VerticalLayout mobileUserSection = createMobileUserSection();
             drawerLayout.add(mobileUserSection);
@@ -306,7 +287,6 @@ public class MainLayout extends AppLayout {
 
         String username = currentUser != null ? currentUser.getVollstaendigerName() : "Gast";
 
-        // Hilfe-Button für Mobile
         Button hilfeButtonMobile = new Button("Hilfe", VaadinIcon.QUESTION_CIRCLE.create());
         hilfeButtonMobile.addClickListener(e -> {
             getUI().ifPresent(ui -> {
@@ -321,7 +301,6 @@ public class MainLayout extends AppLayout {
                 .set("justify-content", "flex-start")
                 .set("margin-bottom", "var(--lumo-space-xs)");
 
-        // Profil-Button für Mobile
         profilButtonMobile = new Button(username, VaadinIcon.USER.create());
         profilButtonMobile.addClickListener(e ->
                 getUI().ifPresent(ui -> ui.navigate(ProfilView.class))
@@ -333,7 +312,6 @@ public class MainLayout extends AppLayout {
                 .set("justify-content", "flex-start")
                 .set("margin-bottom", "var(--lumo-space-xs)");
 
-        // Logout-Button für Mobile
         Button logoutButton = new Button("Abmelden", VaadinIcon.SIGN_OUT.create());
         logoutButton.addClickListener(e -> securityService.logout());
         logoutButton.setWidthFull();

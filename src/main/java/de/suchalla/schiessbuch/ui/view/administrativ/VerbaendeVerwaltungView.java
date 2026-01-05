@@ -54,26 +54,21 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
     }
 
     private void createContent() {
-        // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
 
-        // Header-Bereich
         Div header = ViewComponentHelper.createGradientHeader("Verbandsverwaltung");
         contentWrapper.add(header);
 
-        // Info-Box mit modernem Styling
         Div infoBox = ViewComponentHelper.createInfoBox(
                 "Erstellen und verwalten Sie Verbände im System. Jeder Verband kann mehrere Vereine enthalten."
         );
         contentWrapper.add(infoBox);
 
-        // Formular-Container
         Div formContainer = ViewComponentHelper.createFormContainer();
 
         H3 erstellenTitle = new H3("Neuen Verband erstellen");
         erstellenTitle.getStyle().set("margin-top", "0").set("margin-bottom", "var(--lumo-space-m)");
 
-        // Formular
         nameField.setRequired(true);
         beschreibungField.setMaxLength(1000);
 
@@ -86,10 +81,8 @@ public class VerbaendeVerwaltungView extends VerticalLayout {
         formContainer.add(erstellenTitle, formLayout, speichernButton);
         contentWrapper.add(formContainer);
 
-        // Grid-Container mit weißem Hintergrund
         Div gridContainer = ViewComponentHelper.createGridContainer();
 
-        // Empty State Message
         emptyStateMessage = ViewComponentHelper.createEmptyStateMessage("Noch keine Verbände vorhanden.", VaadinIcon.INSTITUTION);
         emptyStateMessage.setVisible(false);
 

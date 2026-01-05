@@ -8,10 +8,8 @@ import java.time.LocalDateTime;
  * DTO für Digitale Zertifikate ohne den privaten Schlüssel.
  *
  *   Das privateKeyPEM-Feld der Entity wird aus
- *   Sicherheitsgründen NICHT in dieses DTO gemappt. Private Schlüssel sollten niemals
- *   an Clients geschickt werden.
- *   Verifizierung: Enthält Felder für öffentliche Verifizierung
- *       ohne Zugriff auf sensible Schlüsseldaten zu benötigen.</li>
+ *   Sicherheitsgründen NICHT in dieses DTO gemappt.
+
  *
  * @author Markus Suchalla
  * @version 1.0.0

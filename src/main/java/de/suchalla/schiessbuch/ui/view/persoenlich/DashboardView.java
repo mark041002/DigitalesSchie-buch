@@ -68,22 +68,18 @@ public class DashboardView extends VerticalLayout {
             return;
         }
 
-        // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
-        
-        // Willkommens-Header
+
         Div header = ViewComponentHelper.createGradientHeader("Willkommen zurück, " + currentUser.getVorname() + "!");
         header.getStyle().set("margin-bottom", "var(--lumo-space-l)");
         header.setWidthFull();
         contentWrapper.add(header);
 
-        // Statistik-Cards (volle Breite, responsive durch CSS grid)
         Div statsGrid = createStatsGrid(currentUser);
         statsGrid.getStyle().set("margin-bottom", "var(--lumo-space-m)");
         statsGrid.setWidthFull();
         contentWrapper.add(statsGrid);
 
-        // Schnellzugriff: unter den Statistik-Karten, Buttons nebeneinander (wrap)
         Div quickActions = createQuickActions(currentUser);
         quickActions.getStyle().set("margin-top", "var(--lumo-space-m)");
         quickActions.setWidthFull();
@@ -115,7 +111,6 @@ public class DashboardView extends VerticalLayout {
         try {
             long unsignierteEintraege = schiessnachweisService.zaehleUnsignierteEintraege(user);
 
-            // Für Aufseher, Schießstandaufseher und Vereinschef: Zähle offene Einträge in ihren Vereinen
             long offeneEintraege = 0;
             long beitrittsanfragen = 0;
             if (user.getRolle() == BenutzerRolle.AUFSEHER || user.getRolle() == BenutzerRolle.SCHIESSSTAND_AUFSEHER || user.getRolle() == BenutzerRolle.VEREINS_CHEF || user.getRolle() == BenutzerRolle.ADMIN) {
@@ -129,12 +124,10 @@ public class DashboardView extends VerticalLayout {
                     offeneEintraege = schiesstaende.stream()
                         .mapToLong(schiesstand -> schiessnachweisService.findeUnsignierteEintraege(schiesstand).size())
                         .sum();
-                    // Zähle Beitrittsanfragen für Vereinschef
                     beitrittsanfragen = vereinsmitgliedschaftService.findeBeitrittsanfragen(verein).size();
                 }
             }
 
-            // Karten basierend auf Rolle
             if (user.getRolle() == BenutzerRolle.AUFSEHER || user.getRolle() == BenutzerRolle.SCHIESSSTAND_AUFSEHER) {
                 grid.add(
                         createStatCard("Meine unsignierten Einträge", String.valueOf(unsignierteEintraege),
@@ -164,7 +157,6 @@ public class DashboardView extends VerticalLayout {
                 );
             }
         } catch (Exception e) {
-            // Fallback wenn Services nicht verfügbar
             grid.add(
                 createStatCard("Rolle", getRollenText(user.getRolle()),
                         VaadinIcon.USER_STAR, "var(--lumo-success-color)", null)
@@ -185,7 +177,6 @@ public class DashboardView extends VerticalLayout {
                 .set("padding", "var(--lumo-space-m)")
                 .set("box-shadow", "var(--lumo-box-shadow-xs)");
 
-        // Click-Handling, nur wenn clickable (route != null)
         if (route != null) {
             card.addClickListener(e ->
                 getUI().ifPresent(ui -> ui.navigate(route))
@@ -212,7 +203,6 @@ public class DashboardView extends VerticalLayout {
         header.add(labelSpan, iconComponent);
 
         Span valueSpan = new Span(value);
-        // Passe Schriftgröße an, wenn Text lang ist
         String fontSize = value.length() > 12 ? "var(--lumo-font-size-xxl)" : "var(--lumo-font-size-xxxl)";
         valueSpan.getStyle()
                 .set("font-size", fontSize)
@@ -229,7 +219,6 @@ public class DashboardView extends VerticalLayout {
     }
 
     private Div createQuickActions(Benutzer user) {
-        // Äußerer Container mit farblichem Hintergrund für visuelle Gruppierung
         Div outerContainer = new Div();
         outerContainer.setWidthFull();
         outerContainer.getStyle()
@@ -242,7 +231,6 @@ public class DashboardView extends VerticalLayout {
                 .set("max-width", "100%")
                 .set("overflow", "hidden");
 
-        // Überschrift für den Schnellzugriff-Bereich
         H2 title = new H2("Schnellzugriff");
         title.getStyle()
                 .set("margin-top", "0")
@@ -250,11 +238,9 @@ public class DashboardView extends VerticalLayout {
                 .set("color", "var(--lumo-primary-text-color)")
                 .set("text-align", "center");
 
-        // Actions als flexible Zeile: nebeneinander auf breiten Bildschirmen, wrap auf schmalen
         Div actionsGrid = new Div();
         actionsGrid.addClassName("quick-actions");
 
-        // Buttons: flexible Karten, nebeneinander; min-width sorgt für Umbruch auf Mobile
         actionsGrid.add(
                 createActionButton("Neuer Eintrag", VaadinIcon.PLUS, "neuer-eintrag"),
                 createActionButton("Meine Einträge", VaadinIcon.BOOK, "meine-eintraege"),
@@ -262,21 +248,16 @@ public class DashboardView extends VerticalLayout {
                 createActionButton("Profil", VaadinIcon.USER, "profil")
         );
 
-        // Zusätzliche Buttons für Vereinschef
         if (user.getRolle() == BenutzerRolle.VEREINS_CHEF) {
                         actionsGrid.add(createActionButton("Alle Mitglieder", VaadinIcon.USERS, "mitgliedsverwaltung"));
                         actionsGrid.add(createActionButton("Beitrittsanfragen", VaadinIcon.USER_CHECK, "mitgliedsverwaltung?tab=beantragt"));
                         actionsGrid.add(createActionButton("Eintragsverwaltung", VaadinIcon.RECORDS, "eintraege-verwaltung"));
         }
 
-        // Eintragsverwaltung-Button für Aufseher und Admin
         if (user.getRolle() == BenutzerRolle.AUFSEHER || user.getRolle() == BenutzerRolle.SCHIESSSTAND_AUFSEHER) {
             actionsGrid.add(createActionButton("Eintragsverwaltung", VaadinIcon.RECORDS, "eintraege-verwaltung"));
         }
 
-
-
-        // Infobox unter den Aktionen
         Div infoBox = new Div();
         infoBox.getStyle()
                 .set("background", "var(--lumo-primary-color-10pct)")
@@ -313,7 +294,6 @@ public class DashboardView extends VerticalLayout {
 
     private Div createActionButton(String label, VaadinIcon icon, String route) {
         Div button = new Div();
-        // Flex-Karte: steht nebeneinander, ist zentriert und responsive
         button.getStyle()
                 .set("background", "var(--lumo-contrast-5pct)")
                 .set("border-radius", "var(--lumo-border-radius-m)")

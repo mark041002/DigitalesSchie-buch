@@ -204,7 +204,6 @@ public final class ViewComponentHelper {
         return formLayout;
     }
 
-    // ==================== Hilfe-System Komponenten ====================
 
     /**
      * Erstellt eine Tipp-Box mit Lightbulb-Icon und Text.

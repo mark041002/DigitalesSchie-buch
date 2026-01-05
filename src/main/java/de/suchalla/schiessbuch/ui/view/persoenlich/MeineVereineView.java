@@ -260,17 +260,16 @@ public class MeineVereineView extends VerticalLayout {
 
         Span infoText = new Span("Suchen Sie nach Namen oder Adresse (Teiltext möglich). Wählen Sie einen Verein aus der Liste aus — vollständiger Name und Adresse werden angezeigt. 'Beitreten' sendet eine Beitrittsanfrage.");
         infoText.getStyle().set("margin-left", "var(--lumo-space-s)");
-        infoText.getStyle().set("color", "var(--lumo-primary-text-color)"); // Blauschrift
+        infoText.getStyle().set("color", "var(--lumo-primary-text-color)");
 
         HorizontalLayout infoLayout = new HorizontalLayout(infoIcon, infoText);
         infoLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         infoLayout.setSpacing(false);
-        infoLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START); // linksbündig
+        infoLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         infoBox.add(infoLayout);
 
         Button abbrechenButton = new Button("Abbrechen", e -> dialog.close());
 
-        // Einfache Suche: ein Feld für Name / Nummer / Adresse und eine Ergebnisliste (keine Tabelle)
         TextField suchFeld = new TextField("Verein suchen (Name, Adresse)");
         suchFeld.setWidthFull();
         suchFeld.setPlaceholder("Teil des Namens oder der Adresse eingeben");

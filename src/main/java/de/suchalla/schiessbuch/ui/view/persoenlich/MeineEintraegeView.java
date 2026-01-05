@@ -95,11 +95,9 @@ public class MeineEintraegeView extends VerticalLayout {
      * Erstellt den Inhalt der View.
      */
     private void createContent() {
-        // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
         contentWrapper.setWidthFull();
 
-        // Header-Bereich
         HorizontalLayout header = new HorizontalLayout();
         header.addClassName("gradient-header");
         header.setWidthFull();
@@ -109,7 +107,6 @@ public class MeineEintraegeView extends VerticalLayout {
                 .set("flex-wrap", "wrap")
                 .set("gap", "var(--lumo-space-m)");
 
-        // Text-Container
         Div textContainer = new Div();
         H3 title = new H3("Meine Schießnachweis-Einträge");
         title.getStyle()
@@ -457,12 +454,9 @@ public class MeineEintraegeView extends VerticalLayout {
                 LocalDate vonEff = von != null ? von : LocalDate.now().minusMonths(3);
                 LocalDate bisEff = bis != null ? bis : LocalDate.now();
 
-                // Service gibt jetzt DTOs zurück
                 List<SchiessnachweisEintrag> eintraege = schiessnachweisService
                         .findeSignierteEintraegeImZeitraum(currentUser, vonEff, bisEff);
 
-                // BenutzerMapper wird nicht benötigt, da currentUser noch Entity ist (für Security)
-                // Aber wir erstellen ein DTO für den PDF-Export
                 de.suchalla.schiessbuch.model.dto.BenutzerDTO schuetzeDTO = de.suchalla.schiessbuch.model.dto.BenutzerDTO.builder()
                         .id(currentUser.getId())
                         .vorname(currentUser.getVorname())

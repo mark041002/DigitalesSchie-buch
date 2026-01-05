@@ -136,7 +136,6 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
             return;
         }
 
-        // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
 
         // Header-Bereich: Titel + Vereinsname rechts vom Titel
@@ -146,7 +145,6 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
         header.setWidthFull();
         H2 title = new H2("Mitgliedsverwaltung");
         title.getStyle().set("margin", "0");
-        // Vereinsname als rechter Inhalt
         Span vereinName = new Span(aktuellerVerein.getName());
         vereinName.addClassName("subtitle");
 
@@ -156,18 +154,15 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
         header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
         contentWrapper.add(header);
 
-        // Info-Box mit modernem Styling
         Div infoBox = ViewComponentHelper.createInfoBox(
                 "Verwalten Sie die Mitgliedschaften Ihres Vereins. Genehmigen oder lehnen Sie Beitrittsanfragen ab und verwalten Sie aktive Mitglieder."
         );
         contentWrapper.add(infoBox);
 
-        // Tabs-Container mit weißem Hintergrund
         Div tabsContainer = new Div();
         tabsContainer.addClassName("tabs-container");
         tabsContainer.setWidthFull();
 
-        // Tabs für Status-Filter
         genehmigtTab = new Tab("Aktive Mitglieder");
         beantragtTab = new Tab("Zur Genehmigung");
         abgelehntTab = new Tab("Abgelehnte");
@@ -216,14 +211,11 @@ public class MitgliedschaftenVerwaltenView extends VerticalLayout implements Bef
         tabsContainer.add(tabs);
         contentWrapper.add(tabsContainer);
 
-        // Filter-Container
         contentWrapper.add(ViewComponentHelper.createFilterBox(createFilterLayout()));
 
-        // Empty State Message
         emptyStateMessage = ViewComponentHelper.createEmptyStateMessage("Noch keine Mitgliedschaften vorhanden.", VaadinIcon.USERS);
         emptyStateMessage.setVisible(false);
 
-        // Grid-Container
         Div gridContainer = ViewComponentHelper.createGridContainer();
         gridContainer.add(emptyStateMessage, createGridLayout());
         contentWrapper.add(gridContainer);

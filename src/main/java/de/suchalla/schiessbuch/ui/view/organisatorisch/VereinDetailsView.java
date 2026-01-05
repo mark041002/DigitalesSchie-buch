@@ -91,20 +91,17 @@ public class VereinDetailsView extends VerticalLayout implements BeforeEnterObse
      * Erstellt den Inhalt der View.
      */
     private void createContent() {
-        // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
 
         // Header-Bereich
         Div header = ViewComponentHelper.createGradientHeader("Vereinsdetails bearbeiten");
         contentWrapper.add(header);
 
-        // Info-Box mit modernem Styling
         Div infoBox = ViewComponentHelper.createInfoBox(
                 "Hier können Sie die Details Ihres Vereins bearbeiten und verwalten. Änderungen werden sofort gespeichert."
         );
         contentWrapper.add(infoBox);
 
-        // Form-Container mit weißem Hintergrund und modernen Styles
         Div formContainer = ViewComponentHelper.createFormContainer();
         formContainer.getStyle()
                 .set("background", "white")

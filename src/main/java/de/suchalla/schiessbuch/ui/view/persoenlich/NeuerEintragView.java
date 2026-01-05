@@ -96,7 +96,6 @@ public class NeuerEintragView extends VerticalLayout {
         contentWrapper.setPadding(false);
         contentWrapper.addClassName("content-wrapper");
 
-        // Header-Bereich mit modernem Styling
         Div header = ViewComponentHelper.createGradientHeader("Neuer Schießnachweis-Eintrag");
         contentWrapper.add(header);
 
@@ -107,7 +106,6 @@ public class NeuerEintragView extends VerticalLayout {
         // Formular in Card-Layout
         Div formCard = ViewComponentHelper.createFormContainer();
 
-        // Formular konfigurieren - nur wichtige Felder mit Icons
         datum.setValue(LocalDate.now());
         datum.setRequired(true);
         datum.setLocale(Locale.GERMANY);  // Deutsches Datumsformat
@@ -205,7 +203,6 @@ public class NeuerEintragView extends VerticalLayout {
             return List.of();
         }
 
-        // Verwende Service-Methode statt direkten Zugriff auf lazy Collection
         return vereinsmitgliedschaftService.findeVerbaendeVonBenutzerEntities(currentUser);
     }
 

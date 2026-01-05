@@ -82,7 +82,6 @@ public class PasswortResetView extends VerticalLayout {
         }
 
         try {
-            // Die Methode resetPasswortMitToken verwendet jetzt UserToken
             boolean success = benutzerService.resetPasswortMitToken(token, neuesPasswort.getValue());
             if (success) {
                 Notification notification = Notification.show("Passwort erfolgreich geändert. Sie können sich jetzt anmelden.");

@@ -90,7 +90,6 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
     }
 
     private void createContent() {
-        // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
 
         // Header-Bereich mit Zurück-Button
@@ -117,14 +116,12 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
         headerContainer.add(title, zurueckButton);
         contentWrapper.add(headerContainer);
 
-        // Info-Box
         Div infoBox = ViewComponentHelper.createInfoBox(
                 "Erstellen und verwalten Sie Schießdisziplinen für den Verband: " +
                 (aktuellerVerband != null ? aktuellerVerband.getName() : "-")
         );
         contentWrapper.add(infoBox);
 
-        // Formular-Container
         Div formContainer = ViewComponentHelper.createFormContainer();
 
         H3 erstellenTitle = new H3("Neue Disziplin erstellen");
@@ -166,7 +163,6 @@ public class DisziplinenVerwaltungView extends VerticalLayout implements BeforeE
         uploadContainer.add(csvTitle, csvInfo, upload);
         contentWrapper.add(uploadContainer);
 
-        // Grid-Container mit weißem Hintergrund (standardisiert)
         Div gridContainer = ViewComponentHelper.createGridContainer();
 
         emptyStateMessage = ViewComponentHelper.createEmptyStateMessage("Keine Disziplinen vorhanden.", VaadinIcon.TROPHY);

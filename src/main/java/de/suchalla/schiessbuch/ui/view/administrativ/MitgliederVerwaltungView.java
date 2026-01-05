@@ -53,15 +53,12 @@ public class MitgliederVerwaltungView extends VerticalLayout {
     }
 
     private void createContent() {
-        // Content-Wrapper für zentrierte Inhalte
         VerticalLayout contentWrapper = ViewComponentHelper.createContentWrapper();
         contentWrapper.setWidthFull();
 
-        // Header-Bereich
         Div header = ViewComponentHelper.createGradientHeader("Benutzerverwaltung");
         contentWrapper.add(header);
 
-        // Info-Box mit modernem Styling
         Div infoBox = ViewComponentHelper.createInfoBox("Übersicht aller Benutzer im System.");
         contentWrapper.add(infoBox);
 
@@ -73,14 +70,11 @@ public class MitgliederVerwaltungView extends VerticalLayout {
         buttonLayout.getStyle().set("margin-bottom", "var(--lumo-space-m)");
         contentWrapper.add(buttonLayout);
 
-        // Grid-Container mit weißem Hintergrund
         Div gridContainer = ViewComponentHelper.createGridContainer();
 
-        // Empty State Message
         emptyStateMessage = ViewComponentHelper.createEmptyStateMessage("Keine Benutzer vorhanden.", VaadinIcon.USERS);
         emptyStateMessage.setVisible(false);
 
-        // Grid Einrichtung
         setupGrid();
 
         gridContainer.add(emptyStateMessage, grid);

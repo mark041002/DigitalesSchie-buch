@@ -75,11 +75,9 @@ public class ProfilView extends VerticalLayout {
         contentWrapper.setPadding(false);
         contentWrapper.addClassName("content-wrapper");
 
-        // Header-Bereich mit modernem Styling
         Div header = ViewComponentHelper.createGradientHeader("Mein Profil");
         contentWrapper.add(header);
 
-        // Info-Box mit modernem Styling
         Div infoBox = ViewComponentHelper.createInfoBox("Verwalten Sie Ihre persönlichen Daten und Sicherheitseinstellungen.");
         infoBox.getStyle().set("margin-bottom", "var(--lumo-space-l)");
         contentWrapper.add(infoBox);
@@ -250,7 +248,6 @@ public class ProfilView extends VerticalLayout {
     }
 
     private Div createEmailRow(Div card) {
-        // Container, der E-Mail-Zeile und die (nun) lokale Benachrichtigungs-Div enthält
         Div container = new Div();
         container.setWidthFull();
 
@@ -335,7 +332,6 @@ public class ProfilView extends VerticalLayout {
             emailRow.add(emailField, speichern);
         }
 
-        // --- Neue optisch getrennte Div für E-Mail-Benachrichtigungen (unterhalb der E-Mail-Zeile) ---
         Div notifRow = new Div();
         notifRow.getStyle()
                 .set("display", "flex")
